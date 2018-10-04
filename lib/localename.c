@@ -1143,7 +1143,7 @@ extern char * getlocalename_l(int, locale_t);
 
 
 #if HAVE_CFLOCALECOPYCURRENT || HAVE_CFPREFERENCESCOPYAPPVALUE
-/* Mac OS X 10.2 or newer */
+/* Mac OS X 10.4 or newer */
 
 /* Canonicalize a Mac OS X locale name to a Unix locale name.
    NAME is a sufficiently large buffer.
@@ -1308,22 +1308,44 @@ gl_locale_name_canonicalize (char *name)
     /* Mac OS X has "az-Arab", "az-Cyrl", "az-Latn".
        The default script for az on Unix is Latin.  */
     { "az-Latn", "az" },
+    /* Mac OS X has "bs-Cyrl", "bs-Latn".
+       The default script for bs on Unix is Latin.  */
+    { "bs-Latn", "bs" },
     /* Mac OS X has "ga-dots".  Does not yet exist on Unix.  */
     { "ga-dots", "ga" },
-    /* Mac OS X has "kk-Cyrl".  Does not yet exist on Unix.  */
+    /* Mac OS X has "kk-Cyrl".
+       The default script for kk on Unix is Cyrillic.  */
+    { "kk-Cyrl", "kk" },
     /* Mac OS X has "mn-Cyrl", "mn-Mong".
        The default script for mn on Unix is Cyrillic.  */
     { "mn-Cyrl", "mn" },
     /* Mac OS X has "ms-Arab", "ms-Latn".
        The default script for ms on Unix is Latin.  */
     { "ms-Latn", "ms" },
+    /* Mac OS X has "pa-Arab", "pa-Guru".
+       Country codes are used to distinguish these on Unix.  */
+    { "pa-Arab", "pa_PK" },
+    { "pa-Guru", "pa_IN" },
+    /* Mac OS X has "shi-Latn", "shi-Tfng".  Does not yet exist on Unix.  */
+    /* Mac OS X has "sr-Cyrl", "sr-Latn".
+       The default script for sr on Unix is Cyrillic.  */
+    { "sr-Cyrl", "sr" },
     /* Mac OS X has "tg-Cyrl".
        The default script for tg on Unix is Cyrillic.  */
     { "tg-Cyrl", "tg" },
-    /* Mac OS X has "tk-Cyrl".  Does not yet exist on Unix.  */
+    /* Mac OS X has "tk-Cyrl".
+       The default script for tk on Unix is Cyrillic.  */
+    { "tk-Cyrl", "tk" },
     /* Mac OS X has "tt-Cyrl".
        The default script for tt on Unix is Cyrillic.  */
     { "tt-Cyrl", "tt" },
+    /* Mac OS X has "uz-Arab", "uz-Cyrl", "uz-Latn".
+       The default script for uz on Unix is Latin.  */
+    { "uz-Latn", "uz" },
+    /* Mac OS X has "vai-Latn", "vai-Vaii".  Does not yet exist on Unix.  */
+    /* Mac OS X has "yue-Hans", "yue-Hant".
+       The default script for yue on Unix is Simplified Han.  */
+    { "yue-Hans", "yue" },
     /* Mac OS X has "zh-Hans", "zh-Hant".
        Country codes are used to distinguish these on Unix.  */
     { "zh-Hans", "zh_CN" },
@@ -1337,6 +1359,7 @@ gl_locale_name_canonicalize (char *name)
   static const script_entry script_table[] = {
     { "Arab", "arabic" },
     { "Cyrl", "cyrillic" },
+    { "Latn", "latin" },
     { "Mong", "mongolian" }
   };
 
@@ -2932,7 +2955,7 @@ gl_locale_name_default (void)
      codeset.  */
 
 # if HAVE_CFLOCALECOPYCURRENT || HAVE_CFPREFERENCESCOPYAPPVALUE
-  /* Mac OS X 10.2 or newer */
+  /* Mac OS X 10.4 or newer */
   {
     /* Cache the locale name, since CoreFoundation calls are expensive.  */
     static const char *cached_localename;
@@ -2940,29 +2963,28 @@ gl_locale_name_default (void)
     if (cached_localename == NULL)
       {
         char namebuf[256];
-#  if HAVE_CFLOCALECOPYCURRENT /* Mac OS X 10.3 or newer */
+#  if HAVE_CFLOCALECOPYCURRENT /* Mac OS X 10.5 or newer */
         CFLocaleRef locale = CFLocaleCopyCurrent ();
         CFStringRef name = CFLocaleGetIdentifier (locale);
-
-        if (CFStringGetCString (name, namebuf, sizeof (namebuf),
-                                kCFStringEncodingASCII))
-          {
-            gl_locale_name_canonicalize (namebuf);
-            cached_localename = strdup (namebuf);
-          }
-        CFRelease (locale);
-#  elif HAVE_CFPREFERENCESCOPYAPPVALUE /* Mac OS X 10.2 or newer */
+#  elif HAVE_CFPREFERENCESCOPYAPPVALUE /* Mac OS X 10.4 or newer */
         CFTypeRef value =
           CFPreferencesCopyAppValue (CFSTR ("AppleLocale"),
                                      kCFPreferencesCurrentApplication);
-        if (value != NULL
-            && CFGetTypeID (value) == CFStringGetTypeID ()
-            && CFStringGetCString ((CFStringRef)value,
-                                   namebuf, sizeof (namebuf),
-                                   kCFStringEncodingASCII))
+        if (value != NULL && CFGetTypeID (value) == CFStringGetTypeID ())
           {
-            gl_locale_name_canonicalize (namebuf);
-            cached_localename = strdup (namebuf);
+            CFStringRef name = (CFStringRef)value;
+#  endif
+
+            if (CFStringGetCString (name, namebuf, sizeof (namebuf),
+                                    kCFStringEncodingASCII))
+              {
+                gl_locale_name_canonicalize (namebuf);
+                cached_localename = strdup (namebuf);
+              }
+
+#  if HAVE_CFLOCALECOPYCURRENT /* Mac OS X 10.5 or newer */
+        CFRelease (locale);
+#  elif HAVE_CFPREFERENCESCOPYAPPVALUE /* Mac OS X 10.4 or newer */
           }
 #  endif
         if (cached_localename == NULL)

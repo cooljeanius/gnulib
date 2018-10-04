@@ -3396,7 +3396,12 @@ problems are not worked around by Gnulib.
 * gethostbyname::
 * getwd::
 * h_errno::
+@ifhtml
+* _index::
+@end ifhtml
+@ifnothtml
 * index::
+@end ifnothtml
 * makecontext::
 * mktemp::
 * pthread_attr_getstackaddr::
@@ -6362,6 +6367,7 @@ to POSIX that it can be treated like any other Unix-like platform.
 * Quoting::
 * error and progname::
 * gcd::
+* Profiling of program phases::
 * Library version handling::
 * Supporting Relocation::
 * func::
@@ -6393,6 +6399,8 @@ to POSIX that it can be treated like any other Unix-like platform.
 @include error.texi
 
 @include gcd.texi
+
+@include timevar.texi
 
 @include check-version.texi
 

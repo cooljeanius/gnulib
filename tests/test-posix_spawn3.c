@@ -38,8 +38,6 @@ SIGNATURE_CHECK (posix_spawn, int, (pid_t *, char const *,
 #include <sys/types.h>
 #include <sys/wait.h>
 
-extern char **environ;
-
 #define CHILD_PROGRAM_FILENAME "test-posix_spawn3"
 #define DATA_FILENAME "t!#$%&'()*+,-;=?@[\\]^_`{|}~.tmp"
 /* On Cygwin, '*' '?' '\\' '|' cannot be used in file names.  */
@@ -82,7 +80,7 @@ parent_main (void)
     }
 
   /* Test whether posix_spawn_file_actions_addopen with this file name
-     actually works, but spawning a child that reads from this file.  */
+     actually works, by spawning a child that reads from this file.  */
   actions_allocated = false;
   if ((err = posix_spawn_file_actions_init (&actions)) != 0
       || (actions_allocated = true,
