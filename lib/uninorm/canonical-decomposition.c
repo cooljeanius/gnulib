@@ -1,5 +1,5 @@
 /* Canonical decomposition of Unicode characters.
-   Copyright (C) 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2009-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
 
 #include <stdlib.h>
 
-#include "decomposition-table.h"
+#include "uninorm/decomposition-table.h"
 
 int
 uc_canonical_decomposition (ucs4_t uc, ucs4_t *decomposition)

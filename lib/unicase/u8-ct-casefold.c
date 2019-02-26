@@ -1,5 +1,5 @@
 /* Casefolding mapping for UTF-8 substrings (locale dependent).
-   Copyright (C) 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2009-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "unicasemap.h"
+#include "unicase/unicasemap.h"
 #include "unicase/special-casing.h"
-#include "casefold.h"
+#include "unicase/casefold.h"
 
 #define FUNC u8_ct_casefold
 #define UNIT uint8_t

@@ -3,7 +3,7 @@
 @setfilename standards.info
 @settitle GNU Coding Standards
 @c This date is automagically updated when you save this file:
-@set lastupdate March 7, 2018
+@set lastupdate January 14, 2019
 @c %**end of header
 
 @dircategory GNU organization
@@ -234,12 +234,12 @@ Information for GNU Maintainers}.
 @section Trademarks
 @cindex trademarks
 
-Please do not include any trademark acknowledgements in GNU software
+Please do not include any trademark acknowledgments in GNU software
 packages or documentation.
 
-Trademark acknowledgements are the statements that such-and-such is a
+Trademark acknowledgments are the statements that such-and-such is a
 trademark of so-and-so.  The GNU Project has no objection to the basic
-idea of trademarks, but these acknowledgements feel like kowtowing,
+idea of trademarks, but these acknowledgments feel like kowtowing,
 and there is no legal requirement for them, so we don't use them.
 
 What is legally required, as regards other people's trademarks, is to
@@ -3313,6 +3313,27 @@ topic and reads it straight through.  This means covering basic topics
 at the beginning, and advanced topics only later.  This also means
 defining every specialized term when it is first used.
 
+Remember that the audience for a GNU manual (and other GNU
+documentation) is global, and that it will be used for years, maybe
+decades.  This means that the reader could have very different cultural
+reference points.  Decades from now, all but old folks will have very
+different cultural reference points; many things that "everyone knows
+about" today may be mostly forgotten.
+
+For this reason, try to avoid writing in a way that crucially depends on
+cultural reference points for understanding, or that refers to them in
+ways that would impede reading for someone that doesn't recognize them.
+
+Likewise, be conservative in your choice of words (aside from technical
+terms), linguistic constructs, and spelling: aim to make them
+intelligible to readers from ten years ago.  In any contest for
+trendiness, GNU writing should not even qualify to enter.
+
+It is ok to refer once in a rare while to spatially or temporally
+localized reference points or facts, if it is directly pertinent or as
+an aside.  Changing these few things (which in any case stand out) when
+they no longer make sense will not be a lot of work.
+
 Programmers tend to carry over the structure of the program as the
 structure for its documentation.  But this structure is not
 necessarily good for explaining how to use the program; it may be
@@ -3584,12 +3605,16 @@ The best place to explain how parts of the new code work with other code
 is in comments in the code, not in the change log.
 
 If you think that a change calls for explanation of @emph{why} the
-change was needed (what problem the old code had), you're probably
-right.  Please put the explanation in comments in the code, where
-people will see it whenever they see the code.  An example of such an
-explanation is, ``This function used to be iterative, but that failed
-when MUMBLE was a tree.''  (Though such a simple reason would not need
-this kind of explanation.)
+change was needed---that is, what problem the old code had such that
+it required this change---you're probably right.  Please put the
+explanation in comments in the code, where people will see it whenever
+they see the code.  An example of such an explanation is, ``This
+function used to be iterative, but that failed when MUMBLE was a
+tree.''  (Though such a simple reason would not need this kind of
+explanation.)
+
+The best place for other kinds of explanation of the change is in the
+change log entry.
 
 The easiest way to add an entry to @file{ChangeLog} is with the Emacs
 command @kbd{M-x add-change-log-entry}.  An individual change should

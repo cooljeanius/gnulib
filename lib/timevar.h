@@ -1,6 +1,6 @@
 /* Timing variables for measuring application performance.
 
-   Copyright (C) 2000, 2002, 2004, 2009-2015, 2018 Free Software
+   Copyright (C) 2000, 2002, 2004, 2009-2015, 2018-2019 Free Software
    Foundation, Inc.
 
    Contributed by Alex Samuel <samuel@codesourcery.com>
@@ -19,7 +19,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #ifndef _TIMEVAR_H
-#define _TIMEVAR_H
+# define _TIMEVAR_H 1
+
+# include <stdio.h>
+
+# include "xtime.h"
+
+# ifdef  __cplusplus
+extern "C" {
+# endif
 
 /* Timing variables are used to measure elapsed time in various
    portions of the application.  Each measures elapsed user, system, and
@@ -52,14 +60,14 @@
 struct timevar_time_def
 {
   /* User time in this process.  */
-  float user;
+  xtime_t user;
 
   /* System time (if applicable for this host platform) in this
      process.  */
-  float sys;
+  xtime_t sys;
 
   /* Wall clock time.  */
-  float wall;
+  xtime_t wall;
 };
 
 /* An enumeration of timing variable identifiers.  Constructed from
@@ -118,7 +126,13 @@ void timevar_get (timevar_id_t timevar, struct timevar_time_def *elapsed);
 
 void timevar_print (FILE *fp);
 
-/* Set to to nonzero to enable timing variables.  */
+/* Set to to nonzero to enable timing variables.  All the timevar
+   functions make an early exit if timevar is disabled.  */
+
 extern int timevar_enabled;
+
+# ifdef  __cplusplus
+}
+# endif
 
 #endif /* ! _TIMEVAR_H */

@@ -35,14 +35,22 @@ here in a platform-specific way:
 
 @itemize
 @item
-On GNU/Linux, it adds a linker option (@option{-rpath}) that causes
-the dynamic linker to search for libraries in a directory relative to
-the location of the invoked executable.
+On most operating systems, it adds a linker option (@option{-rpath}) that
+causes the dynamic linker to search for libraries in a directory relative
+to the location of the invoked executable.  This works on GNU/Linux and
+modern versions of GNU/Hurd, GNU/kFreeBSD, FreeBSD, NetBSD, OpenBSD, Solaris,
+Haiku.
 
 @item
-On other Unix systems, it installs a wrapper executable.  The wrapper
+On macOS, it modifies the installed executables after installation in a way
+that causes the dynamic linker to search for libraries in a directory relative
+to the location of the invoked executable.
+
+@item
+On other Unix systems, it installs a trampoline executable.  The trampoline
 sets the environment variable that controls shared library searching
 (usually @env{LD_LIBRARY_PATH}) and then invokes the real executable.
+This applies to operating systems such as AIX, HP-UX, or Minix.
 
 @item
 On Windows, the executable's own directory is searched for libraries,
@@ -122,8 +130,12 @@ shell script that your package installs, add the following:
 
 @smallexample
 @@relocatable_sh@@
+
+prefix="@@prefix@@"
+exec_prefix="@@exec_prefix@@"   # usually needs $prefix.
+datarootdir="@@datarootdir@@"   # usually needs $prefix.
+
 if test "@@RELOCATABLE@@" = yes; then
-  exec_prefix="@@exec_prefix@@"
   bindir="@@bindir@@"
   orig_installdir="$bindir" # see Makefile.am's *_SCRIPTS variables
   func_find_curr_installdir # determine curr_installdir
@@ -140,8 +152,9 @@ else
 fi
 
 # Get some relocated directory names.
-sysconfdir=`relocate "@@sysconfdir@@"`
-some_datadir=`relocate "@@datadir@@/something"`
+sysconfdir=`relocate "@@sysconfdir@@"`          # usually needs $prefix.
+some_datadir=`relocate "@@datadir@@/something"` # usually needs $datarootdir.
+bindir=`relocate "@@bindir@@"`       # usually needs $exec_prefix, hence $prefix.
 @end smallexample
 
 You must adapt the definition of @code{orig_installdir}, depending on

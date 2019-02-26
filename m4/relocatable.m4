@@ -1,5 +1,5 @@
-# relocatable.m4 serial 19
-dnl Copyright (C) 2003, 2005-2007, 2009-2018 Free Software Foundation, Inc.
+# relocatable.m4 serial 22
+dnl Copyright (C) 2003, 2005-2007, 2009-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -34,6 +34,7 @@ AC_DEFUN([gl_RELOCATABLE_BODY],
   AC_REQUIRE([AC_CANONICAL_HOST])
   is_noop=no
   use_elf_origin_trick=no
+  use_macos_tools=no
   use_wrapper=no
   if test $RELOCATABLE = yes; then
     # --enable-relocatable implies --disable-rpath
@@ -42,7 +43,43 @@ AC_DEFUN([gl_RELOCATABLE_BODY],
     AC_CHECK_FUNCS([_NSGetExecutablePath])
     case "$host_os" in
       mingw*) is_noop=yes ;;
+      # For the platforms that support $ORIGIN, see
+      # <https://lekensteyn.nl/rpath.html>.
+      # glibc systems, Linux with musl libc: yes. Android: no.
+      linux*-android*) ;;
       linux* | kfreebsd*) use_elf_origin_trick=yes ;;
+      # Hurd: <http://lists.gnu.org/archive/html/bug-hurd/2019-02/msg00049.html>
+      # only after the glibc commit from 2018-01-08
+      # <https://sourceware.org/git/?p=glibc.git;a=commitdiff;h=311ba8dc4416467947eff2ab327854f124226309>
+      gnu*)
+        # Test for a glibc version >= 2.27.
+        AC_CHECK_FUNCS([copy_file_range])
+        if test $ac_cv_func_copy_file_range = yes; then
+          use_elf_origin_trick=yes
+        fi
+        ;;
+changequote(,)dnl
+      # FreeBSD >= 7.3, DragonFly >= 3.0: yes.
+      freebsd | freebsd[1-7] | freebsd[1-6].* | freebsd7.[0-2]) ;;
+      dragonfly | dragonfly[1-2] | dragonfly[1-2].*) ;;
+      freebsd* | dragonfly*) use_elf_origin_trick=yes ;;
+      # NetBSD >= 8.0: yes.
+      netbsd | netbsd[1-7] | netbsd[1-7].*) ;;
+      netbsdelf | netbsdelf[1-7] | netbsdelf[1-7].*) ;;
+      netbsd*) use_elf_origin_trick=yes ;;
+      # OpenBSD >= 5.4: yes.
+      openbsd | openbsd[1-5] | openbsd[1-4].* | openbsd5.[0-3]) ;;
+      openbsd*) use_elf_origin_trick=yes ;;
+      # Solaris >= 10: yes.
+      solaris | solaris2.[1-9] | solaris2.[1-9].*) ;;
+      solaris*) use_elf_origin_trick=yes ;;
+      # Haiku: yes.
+      haiku*) use_elf_origin_trick=yes ;;
+      # On Mac OS X 10.4 or newer, use Mac OS X tools. See
+      # <https://wincent.com/wiki/@executable_path,_@load_path_and_@rpath>.
+      darwin | darwin[1-7].*) ;;
+      darwin*) use_macos_tools=yes ;;
+changequote([,])dnl
     esac
     if test $is_noop = yes; then
       RELOCATABLE_LDFLAGS=:
@@ -57,12 +94,16 @@ AC_DEFUN([gl_RELOCATABLE_BODY],
         RELOCATABLE_LDFLAGS="\"$reloc_ldflags\" \"\$(host)\" \"\$(RELOCATABLE_LIBRARY_PATH)\""
         AC_SUBST([RELOCATABLE_LDFLAGS])
       else
-        use_wrapper=yes
         dnl Unfortunately we cannot define INSTALL_PROGRAM to a command
         dnl consisting of more than one word - libtool doesn't support this.
         dnl So we abuse the INSTALL_PROGRAM_ENV hook, originally meant for the
         dnl 'install-strip' target.
-        INSTALL_PROGRAM_ENV="RELOC_LIBRARY_PATH_VAR=\"$shlibpath_var\" RELOC_LIBRARY_PATH_VALUE=\"\$(RELOCATABLE_LIBRARY_PATH)\" RELOC_PREFIX=\"\$(prefix)\" RELOC_DESTDIR=\"\$(DESTDIR)\" RELOC_COMPILE_COMMAND=\"\$(CC) \$(CPPFLAGS) \$(CFLAGS) \$(LDFLAGS)\" RELOC_SRCDIR=\"\$(RELOCATABLE_SRC_DIR)\" RELOC_BUILDDIR=\"\$(RELOCATABLE_BUILD_DIR)\" RELOC_CONFIG_H_DIR=\"\$(RELOCATABLE_CONFIG_H_DIR)\" RELOC_EXEEXT=\"\$(EXEEXT)\" RELOC_STRIP_PROG=\"\$(RELOCATABLE_STRIP)\" RELOC_INSTALL_PROG=\"$INSTALL_PROGRAM\""
+        if test $use_macos_tools = yes; then
+          INSTALL_PROGRAM_ENV="RELOC_MODE=macosx RELOC_PREFIX=\"\$(prefix)\" RELOC_DESTDIR=\"\$(DESTDIR)\" RELOC_STRIP_PROG=\"\$(RELOCATABLE_STRIP)\" RELOC_INSTALL_PROG=\"$INSTALL_PROGRAM\""
+        else
+          use_wrapper=yes
+          INSTALL_PROGRAM_ENV="RELOC_MODE=wrapper RELOC_LIBRARY_PATH_VAR=\"$shlibpath_var\" RELOC_LIBRARY_PATH_VALUE=\"\$(RELOCATABLE_LIBRARY_PATH)\" RELOC_PREFIX=\"\$(prefix)\" RELOC_DESTDIR=\"\$(DESTDIR)\" RELOC_COMPILE_COMMAND=\"\$(CC) \$(CPPFLAGS) \$(CFLAGS) \$(LDFLAGS)\" RELOC_SRCDIR=\"\$(RELOCATABLE_SRC_DIR)\" RELOC_BUILDDIR=\"\$(RELOCATABLE_BUILD_DIR)\" RELOC_CONFIG_H_DIR=\"\$(RELOCATABLE_CONFIG_H_DIR)\" RELOC_EXEEXT=\"\$(EXEEXT)\" RELOC_STRIP_PROG=\"\$(RELOCATABLE_STRIP)\" RELOC_INSTALL_PROG=\"$INSTALL_PROGRAM\""
+        fi
         AC_SUBST([INSTALL_PROGRAM_ENV])
         case "$ac_aux_dir" in
           /*) INSTALL_PROGRAM="$ac_aux_dir/install-reloc" ;;

@@ -1,5 +1,5 @@
 /* Quad-precision floating point argument reduction.  -*- coding: utf-8 -*-
-   Copyright (C) 1999, 2007, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2007, 2009-2019 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Jakub Jelinek <jj@ultra.linux.cz>
 
@@ -325,7 +325,7 @@ static char rcsid[] =
  *                      z    = (z-x[i])*2**24
  *
  *
- *      y[]     ouput result in an array of double precision numbers.
+ *      y[]     output result in an array of double precision numbers.
  *              The dimension of y[] is:
  *                      24-bit  precision       1
  *                      53-bit  precision       2

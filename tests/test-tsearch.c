@@ -1,5 +1,5 @@
 /* Test program for tsearch et al.
-   Copyright (C) 1997, 2000-2001, 2007-2018 Free Software Foundation, Inc.
+   Copyright (C) 1997, 2000-2001, 2007-2019 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software: you can redistribute it and/or
@@ -264,11 +264,12 @@ int
 main (int argc, char **argv)
 {
   int total_error = 0;
-  static char state[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
   void *root = NULL;
   int i, j;
 
 #if HAVE_INITSTATE
+  static char state[8] = { 1, 2, 3, 4, 5, 6, 7, 8 };
+
   initstate (SEED, state, 8);
 #endif
 

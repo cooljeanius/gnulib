@@ -1,5 +1,5 @@
 /* Creating and controlling threads.
-   Copyright (C) 2005-2018 Free Software Foundation, Inc.
+   Copyright (C) 2005-2019 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -132,8 +132,6 @@ extern int glthread_in_use (void);
    PIC mode, &foo != NULL always evaluates to true if there is a direct
    call to foo(...) in the same function.  To avoid this, we test the
    address of a function in libpthread that we don't use.  */
-
-#  pragma weak pthread_create
 
 #  ifndef pthread_sigmask /* Do not declare rpl_pthread_sigmask weak.  */
 #   pragma weak pthread_sigmask

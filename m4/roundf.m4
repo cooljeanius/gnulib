@@ -1,5 +1,5 @@
-# roundf.m4 serial 20
-dnl Copyright (C) 2007-2018 Free Software Foundation, Inc.
+# roundf.m4 serial 21
+dnl Copyright (C) 2007-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -99,7 +99,7 @@ float roundf (float);
 static float dummy (float f) { return 0; }
 int main (int argc, char *argv[])
 {
-  float (*my_roundf) (float) = argc ? roundf : dummy;
+  float (* volatile my_roundf) (float) = argc ? roundf : dummy;
   int result = 0;
   /* Test whether roundf (-0.0f) is -0.0f.  */
   if (signbitf (minus_zerof) && !signbitf (my_roundf (minus_zerof)))

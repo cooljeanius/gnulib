@@ -1,5 +1,5 @@
 /* Compile a Java program.
-   Copyright (C) 2001-2003, 2006-2018 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2006-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
@@ -339,11 +339,11 @@ compile_using_envjavac (const char *javac,
   if (verbose)
     printf ("%s\n", command);
 
-  argv[0] = "/bin/sh";
+  argv[0] = BOURNE_SHELL;
   argv[1] = "-c";
   argv[2] = command;
   argv[3] = NULL;
-  exitstatus = execute (javac, "/bin/sh", argv, false, false, false,
+  exitstatus = execute (javac, BOURNE_SHELL, argv, false, false, false,
                         null_stderr, true, true, NULL);
   err = (exitstatus != 0);
 
@@ -656,11 +656,11 @@ is_envjavac_gcj (const char *javac)
         abort ();
 
       /* Call $JAVAC --version 2>/dev/null.  */
-      argv[0] = "/bin/sh";
+      argv[0] = BOURNE_SHELL;
       argv[1] = "-c";
       argv[2] = command;
       argv[3] = NULL;
-      child = create_pipe_in (javac, "/bin/sh", argv, DEV_NULL, true, true,
+      child = create_pipe_in (javac, BOURNE_SHELL, argv, DEV_NULL, true, true,
                               false, fd);
       if (child == -1)
         goto failed;
@@ -738,11 +738,11 @@ is_envjavac_gcj43 (const char *javac)
         abort ();
 
       /* Call $JAVAC --version 2>/dev/null.  */
-      argv[0] = "/bin/sh";
+      argv[0] = BOURNE_SHELL;
       argv[1] = "-c";
       argv[2] = command;
       argv[3] = NULL;
-      child = create_pipe_in (javac, "/bin/sh", argv, DEV_NULL, true, true,
+      child = create_pipe_in (javac, BOURNE_SHELL, argv, DEV_NULL, true, true,
                               false, fd);
       if (child == -1)
         goto failed;

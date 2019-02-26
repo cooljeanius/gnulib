@@ -1,5 +1,5 @@
 /* Rename a file relative to open directories.
-   Copyright (C) 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -80,7 +80,10 @@ renameatu (int fd1, char const *src, int fd2, char const *dst,
   int ret_val = -1;
   int err = EINVAL;
 
-#ifdef SYS_renameat2
+#ifdef HAVE_RENAMEAT2
+  ret_val = renameat2 (fd1, src, fd2, dst, flags);
+  err = errno;
+#elif defined SYS_renameat2
   ret_val = syscall (SYS_renameat2, fd1, src, fd2, dst, flags);
   err = errno;
 #elif defined RENAME_EXCL

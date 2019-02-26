@@ -23,6 +23,10 @@ BeOS.
 printf of @samp{long double} numbers is unsupported on some platforms:
 BeOS.
 @item
+printf @code{"%f"}, @code{"%e"}, @code{"%g"} of Infinity and NaN yields an
+incorrect result on some platforms:
+Solaris 11.4.
+@item
 This function does not support the @samp{a} and @samp{A} directives on some
 platforms:
 glibc-2.3.6, BeOS.
@@ -34,6 +38,10 @@ This function does not support format directives that access arguments in an
 arbitrary order, such as @code{"%2$s"}, on some platforms:
 BeOS.
 @item
+printf @code{"%010f"} of NaN and Infinity yields an incorrect result (padded
+with zeroes, or wrong capitalization) on some platforms:
+Solaris 11.4.
+@item
 This function does not support precisions larger than 512 or 1024 in integer,
 floating-point and pointer output on some platforms:
 AIX 7.1, BeOS.
@@ -41,6 +49,10 @@ AIX 7.1, BeOS.
 
 Portability problems not fixed by Gnulib:
 @itemize
+@item
+The @code{%m} directive is not portable, use @code{%s} mapped to an
+argument of @code{strerror(errno)} (or a version of @code{strerror_r})
+instead.
 @item
 Formatting noncanonical @samp{long double} numbers produces
 nonmeaningful results on some platforms:

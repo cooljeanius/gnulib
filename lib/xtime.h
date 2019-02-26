@@ -1,6 +1,6 @@
 /* xtime -- extended-resolution integer timestamps
 
-   Copyright (C) 2005-2006, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2005-2006, 2009-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,10 +50,13 @@ extern "C" {
 #endif
 
 /* Return an extended time value that contains S seconds and NS
-   nanoseconds, without any overflow checking.  */
+   nanoseconds.  */
 XTIME_INLINE xtime_t
 xtime_make (xtime_t s, long int ns)
 {
+  const long int giga = 1000 * 1000 * 1000;
+  s += ns / giga;
+  ns %= giga;
   if (XTIME_PRECISION == 1)
     return s;
   else

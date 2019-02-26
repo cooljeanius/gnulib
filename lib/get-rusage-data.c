@@ -1,5 +1,5 @@
 /* Getter for RLIMIT_DATA.
-   Copyright (C) 2011-2018 Free Software Foundation, Inc.
+   Copyright (C) 2011-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify
@@ -413,7 +413,7 @@ get_rusage_data (void)
      Prefer get_rusage_data_via_iterator().  */
   return get_rusage_data_via_iterator ();
 #elif HAVE_SETRLIMIT && defined RLIMIT_DATA && !defined __HAIKU__
-# if defined __linux__ || defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined _AIX || defined __hpux || defined __sgi || defined __osf__ || defined __sun /* Linux, FreeBSD, NetBSD, OpenBSD, AIX, HP-UX, IRIX, OSF/1, Solaris */
+# if defined __linux__ || defined __ANDROID__ || defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined _AIX || defined __hpux || defined __sgi || defined __osf__ || defined __sun /* Linux, FreeBSD, NetBSD, OpenBSD, AIX, HP-UX, IRIX, OSF/1, Solaris */
   /* get_rusage_data_via_setrlimit() works.  */
   return get_rusage_data_via_setrlimit ();
 # else

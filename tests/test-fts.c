@@ -1,5 +1,5 @@
 /* Test the fts function.
-   Copyright 2017-2018 Free Software Foundation, Inc.
+   Copyright 2017-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@ fts_dealloc (void)
 {
   static char dir[] = "./";
   static char *const curr_dir[2] = { dir, 0 };
-  FTSENT *e;
   FTS *ftsp = fts_open (curr_dir, FTS_NOSTAT | FTS_PHYSICAL | FTS_CWDFD, 0);
   if (ftsp)
     {
@@ -102,7 +101,7 @@ main (void)
 
   /* Create directories BASE, BASE/d, BASE/d/1, BASE/d/2, ..., BASE/d/65536,
      to stress-test fts.  Stop if directory creation fails due to
-     EMFILE problems, or if BASE/d's link count no longer matches the
+     EMFILE or EMLINK problems, or if BASE/d's link count no longer matches the
      Unix tradition.  See:
      https://bugzilla.kernel.org/show_bug.cgi?id=196405
      for more info.  */
@@ -115,7 +114,9 @@ main (void)
       sprintf (buf, "%s/d/%i", base, i);
       if (mkdir (buf, 0777) != 0)
         {
-          if (errno != EMFILE || i <= needles)
+          if (errno == EMFILE || errno == EMLINK)
+            break;
+          if (i <= needles)
             perror_exit (buf, 77);
           break;
         }

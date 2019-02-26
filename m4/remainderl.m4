@@ -1,5 +1,5 @@
-# remainderl.m4 serial 9
-dnl Copyright (C) 2012-2018 Free Software Foundation, Inc.
+# remainderl.m4 serial 10
+dnl Copyright (C) 2012-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -87,7 +87,7 @@ numeric_equal (long double x, long double y)
 static long double dummy (long double x, long double y) { return 0; }
 int main (int argc, char *argv[])
 {
-  long double (*my_remainderl) (long double, long double) = argc ? remainderl : dummy;
+  long double (* volatile my_remainderl) (long double, long double) = argc ? remainderl : dummy;
   long double f;
   /* Test remainderl(...,0.0L).
      This test fails on OSF/1 5.1.  */

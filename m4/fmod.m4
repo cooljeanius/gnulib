@@ -1,5 +1,5 @@
-# fmod.m4 serial 6
-dnl Copyright (C) 2011-2018 Free Software Foundation, Inc.
+# fmod.m4 serial 7
+dnl Copyright (C) 2011-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -39,7 +39,7 @@ numeric_equal (double x, double y)
 static double dummy (double x, double y) { return 0; }
 int main (int argc, char *argv[])
 {
-  double (*my_fmod) (double, double) = argc ? fmod : dummy;
+  double (* volatile my_fmod) (double, double) = argc ? fmod : dummy;
   int result = 0;
   double f;
   /* Test fmod(...,0.0).

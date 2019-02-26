@@ -1,5 +1,5 @@
 /* Abstract ordered set data type.
-   Copyright (C) 2006-2007, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -77,9 +77,12 @@ extern "C" {
    NULL denotes pointer comparison.  */
 typedef int (*gl_setelement_compar_fn) (const void *elt1, const void *elt2);
 
+#ifndef _GL_SETELEMENT_DISPOSE_FN_DEFINED
 /* Type of function used to dispose an element once it's removed from a set.
    NULL denotes a no-op.  */
 typedef void (*gl_setelement_dispose_fn) (const void *elt);
+# define _GL_SETELEMENT_DISPOSE_FN_DEFINED 1
+#endif
 
 /* Type of function used to compare an element with a threshold.
    Return true if the element is greater or equal than the threshold.  */
@@ -141,10 +144,11 @@ extern int gl_oset_nx_add (gl_oset_t set, const void *elt)
 extern bool gl_oset_remove (gl_oset_t set, const void *elt);
 
 /* Free an entire ordered set.
-   (But this call does not free the elements of the set.)  */
+   (But this call does not free the elements of the set.  It only invokes
+   the DISPOSE_FN on each of the elements of the set.)  */
 extern void gl_oset_free (gl_oset_t set);
 
-#endif /* End of inline and gl_xlist.h-defined functions.  */
+#endif /* End of inline and gl_xoset.h-defined functions.  */
 
 /* --------------------- gl_oset_iterator_t Data Type --------------------- */
 

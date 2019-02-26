@@ -1,5 +1,5 @@
 /* Ordered set data type implemented by a binary tree.
-   Copyright (C) 2006-2007, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -91,7 +91,7 @@ gl_tree_search_atleast (gl_oset_t set,
         node = node->right;
       else
         {
-          /* We have an element >= VALUE.  But we need the leftmost such
+          /* We have an element >= THRESHOLD.  But we need the leftmost such
              element.  */
           gl_oset_node_t found = node;
           node = node->left;

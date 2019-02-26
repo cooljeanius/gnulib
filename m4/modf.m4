@@ -1,5 +1,5 @@
-# modf.m4 serial 5
-dnl Copyright (C) 2011-2018 Free Software Foundation, Inc.
+# modf.m4 serial 6
+dnl Copyright (C) 2011-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -41,7 +41,7 @@ double zero;
 double minus_one = - 1.0;
 int main (int argc, char *argv[])
 {
-  double (*my_modf) (double, double *) = argc ? modf : dummy;
+  double (* volatile my_modf) (double, double *) = argc ? modf : dummy;
   int result = 0;
   double i;
   double f;

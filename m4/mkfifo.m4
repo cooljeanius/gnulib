@@ -1,7 +1,7 @@
-# serial 7
+# serial 8
 # See if we need to provide mkfifo replacement.
 
-dnl Copyright (C) 2009-2018 Free Software Foundation, Inc.
+dnl Copyright (C) 2009-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -27,6 +27,8 @@ AC_DEFUN([gl_FUNC_MKFIFO],
   if test $gl_cv_func_mkfifo = no; then
     HAVE_MKFIFO=0
   else
+    AC_DEFINE([HAVE_MKFIFO], [1],
+      [Define to 1 if you have a 'mkfifo' function.])
     dnl Check for Solaris 9 and FreeBSD bug with trailing slash.
     AC_CHECK_FUNCS_ONCE([lstat])
     AC_CACHE_CHECK([whether mkfifo rejects trailing slashes],

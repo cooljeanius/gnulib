@@ -1,5 +1,5 @@
 /* gc.h --- Header file for implementation agnostic crypto wrapper API.
- * Copyright (C) 2002-2005, 2007-2008, 2011-2018 Free Software Foundation, Inc.
+ * Copyright (C) 2002-2005, 2007-2008, 2011-2019 Free Software Foundation, Inc.
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GC_H
-# define GC_H
+#ifndef _GL_GC_H
+# define _GL_GC_H
 
 /* Get size_t. */
 # include <stddef.h>
@@ -321,4 +321,4 @@ gc_pbkdf2_sha1 (const char *P, size_t Plen,
   Simon
  */
 
-#endif /* GC_H */
+#endif /* _GL_GC_H */

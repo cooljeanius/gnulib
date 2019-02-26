@@ -1,5 +1,5 @@
 /* Ordered set data type implemented by an array.
-   Copyright (C) 2006-2007, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -136,7 +136,7 @@ gl_array_search_atleast (gl_oset_t set,
                  minimal such index.  */
               high = mid;
               /* At each loop iteration, low <= high and
-                   compar (list->elements[high], value) >= 0,
+                   compar (set->elements[high], threshold) >= 0,
                  and we know that the first occurrence of the element is at
                  low <= position <= high.  */
               while (low < high)

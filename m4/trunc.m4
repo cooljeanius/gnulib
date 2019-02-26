@@ -1,5 +1,5 @@
-# trunc.m4 serial 11
-dnl Copyright (C) 2007, 2010-2018 Free Software Foundation, Inc.
+# trunc.m4 serial 13
+dnl Copyright (C) 2007, 2010-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -21,8 +21,9 @@ AC_DEFUN([gl_FUNC_TRUNC],
            # define __NO_MATH_INLINES 1 /* for glibc */
            #endif
            #include <math.h>
+           double (*funcptr) (double) = trunc;
            double x;]],
-         [[x = trunc(x);]])],
+         [[x = funcptr(x) + trunc(x);]])],
       [TRUNC_LIBM=])
     if test "$TRUNC_LIBM" = "?"; then
       save_LIBS="$LIBS"
@@ -33,8 +34,9 @@ AC_DEFUN([gl_FUNC_TRUNC],
              # define __NO_MATH_INLINES 1 /* for glibc */
              #endif
              #include <math.h>
+             double (*funcptr) (double) = trunc;
              double x;]],
-           [[x = trunc(x);]])],
+           [[x = funcptr(x) + trunc(x);]])],
         [TRUNC_LIBM="-lm"])
       LIBS="$save_LIBS"
     fi
@@ -60,7 +62,7 @@ AC_DEFUN([gl_FUNC_TRUNC],
 static double dummy (double f) { return 0; }
 int main (int argc, char *argv[])
 {
-  double (*my_trunc) (double) = argc ? trunc : dummy;
+  double (* volatile my_trunc) (double) = argc ? trunc : dummy;
   /* Test whether trunc (-0.0) is -0.0.  */
   if (signbitd (minus_zerod) && !signbitd (my_trunc (minus_zerod)))
     return 1;

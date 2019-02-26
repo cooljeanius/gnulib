@@ -1,5 +1,5 @@
 /* Character set conversion with error handling.
-   Copyright (C) 2001-2018 Free Software Foundation, Inc.
+   Copyright (C) 2001-2019 Free Software Foundation, Inc.
    Written by Bruno Haible and Simon Josefsson.
 
    This program is free software: you can redistribute it and/or modify
@@ -73,7 +73,7 @@ iconveh_open (const char *to_codeset, const char *from_codeset, iconveh_t *cdp)
         {
           int saved_errno = errno;
           if (cd != (iconv_t)(-1))
-            iconv_close (cdp->cd);
+            iconv_close (cd);
           errno = saved_errno;
           return -1;
         }

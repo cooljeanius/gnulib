@@ -1,5 +1,5 @@
 /* Sequential list data type implemented by a hash table with a binary tree.
-   Copyright (C) 2006-2007, 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -27,16 +27,6 @@ struct gl_multiple_nodes
 /* A value that cannot occur at the corresponding field (->left) in
    gl_list_node_impl.  */
 #define MULTIPLE_NODES_MAGIC  (void *) -1
-
-/* Resize the hash table if needed, after list->count was incremented.  */
-static void
-hash_resize_after_add (gl_list_t list)
-{
-  size_t count = (list->root != 0 ? list->root->branch_size : 0);
-  size_t estimate = xsum (count, count / 2); /* 1.5 * count */
-  if (estimate > list->table_size)
-    hash_resize (list, estimate);
-}
 
 /* Return the position of the given node in the tree.  */
 static size_t

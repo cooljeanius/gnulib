@@ -1,6 +1,5 @@
-/* Sequential list data type implemented by a hash table with another list.
-   Copyright (C) 2006, 2009-2018 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2006.
+/* Ensure that stdin, stdout, stderr are open.
+   Copyright (C) 2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,13 +14,15 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-/* Common code of
-   gl_linkedhash_list.c, gl_avltreehash_list.c, gl_rbtreehash_list.c.  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* Hash table entry.  */
-struct gl_hash_entry
-{
-  struct gl_hash_entry *hash_next;  /* chain of entries in same bucket */
-  size_t hashcode;                  /* cache of values' common hash code */
-};
-typedef struct gl_hash_entry * gl_hash_entry_t;
+/* Ensures that the file descriptors of stdin, stdout, stderr (0, 1, 2) are
+   open.  Exits the program with an error message upon failure; the error
+   message may not appear if stderr is closed.  */
+extern void xstdopen (void);
+
+#ifdef __cplusplus
+}
+#endif

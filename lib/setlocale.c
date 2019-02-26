@@ -1,5 +1,5 @@
 /* Set the current locale.  -*- coding: utf-8 -*-
-   Copyright (C) 2009, 2011-2018 Free Software Foundation, Inc.
+   Copyright (C) 2009, 2011-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -793,6 +793,39 @@ setlocale_unixlike (int category, const char *locale)
   /* Failed.  */
   return NULL;
 }
+
+# elif defined __ANDROID__
+
+/* Like setlocale, but accept also the locale names "C" and "POSIX".  */
+static char *
+setlocale_unixlike (int category, const char *locale)
+{
+  char *result = setlocale (category, locale);
+  if (result == NULL)
+    switch (category)
+      {
+      case LC_CTYPE:
+      case LC_NUMERIC:
+      case LC_TIME:
+      case LC_COLLATE:
+      case LC_MONETARY:
+      case LC_MESSAGES:
+      case LC_ALL:
+      case LC_PAPER:
+      case LC_NAME:
+      case LC_ADDRESS:
+      case LC_TELEPHONE:
+      case LC_MEASUREMENT:
+        if (locale == NULL
+            || strcmp (locale, "C") == 0 || strcmp (locale, "POSIX") == 0)
+          result = (char *) "C";
+        break;
+      default:
+        break;
+      }
+  return result;
+}
+#  define setlocale setlocale_unixlike
 
 # else
 #  define setlocale_unixlike setlocale

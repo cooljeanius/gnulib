@@ -1,5 +1,5 @@
 /* Sequential list data type implemented by an array.
-   Copyright (C) 2006-2018 Free Software Foundation, Inc.
+   Copyright (C) 2006-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -512,7 +512,7 @@ gl_array_iterator_next (gl_list_iterator_t *iterator,
 }
 
 static void
-gl_array_iterator_free (gl_list_iterator_t *iterator)
+gl_array_iterator_free (gl_list_iterator_t *iterator _GL_UNUSED)
 {
 }
 

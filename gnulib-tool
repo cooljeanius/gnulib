@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Copyright (C) 2002-2018 Free Software Foundation, Inc.
+# Copyright (C) 2002-2019 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,16 +25,16 @@ nl='
 '
 IFS=" ""	$nl"
 
-# You can set AUTOCONFPATH to empty if autoconf 2.57 is already in your PATH.
+# You can set AUTOCONFPATH to empty if autoconf 2.63 is already in your PATH.
 AUTOCONFPATH=
 #case $USER in
 #  bruno )
-#    AUTOCONFBINDIR=/packages/gnu-inst-autoconf/2.57/bin
+#    AUTOCONFBINDIR=/arch/x86-linux/gnu-inst-autoconf/2.63/bin
 #    AUTOCONFPATH="eval env PATH=${AUTOCONFBINDIR}:\$PATH "
 #    ;;
 #esac
 
-# You can set AUTOMAKEPATH to empty if automake 1.9.x is already in your PATH.
+# You can set AUTOMAKEPATH to empty if automake 1.11 is already in your PATH.
 AUTOMAKEPATH=
 
 # You can set GETTEXTPATH to empty if autopoint 0.15 is already in your PATH.
@@ -141,10 +141,12 @@ Usage: gnulib-tool --list
        gnulib-tool --extract-applicability module
        gnulib-tool --extract-filelist module
        gnulib-tool --extract-dependencies module
+       gnulib-tool --extract-recursive-dependencies module
        gnulib-tool --extract-autoconf-snippet module
        gnulib-tool --extract-automake-snippet module
        gnulib-tool --extract-include-directive module
        gnulib-tool --extract-link-directive module
+       gnulib-tool --extract-recursive-link-directive module
        gnulib-tool --extract-license module
        gnulib-tool --extract-maintainer module
        gnulib-tool --extract-tests-module module
@@ -177,10 +179,16 @@ Operation modes:
       --extract-applicability      extract the applicability
       --extract-filelist           extract the list of files
       --extract-dependencies       extract the dependencies
+      --extract-recursive-dependencies  extract the dependencies of the module
+                                        and its dependencies, recursively, all
+                                        together, but without the conditions
       --extract-autoconf-snippet   extract the snippet for configure.ac
       --extract-automake-snippet   extract the snippet for library makefile
       --extract-include-directive  extract the #include directive
       --extract-link-directive     extract the linker directive
+      --extract-recursive-link-directive  extract the linker directive of the
+                                          module and its dependencies,
+                                          recursively, all together
       --extract-license            report the license terms of the source files
                                    under lib/
       --extract-maintainer         report the maintainer(s) inside gnulib
@@ -548,21 +556,8 @@ func_determine_path_separator ()
   fi
 }
 
-# func_path_prepend pathvar directory
-# puts directory before pathvar, delimiting directories by PATH_SEPARATOR.
-# Newly added directory into pathvar has the highest priority.
-func_path_prepend ()
-{
-  if eval "test -n \"\$$1\""; then
-    eval "$1=\$2\$PATH_SEPARATOR\$$1"
-  else
-    eval "$1=\$2"
-  fi
-}
-
 # func_path_append pathvar directory
-# Similar to func_path_prepend except that the newest directory has the lowest
-# priority.
+# appends directory to pathvar, delimiting directories by PATH_SEPARATOR.
 func_path_append ()
 {
   if eval "test -n \"\$$1\""; then
@@ -582,7 +577,7 @@ func_path_foreach_inner ()
   set %start% "$@"
   for _fpf_arg
   do
-    case $_fpf_arg in
+    case "$_fpf_arg" in
       %start%)
         set dummy
         ;;
@@ -605,17 +600,18 @@ func_path_foreach_inner ()
 # with processed directory from path.
 func_path_foreach ()
 {
-  fpf_save_IFS=$IFS
-  fpf_dirs=$1 ; shift
-  fpf_cb=$1 ; shift
+  fpf_dirs="$1"; shift
+  fpf_cb="$1"; shift
   fpf_rc=false
 
-  IFS=$PATH_SEPARATOR
+  fpf_save_IFS="$IFS"
+  IFS="$PATH_SEPARATOR"
   for fpf_dir in $fpf_dirs
   do
+    IFS="$fpf_save_IFS"
     func_path_foreach_inner "$@" && fpf_rc=:
   done
-  IFS=$fpf_save_IFS
+  IFS="$fpf_save_IFS"
   $fpf_rc
 }
 
@@ -1041,7 +1037,7 @@ func_determine_path_separator
 #                   update, create-testdir, create-megatestdir, test, megatest,
 #                   copy-file
 # - destdir         from --dir
-# - local_gnulib_path  from --local-dir
+# - local_gnulib_path  from --local-dir, highest priority dir comes first
 # - modcache        true or false, from --cache-modules/--no-cache-modules
 # - verbose         integer, default 0, inc/decremented by --verbose/--quiet
 # - libname, supplied_libname  from --lib
@@ -1189,11 +1185,11 @@ func_determine_path_separator
         if test $# = 0; then
           func_fatal_error "missing argument for --local-dir"
         fi
-        func_path_prepend local_gnulib_path "$1"
+        func_path_append local_gnulib_path "$1"
         shift ;;
       --local-dir=* )
         local_dir=`echo "X$1" | sed -e 's/^X--local-dir=//'`
-        func_path_prepend local_gnulib_path "$local_dir"
+        func_path_append local_gnulib_path "$local_dir"
         shift ;;
       --cache-modules | --cache-module | --cache-modul | --cache-modu | --cache-mod | --cache-mo | --cache-m | --cache- | --cache | --cach | --cac | --ca )
         modcache=true
@@ -1513,7 +1509,7 @@ func_determine_path_separator
 
   # Determine the minimum supported autoconf version from the project's
   # configure.ac.
-  DEFAULT_AUTOCONF_MINVERSION="2.59"
+  DEFAULT_AUTOCONF_MINVERSION="2.63"
   autoconf_minversion=
   configure_ac=
   if case "$mode" in import | add-import | remove-import | update) true;; *) false;; esac \
@@ -1560,25 +1556,26 @@ func_determine_path_separator
     autoconf_minversion=$DEFAULT_AUTOCONF_MINVERSION
   fi
   case "$autoconf_minversion" in
-    1.* | 2.[0-4]* | 2.5[0-8]*)
-      func_fatal_error "minimum supported autoconf version is 2.59. Try adding AC_PREREQ([$DEFAULT_AUTOCONF_MINVERSION]) to your configure.ac." ;;
+    1.* | 2.[0-5]* | 2.6[0-2]*)
+      func_fatal_error "minimum supported autoconf version is 2.63. Try adding AC_PREREQ([$DEFAULT_AUTOCONF_MINVERSION]) to your configure.ac." ;;
   esac
 
   # Remove trailing slashes from the directory names. This is necessary for
   # m4base (to avoid an error in func_import) and optional for the others.
   sed_trimtrailingslashes='s,\([^/]\)//*$,\1,'
-  old_local_gnulib_path=$local_gnulib_path
-  save_IFS=$IFS
-  IFS=:
+  old_local_gnulib_path="$local_gnulib_path"
   local_gnulib_path=
+  save_IFS="$IFS"
+  IFS=:
   for dir in $old_local_gnulib_path
   do
+    IFS="$save_IFS"
     case "$dir" in
       */ ) dir=`echo "$dir" | sed -e "$sed_trimtrailingslashes"` ;;
     esac
     func_path_append local_gnulib_path "$dir"
   done
-  IFS=$save_IFS
+  IFS="$save_IFS"
   case "$sourcebase" in
     */ ) sourcebase=`echo "$sourcebase" | sed -e "$sed_trimtrailingslashes"` ;;
   esac
@@ -1622,8 +1619,8 @@ else
 fi
 
 # func_lookup_local_file_cb dir file
-# return true and set func_lookup_local_file_result if the file 'dir/file'
-# exists
+# returns true and sets func_lookup_local_file_result if the file $dir/$file
+# exists.
 func_lookup_local_file_cb ()
 {
   test -n "$func_lookup_local_file_result" && return 1 # already found?
@@ -1645,6 +1642,25 @@ func_lookup_local_file ()
   func_path_foreach "$local_gnulib_path" func_lookup_local_file_cb %dir% "$1"
 }
 
+# func_lookup_file_cb dir
+# does one step in processing the $local_gnulib_path, looking for $dir/$lkfile
+# and $dir/$lkfile.diff.
+func_lookup_file_cb ()
+{
+  # If we found the file already in a --local-dir of higher priority, nothing
+  # more to do.
+  if test -z "$lookedup_file"; then
+    # Otherwise, look for $dir/$lkfile and $dir/$lkfile.diff.
+    if test -f "$1/$lkfile"; then
+      lookedup_file="$1/$lkfile"
+    else
+      if test -f "$1/$lkfile.diff"; then
+        lkpatches="$1/$lkfile.diff${lkpatches:+$PATH_SEPARATOR$lkpatches}"
+      fi
+    fi
+  fi
+}
+
 # func_lookup_file file
 # looks up a file in $local_gnulib_path or $gnulib_dir, or combines it through
 # 'patch'.
@@ -1656,26 +1672,38 @@ func_lookup_local_file ()
 func_lookup_file ()
 {
   lkfile="$1"
-  if func_lookup_local_file "$lkfile"; then
-    lookedup_file=$func_lookup_local_file_result
-    lookedup_tmp=
-  else
+  # Each element in $local_gnulib_path is a directory whose contents overrides
+  # or amends the result of the lookup in the rest of $local_gnulib_path and
+  # $gnulib_dir. So, the first element of $local_gnulib_path is the highest
+  # priority one.
+  lookedup_file=
+  lkpatches=
+  func_path_foreach "$local_gnulib_path" func_lookup_file_cb %dir%
+  # Treat $gnulib_dir like a lowest-priority --local-dir, except that here we
+  # don't look for .diff files.
+  if test -z "$lookedup_file"; then
     if test -f "$gnulib_dir/$lkfile"; then
-      if func_lookup_local_file "$lkfile.diff"; then
-        lkbase=`echo "$lkfile" | sed -e 's,^.*/,,'`
-        rm -f "$tmp/$lkbase"
-        cp "$gnulib_dir/$lkfile" "$tmp/$lkbase"
-        patch -s "$tmp/$lkbase" < "$func_lookup_local_file_result" >&2 \
-          || func_fatal_error "patch file $func_lookup_local_file_result didn't apply cleanly"
-        lookedup_file="$tmp/$lkbase"
-        lookedup_tmp=true
-      else
-        lookedup_file="$gnulib_dir/$lkfile"
-        lookedup_tmp=
-      fi
+      lookedup_file="$gnulib_dir/$lkfile"
     else
       func_fatal_error "file $gnulib_dir/$lkfile not found"
     fi
+  fi
+  # Now apply the patches, from lowest-priority to highest-priority.
+  lookedup_tmp=
+  if test -n "$lkpatches"; then
+    lkbase=`echo "$lkfile" | sed -e 's,^.*/,,'`
+    rm -f "$tmp/$lkbase"
+    cp "$lookedup_file" "$tmp/$lkbase"
+    save_IFS="$IFS"
+    IFS="$PATH_SEPARATOR"
+    for patchfile in $lkpatches; do
+      IFS="$save_IFS"
+      patch -s "$tmp/$lkbase" < "$patchfile" >&2 \
+        || func_fatal_error "patch file $patchfile didn't apply cleanly"
+    done
+    IFS="$save_IFS"
+    lookedup_file="$tmp/$lkbase"
+    lookedup_tmp=true
   fi
 }
 
@@ -1748,6 +1776,10 @@ func_exists_module ()
 # Input:
 # - local_gnulib_path  from --local-dir
 # - module          module name argument
+# Output:
+# - module          unchanged if OK, empty if not OK
+# - lookedup_file   if OK: name of the merged (combined) module description file
+# - lookedup_tmp    if OK: true if it is located in the tmp directory, blank otherwise
 func_verify_module ()
 {
   if func_exists_module "$module"; then
@@ -2240,11 +2272,6 @@ func_get_filelist ()
   fi
   echo m4/00gnulib.m4
   echo m4/gnulib-common.m4
-  case "$autoconf_minversion" in
-    2.59)
-      echo m4/onceonly.m4
-      ;;
-  esac
 }
 
 # func_filter_filelist outputvar separator filelist prefix suffix removed_prefix removed_suffix [added_prefix [added_suffix]]
@@ -2332,6 +2359,8 @@ func_get_dependencies ()
   } \
   | sed -e '/^#/d'
 }
+
+sed_dependencies_without_conditions='s/ *\[.*//'
 
 # func_get_autoconf_early_snippet module
 # Input:
@@ -2674,6 +2703,83 @@ func_get_tests_module ()
   fi
 }
 
+# func_get_dependencies_recursively module
+# Input:
+# - local_gnulib_path  from --local-dir
+# - modcache          true or false, from --cache-modules/--no-cache-modules
+func_get_dependencies_recursively ()
+{
+  # In order to process every module only once (for speed), process an "input
+  # list" of modules, producing an "output list" of modules. During each round,
+  # more modules can be queued in the input list. Once a module on the input
+  # list has been processed, it is added to the "handled list", so we can avoid
+  # to process it again.
+  handledmodules=
+  inmodules="$1"
+  outmodules=
+  while test -n "$inmodules"; do
+    inmodules_this_round="$inmodules"
+    inmodules=                    # Accumulator, queue for next round
+    for module in $inmodules_this_round; do
+      func_verify_module
+      if test -n "$module"; then
+        func_append outmodules " $module"
+        deps=`func_get_dependencies $module | sed -e "$sed_dependencies_without_conditions"`
+        for dep in $deps; do
+          func_append inmodules " $dep"
+        done
+      fi
+    done
+    handledmodules=`for m in $handledmodules $inmodules_this_round; do echo $m; done | LC_ALL=C sort -u`
+    # Remove $handledmodules from $inmodules.
+    for m in $inmodules; do echo $m; done | LC_ALL=C sort -u > "$tmp"/queued-modules
+    inmodules=`echo "$handledmodules" | LC_ALL=C join -v 2 - "$tmp"/queued-modules`
+  done
+  rm -f "$tmp"/queued-modules
+  for m in $outmodules; do echo $m; done | LC_ALL=C sort -u
+}
+
+# func_get_link_directive_recursively module
+# Input:
+# - local_gnulib_path  from --local-dir
+# - modcache          true or false, from --cache-modules/--no-cache-modules
+func_get_link_directive_recursively ()
+{
+  # In order to process every module only once (for speed), process an "input
+  # list" of modules, producing an "output list" of modules. During each round,
+  # more modules can be queued in the input list. Once a module on the input
+  # list has been processed, it is added to the "handled list", so we can avoid
+  # to process it again.
+  handledmodules=
+  inmodules="$1"
+  outmodules=
+  while test -n "$inmodules"; do
+    inmodules_this_round="$inmodules"
+    inmodules=                    # Accumulator, queue for next round
+    for module in $inmodules_this_round; do
+      func_verify_module
+      if test -n "$module"; then
+        if grep '^Link:[ 	]*$' "$lookedup_file" >/dev/null; then
+          # The module description has a 'Link:' field. Ignore the dependencies.
+          func_append outmodules " $module"
+        else
+          # The module description has no 'Link:' field. Recurse through the dependencies.
+          deps=`func_get_dependencies $module | sed -e "$sed_dependencies_without_conditions"`
+          for dep in $deps; do
+            func_append inmodules " $dep"
+          done
+        fi
+      fi
+    done
+    handledmodules=`for m in $handledmodules $inmodules_this_round; do echo $m; done | LC_ALL=C sort -u`
+    # Remove $handledmodules from $inmodules.
+    for m in $inmodules; do echo $m; done | LC_ALL=C sort -u > "$tmp"/queued-modules
+    inmodules=`echo "$handledmodules" | LC_ALL=C join -v 2 - "$tmp"/queued-modules`
+  done
+  rm -f "$tmp"/queued-modules
+  for m in $outmodules; do func_get_link_directive "$m"; done | LC_ALL=C sort -u | sed -e '/^$/d'
+}
+
 # func_acceptable module
 # tests whether a module is acceptable.
 # Input:
@@ -2822,8 +2928,6 @@ else
     eval 'condition="${conddep_condition_'"$suffix"'}"'
   }
 fi
-
-sed_dependencies_without_conditions='s/ *\[.*//'
 
 # func_modules_transitive_closure
 # Input:
@@ -3602,7 +3706,7 @@ func_emit_lib_Makefile_am ()
     if test -n "$uses_subdirs"; then
       subdir_options=' subdir-objects'
     fi
-    echo "AUTOMAKE_OPTIONS = 1.9.6 gnits${subdir_options}"
+    echo "AUTOMAKE_OPTIONS = 1.11 gnits${subdir_options}"
   fi
   echo
   if test -z "$makefile_name"; then
@@ -3942,7 +4046,7 @@ func_emit_tests_Makefile_am ()
   if test -n "$uses_subdirs"; then
     subdir_options=' subdir-objects'
   fi
-  echo "AUTOMAKE_OPTIONS = 1.9.6 foreign${subdir_options}"
+  echo "AUTOMAKE_OPTIONS = 1.11 foreign${subdir_options}"
   echo
   if $for_test && ! $single_configure; then
     echo "ACLOCAL_AMFLAGS = -I ${testsbase_inverse}/${m4base}"
@@ -5003,6 +5107,14 @@ s,^\(.................................................[^ ]*\) *,                
     s,^top/,$rewritten,
     s,^$rewritten,,"
 
+  # Determine whether to put anything into $testsbase.
+  testsfiles=`echo "$files" | sed -n -e 's,^tests/,,p' -e 's,^tests=lib/,,p'`
+  if test -n "$testsfiles"; then
+    gentests=true
+  else
+    gentests=false
+  fi
+
   # Create directories.
   { echo "$sourcebase"
     echo "$m4base"
@@ -5013,7 +5125,7 @@ s,^\(.................................................[^ ]*\) *,                
     if test -n "$docfiles"; then
       echo "$docbase"
     fi
-    if $inctests; then
+    if $gentests; then
       echo "$testsbase"
     fi
     echo "$auxdir"
@@ -5308,7 +5420,7 @@ s,//*$,/,'
           && ! { test -f "${destdir}/${dir1}Makefile.am" \
                  || test "${dir1}Makefile.am" = "$sourcebase/$makefile_am" \
                  || test "./${dir1}Makefile.am" = "$sourcebase/$makefile_am" \
-                 || { $inctests \
+                 || { $gentests \
                       && { test "${dir1}Makefile.am" = "$testsbase/$makefile_am" \
                            || test "./${dir1}Makefile.am" = "$testsbase/$makefile_am"; }; }; }; do
       dir2=`echo "$dir1" | sed -e "$sed_last"`"$dir2"
@@ -5431,18 +5543,10 @@ s,//*$,/,'
     fi
     # Fetch PO files.
     TP_URL="https://translationproject.org/latest/"
-    TP_RSYNC_URI="translationproject.org::tp/latest/"
     if $doit; then
       echo "Fetching gnulib PO files from $TP_URL"
       (cd "$destdir"/$pobase \
-       && { # Prefer rsync over wget if it is available, since it consumes
-            # less network bandwidth, due to compression.
-            if type rsync 2>/dev/null | grep / > /dev/null; then
-              rsync --delete --include "*.po" --exclude "*" -Lrtz "${TP_RSYNC_URI}gnulib/" . && return
-            fi
-
-            wget --no-verbose --mirror -nd -np  -A.po -P . "${TP_URL}gnulib/"
-          }
+       && wget --no-verbose --mirror --level=1 -nd -A.po -P . "${TP_URL}gnulib/"
       )
     else
       echo "Fetch gnulib PO files from $TP_URL"
@@ -5486,11 +5590,12 @@ s,//*$,/,'
   # - relative_local_dir  path to be stored into gl_LOCAL_DIR
   func_count_relative_local_gnulib_path ()
   {
-    save_IFS=$IFS
-    IFS=$PATH_SEPARATOR
     relative_local_gnulib_path=
+    save_IFS="$IFS"
+    IFS="$PATH_SEPARATOR"
     for local_dir in $local_gnulib_path
     do
+      IFS="$save_IFS"
       # Store the local_dir relative to destdir.
       case "$local_dir" in
         "" | /*)
@@ -5506,7 +5611,7 @@ s,//*$,/,'
       esac
       func_path_append relative_local_gnulib_path "$relative_local_dir"
     done
-    IFS=$save_IFS
+    IFS="$save_IFS"
   }
 
   # Create m4/gnulib-cache.m4.
@@ -5736,7 +5841,7 @@ s,//*$,/,'
     fi
   fi
 
-  if $inctests; then
+  if $gentests; then
     # Create tests makefile.
     func_dest_tmpfilename $testsbase/$makefile_am
     destfile="$testsbase/$makefile_am"
@@ -5924,7 +6029,7 @@ s,//*$,/,'
   if test -n "$pobase"; then
     echo "  - add \"$pobase/Makefile.in\" to AC_CONFIG_FILES in $configure_ac,"
   fi
-  if $inctests; then
+  if $gentests; then
     if test "$makefile_am" = Makefile.am; then
       echo "  - add \"$testsbase/Makefile\" to AC_CONFIG_FILES in $configure_ac,"
     else
@@ -5988,10 +6093,11 @@ func_create_testdir ()
     # Except config-h, which breaks all modules which use HAVE_CONFIG_H.
     # Except non-recursive-gnulib-prefix-hack, which represents a nonstandard
     # way of using Automake.
+    # Except timevar, which lacks the required file timevar.def.
     # Except ftruncate, mountlist, which abort the configuration on mingw. FIXME.
     # Except lib-ignore, which leads to link errors when Sun C++ is used. FIXME.
     modules=`func_all_modules`
-    modules=`for m in $modules; do case $m in config-h | non-recursive-gnulib-prefix-hack | ftruncate | mountlist | lib-ignore) ;; *) echo $m;; esac; done`
+    modules=`for m in $modules; do case $m in config-h | non-recursive-gnulib-prefix-hack | timevar | ftruncate | mountlist | lib-ignore) ;; *) echo $m;; esac; done`
   fi
   specified_modules="$modules"
 
@@ -6349,7 +6455,7 @@ func_create_testdir ()
   # Create Makefile.am.
   (echo "## Process this file with automake to produce Makefile.in."
    echo
-   echo "AUTOMAKE_OPTIONS = 1.9.6 foreign"
+   echo "AUTOMAKE_OPTIONS = 1.11 foreign"
    echo
    echo "SUBDIRS = $subdirs"
    echo
@@ -6577,27 +6683,32 @@ func_create_testdir ()
   if test -n "$distributed_built_sources" || test -n "$tests_distributed_built_sources"; then
     (cd "$testdir"
      ./configure || func_exit 1
-       if test -n "$distributed_built_sources"; then
-         cd "$sourcebase"
-         echo 'built_sources: $(BUILT_SOURCES)' >> Makefile
-         $MAKE AUTOCONF="${AUTOCONF}" AUTOHEADER="${AUTOHEADER}" ACLOCAL="${ACLOCAL}" AUTOMAKE="${AUTOMAKE}" AUTORECONF="${AUTORECONF}" AUTOPOINT="${AUTOPOINT}" LIBTOOLIZE="${LIBTOOLIZE}" \
-               built_sources \
-           || func_exit 1
-         cd ..
-       fi
-       if test -n "$tests_distributed_built_sources"; then
-         cd "$testsbase"
-         echo 'built_sources: $(BUILT_SOURCES)' >> Makefile
-         $MAKE AUTOCONF="${AUTOCONF}" AUTOHEADER="${AUTOHEADER}" ACLOCAL="${ACLOCAL}" AUTOMAKE="${AUTOMAKE}" AUTORECONF="${AUTORECONF}" AUTOPOINT="${AUTOPOINT}" LIBTOOLIZE="${LIBTOOLIZE}" \
-               built_sources \
-           || func_exit 1
-         cd ..
-       fi
+     if test -n "$distributed_built_sources"; then
+       cd "$sourcebase"
+       echo 'built_sources: $(BUILT_SOURCES)' >> Makefile
+       $MAKE AUTOCONF="${AUTOCONF}" AUTOHEADER="${AUTOHEADER}" ACLOCAL="${ACLOCAL}" AUTOMAKE="${AUTOMAKE}" AUTORECONF="${AUTORECONF}" AUTOPOINT="${AUTOPOINT}" LIBTOOLIZE="${LIBTOOLIZE}" \
+             built_sources \
+         || func_exit 1
+       cd ..
+     fi
+     if test -n "$tests_distributed_built_sources"; then
+       cd "$testsbase"
+       echo 'built_sources: $(BUILT_SOURCES)' >> Makefile
+       $MAKE AUTOCONF="${AUTOCONF}" AUTOHEADER="${AUTOHEADER}" ACLOCAL="${ACLOCAL}" AUTOMAKE="${AUTOMAKE}" AUTORECONF="${AUTORECONF}" AUTOPOINT="${AUTOPOINT}" LIBTOOLIZE="${LIBTOOLIZE}" \
+             built_sources \
+         || func_exit 1
+       cd ..
+     fi
      $MAKE AUTOCONF="${AUTOCONF}" AUTOHEADER="${AUTOHEADER}" ACLOCAL="${ACLOCAL}" AUTOMAKE="${AUTOMAKE}" AUTORECONF="${AUTORECONF}" AUTOPOINT="${AUTOPOINT}" LIBTOOLIZE="${LIBTOOLIZE}" \
            distclean \
        || func_exit 1
     ) || func_exit 1
   fi
+  (cd "$testdir"
+   if test -f build-aux/test-driver; then
+     patch build-aux/test-driver < "$gnulib_dir"/build-aux/test-driver.diff || func_exit 1
+   fi
+  ) || func_exit 1
 }
 
 # func_create_megatestdir megatestdir allmodules
@@ -6666,7 +6777,7 @@ func_create_megatestdir ()
   # Create Makefile.am.
   (echo "## Process this file with automake to produce Makefile.in."
    echo
-   echo "AUTOMAKE_OPTIONS = 1.9.6 foreign"
+   echo "AUTOMAKE_OPTIONS = 1.11 foreign"
    echo
    echo "SUBDIRS = $megasubdirs"
    echo
@@ -6698,6 +6809,9 @@ func_create_megatestdir ()
    func_execute_command ${AUTOCONF} || func_exit 1
    func_execute_command ${AUTOMAKE} --add-missing --copy || func_exit 1
    rm -rf autom4te.cache
+   if test -f build-aux/test-driver; then
+     patch build-aux/test-driver < "$gnulib_dir"/build-aux/test-driver.diff || func_exit 1
+   fi
   ) || func_exit 1
 }
 
@@ -7030,6 +7144,19 @@ s/\([.*$]\)/[\1]/g'
     done
     ;;
 
+  extract-recursive-dependencies )
+    if test -n "$avoidlist"; then
+      func_fatal_error "cannot combine --avoid and --extract-recursive-dependencies"
+    fi
+    for module
+    do
+      func_verify_module
+      if test -n "$module"; then
+        func_get_dependencies_recursively "$module"
+      fi
+    done
+    ;;
+
   extract-autoconf-snippet )
     for module
     do
@@ -7066,6 +7193,19 @@ s/\([.*$]\)/[\1]/g'
       func_verify_module
       if test -n "$module"; then
         func_get_link_directive "$module"
+      fi
+    done
+    ;;
+
+  extract-recursive-link-directive )
+    if test -n "$avoidlist"; then
+      func_fatal_error "cannot combine --avoid and --extract-recursive-link-directive"
+    fi
+    for module
+    do
+      func_verify_module
+      if test -n "$module"; then
+        func_get_link_directive_recursively "$module"
       fi
     done
     ;;

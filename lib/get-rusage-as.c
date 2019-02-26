@@ -1,5 +1,5 @@
 /* Getter for RLIMIT_AS.
-   Copyright (C) 2011-2018 Free Software Foundation, Inc.
+   Copyright (C) 2011-2019 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify
@@ -91,7 +91,7 @@
      b) pstat_getprocvm() can be used to find out about the virtual memory
         areas.
      Both methods agree, except that the value of get_rusage_as_via_iterator()
-     is slighly larger higher than get_rusage_as_via_setrlimit(), by 4 KB in
+     is slightly larger higher than get_rusage_as_via_setrlimit(), by 4 KB in
      32-bit mode and by 40 KB in 64-bit mode.
 
    IRIX:

@@ -1,5 +1,5 @@
-# modfl.m4 serial 5
-dnl Copyright (C) 2011-2018 Free Software Foundation, Inc.
+# modfl.m4 serial 6
+dnl Copyright (C) 2011-2019 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -49,7 +49,7 @@ long double zero;
 long double minus_one = - 1.0L;
 int main (int argc, char *argv[])
 {
-  long double (*my_modfl) (long double, long double *) = argc ? modfl : dummy;
+  long double (* volatile my_modfl) (long double, long double *) = argc ? modfl : dummy;
   long double i;
   long double f;
   /* Test modfl(-Inf,...).

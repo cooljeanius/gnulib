@@ -1,5 +1,5 @@
 /* Test of flock() function.
-   Copyright (C) 2008-2018 Free Software Foundation, Inc.
+   Copyright (C) 2008-2019 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ main (int argc, char *argv[])
   ASSERT (fd >= 0);
   ASSERT (write (fd, "hello", 5) == 5);
 
-#if defined __linux__
+#if defined __linux__ || defined __ANDROID__
   /* Invalid operation codes are rejected by the Linux implementation and by
      the gnulib replacement,  but not by the Mac OS X implementation.  */
   ASSERT (flock (fd, LOCK_SH | LOCK_EX) == -1);

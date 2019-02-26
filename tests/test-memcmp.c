@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2018 Free Software Foundation, Inc.
+ * Copyright (C) 2008-2019 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,9 @@ SIGNATURE_CHECK (memcmp, int, (void const *, void const *, size_t));
 
 #include "zerosize-ptr.h"
 #include "macros.h"
+
+/* Note: This test sometimes fails when compiled by 'clang'.
+   See <https://bugs.llvm.org/show_bug.cgi?id=40063>.  */
 
 int
 main (void)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2018 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2019 Free Software Foundation, Inc.
 
    The GNU C Library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -52,6 +52,14 @@
 
 #ifndef _LIBC
 # include <libc-config.h>
+# define __srandom srandom
+# define __initstate initstate
+# define __setstate setstate
+# define __random random
+# define __srandom_r srandom_r
+# define __initstate_r initstate_r
+# define __setstate_r setstate_r
+# define __random_r random_r
 #endif
 
 /* Specification.  */

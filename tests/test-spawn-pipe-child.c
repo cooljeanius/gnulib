@@ -1,5 +1,5 @@
 /* Child program invoked by test-spawn-pipe-main.
-   Copyright (C) 2009-2018 Free Software Foundation, Inc.
+   Copyright (C) 2009-2019 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -98,9 +98,9 @@ main (int argc, char *argv[])
     case 1:
       /* Expect fd 2 is closed.
          But on HP-UX 11, fd 2 gets automatically re-opened to /dev/null if it
-         was closed. Future POSIX will allow this, see
-         <http://austingroupbugs.net/view.php?id=173>.  */
-#if !defined __hpux
+         was closed.  Similarly on native Windows.  Future POSIX will allow
+         this, see <http://austingroupbugs.net/view.php?id=173>.  */
+#if !(defined __hpux || (defined _WIN32 && ! defined __CYGWIN__))
       ASSERT (! is_open (STDERR_FILENO));
 #endif
       break;
