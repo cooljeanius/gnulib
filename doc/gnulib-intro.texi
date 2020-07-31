@@ -104,7 +104,7 @@ we fix bugs when they are reported.  Except that some rarely tested
 platforms are also low priority; bug fixes for these platforms can
 take longer.
 
-As of 2018, the list of supported platforms is the following:
+As of 2019, the list of supported platforms is the following:
 
 @itemize
 @item
@@ -121,7 +121,7 @@ glibc on Linux is frequently tested.
 glibc on kFreeBSD is rarely tested.
 @end itemize
 @item
-Mac OS X.  In versions 10.13, it's occasionally tested.  In version
+Mac OS X@.  In versions 10.13, it's occasionally tested.  In version
 10.5, it's rarely tested.
 @item
 FreeBSD 11.0 or newer is occasionally tested.
@@ -132,7 +132,7 @@ NetBSD 7.0 or newer is occasionally tested.
 @item
 AIX 7.1 is occasionally tested.
 @item
-Solaris 10 and 11 are occasionally tested.  Solaris 9 and older are rarely
+Solaris 10 and 11 are occasionally tested.  Solaris 9 is rarely
 tested and low priority.
 @item
 Cygwin 2.9 is occasionally tested.  Cygwin 1.7.x is rarely tested.
@@ -156,21 +156,37 @@ musl libc is rarely tested.
 @item
 Minix 3.3.0 is rarely tested.
 @item
-HP-UX 11.31 is very rarely tested.
-@item
 @c IRIX 6.5 cc has no option for C99 support. You would need to use gcc instead.
 IRIX 6.5 is very rarely tested.
 @item
-OSF/1 5.1 is no longer tested.
-@item
-Interix 6.1 is no longer tested, and requires the @code{suacomp} library
-(@url{https://sourceforge.net/projects/suacomp/}) in version 0.6.8 or newer.
-@item
-Haiku and BeOS are no longer tested.
+Haiku is no longer tested.
 @item
 uClibc on Linux is no longer tested.
 @item
 QNX is no longer tested.
+@end itemize
+
+The following platforms were supported in the past, but are no longer
+supported:
+@itemize
+@item
+glibc versions 2.1.x and older.
+@item
+Mac OS X 10.4 and older.
+@item
+AIX 4 and older.
+@item
+HP-UX 11.31.
+@item
+IRIX 6.4 and older.
+@item
+OSF/1 5.1.
+@item
+Solaris 8 and older.
+@item
+Interix.
+@item
+BeOS.
 @end itemize
 
 Gnulib supports these operating systems only in an unvirtualized environment.
@@ -305,6 +321,11 @@ with @samp{.in} inserted before the @samp{.h} extension, so that on
 systems which do provide a correct
 header file the system's one is used.
 
+The modules in this category are supported in C++ mode as well.  This
+means, while the autoconfiguration uses the C compiler, the resulting
+header files and function substitutes can be used with a matching C++
+compiler as well.
+
 @subsection Enhancements of ISO C or POSIX functions
 
 These are sometimes POSIX functions with GNU extensions also found in
@@ -357,7 +378,7 @@ Every module has one or more maintainers.  While issues are discussed
 collaboratively on the list, the maintainer of a module nevertheless has
 a veto right regarding changes in his module.
 
-All patches should be posted the list, regardless whether they are
+All patches should be posted to the list, regardless whether they are
 proposed patches or whether they are committed immediately by the
 maintainer of the particular module.  The purpose is not only to inform
 the other users of the module, but mainly to allow peer review.  It is not
@@ -371,8 +392,8 @@ proofreading the patch.
 @node Copyright
 @section Copyright
 
-Most modules are under the GPL.  Some, mostly modules which can
-reasonably be used in libraries, are under LGPL.  The source files
+Most modules are under the GPL@.  Some, mostly modules which can
+reasonably be used in libraries, are under LGPL@.  The source files
 always say "GPL", but the real license specification is in the module
 description file.  If the module description file says "GPL", it means
 "GPLv3+" (GPLv3 or newer, at the licensee's choice); if it says "LGPL",
@@ -405,7 +426,7 @@ with or without modifications, as long as this notice is preserved.
 
 @item tests/
 If a license statement is not present in a test module, the test files are
-under GPL.  Even if the corresponding source module is under LGPL, this is
+under GPL@.  Even if the corresponding source module is under LGPL, this is
 not a problem, since compiled tests are not installed by ``make install''.
 
 @item doc/
@@ -417,8 +438,7 @@ Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
 any later version published by the Free Software Foundation; with no
 Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.  A
-copy of the license is included in the section entitled ``GNU Free
-Documentation License''.
+copy of the license is at @url{https://www.gnu.org/licenses/fdl-1.3.en.html}.
 @end quotation
 @end table
 
@@ -432,7 +452,7 @@ passing the option @samp{--lgpl=2} to @code{gnulib-tool}.
 Keep in mind that when you submit patches to files in Gnulib, you should
 license them under a compatible license.  This means that sometimes the
 contribution will have to be LGPL, if the original file is available
-under LGPL.  You can find out about it by looking for a "License: LGPL"
+under LGPL@.  You can find out about it by looking for a "License: LGPL"
 information in the corresponding module description.
 
 @node Steady Development

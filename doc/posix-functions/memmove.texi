@@ -2,14 +2,12 @@
 @section @code{memmove}
 @findex memmove
 
-POSIX specification:@* @url{http://www.opengroup.org/onlinepubs/9699919799/functions/memmove.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/memmove.html}
 
 Gnulib module: memmove
 
 Portability problems fixed by Gnulib:
 @itemize
-@item
-This function is missing on some older platforms.
 @item
 This function cannot be called from plain inline or extern inline functions
 on some platforms:

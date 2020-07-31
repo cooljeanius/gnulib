@@ -1,5 +1,5 @@
 /* xgetdomainname.c -- Return the NIS domain name, without size limitations.
-   Copyright (C) 1992, 1996, 2000-2001, 2003-2004, 2006, 2008-2019 Free
+   Copyright (C) 1992, 1996, 2000-2001, 2003-2004, 2006, 2008-2020 Free
    Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,9 @@
 
 /* Get errno.  */
 #include <errno.h>
+
+/* Get strlen.  */
+#include <string.h>
 
 /* Get free.  */
 #include <stdlib.h>
@@ -72,6 +75,17 @@ xgetdomainname (void)
       size *= 2;
       domainname = xrealloc (domainname, size);
     }
+
+  /* Shrink DOMAINNAME before returning it.  */
+  {
+    size_t actual_size = strlen (domainname) + 1;
+    if (actual_size < size)
+      {
+        char *shrinked_domainname = realloc (domainname, actual_size);
+        if (shrinked_domainname != NULL)
+          domainname = shrinked_domainname;
+      }
+  }
 
   return domainname;
 }

@@ -1,5 +1,5 @@
 /* Test of <locale.h> substitute in C++ mode.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ SIGNATURE_CHECK (GNULIB_NAMESPACE::setlocale, char *, (int, const char *));
 SIGNATURE_CHECK (GNULIB_NAMESPACE::newlocale, locale_t, (int, const char *, locale_t));
 #endif
 
-#if GNULIB_TEST_DUPLOCALE && HAVE_DUPLOCALE
+#if GNULIB_TEST_DUPLOCALE && HAVE_WORKING_DUPLOCALE
 SIGNATURE_CHECK (GNULIB_NAMESPACE::duplocale, locale_t, (locale_t));
 #endif
 

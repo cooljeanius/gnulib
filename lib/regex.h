@@ -1,6 +1,6 @@
 /* Definitions for data structures and routines for the regular
    expression library.
-   Copyright (C) 1985, 1989-2019 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1989-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -600,11 +600,9 @@ extern void re_set_registers (struct re_pattern_buffer *__buffer,
 #endif	/* Use GNU */
 
 #if defined _REGEX_RE_COMP || (defined _LIBC && defined __USE_MISC)
-# ifndef _CRAY
 /* 4.2 bsd compatibility.  */
 extern char *re_comp (const char *);
 extern int re_exec (const char *);
-# endif
 #endif
 
 /* For plain 'restrict', use glibc's __restrict if defined.

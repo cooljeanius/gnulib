@@ -1,5 +1,5 @@
 /* Sequential list data type implemented by a binary tree.
-   Copyright (C) 2006, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2009-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ typedef struct
 /* A stack used for iterating across the elements.  */
 typedef iterstack_item_t iterstack_t[MAXHEIGHT];
 
-/* Free a non-empty subtree recursively.
+/* Frees a non-empty subtree recursively.
    This function is recursive and therefore not very fast.  */
 static void
 free_subtree (gl_list_node_t node)

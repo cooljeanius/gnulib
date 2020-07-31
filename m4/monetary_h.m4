@@ -1,5 +1,5 @@
-# monetary_h.m4 serial 4
-dnl Copyright (C) 2017-2019 Free Software Foundation, Inc.
+# monetary_h.m4 serial 5
+dnl Copyright (C) 2017-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -38,6 +38,8 @@ AC_DEFUN_ONCE([gl_MONETARY_H],
     gl_WARN_ON_USE_PREPARE([[
       #include <monetary.h>
       ]], [strfmon_l])
+
+    AC_REQUIRE([AC_C_RESTRICT])
   else
     MONETARY_H=''
   fi

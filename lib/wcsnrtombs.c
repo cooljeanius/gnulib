@@ -1,5 +1,5 @@
 /* Convert wide string to string.
-   Copyright (C) 2008-2019 Free Software Foundation, Inc.
+   Copyright (C) 2008-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2008.
 
    This program is free software: you can redistribute it and/or modify
@@ -27,4 +27,8 @@
 
 extern mbstate_t _gl_wcsrtombs_state;
 
+#define FUNC wcsnrtombs
+#define SCHAR_T wchar_t
+#define INTERNAL_STATE _gl_wcsrtombs_state
+#define WCRTOMB wcrtomb
 #include "wcsnrtombs-impl.h"

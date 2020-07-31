@@ -11,6 +11,9 @@ AC_OPENMP
 Makefile.am:
 
 Include:
+#ifdef _OPENMP
+# include <omp.h>
+#endif
 
 Link:
 $(OPENMP_CFLAGS)

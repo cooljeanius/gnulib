@@ -2,7 +2,7 @@
 @section @code{realpath}
 @findex realpath
 
-POSIX specification:@* @url{http://www.opengroup.org/onlinepubs/9699919799/functions/realpath.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/realpath.html}
 
 Gnulib module: canonicalize-lgpl
 
@@ -10,11 +10,11 @@ Portability problems fixed by Gnulib:
 @itemize
 @item
 This function is missing on some platforms:
-mingw, MSVC 14, BeOS.
+mingw, MSVC 14.
 @item
 This function does not allow for a NULL @samp{resolved} parameter on
 some platforms:
-Mac OS X 10.5, FreeBSD 6.4, OpenBSD 4.4, Solaris 10.
+Mac OS X 10.13, FreeBSD 6.4, OpenBSD 4.4, Solaris 10.
 @item
 This function does not always return an absolute path on some
 platforms:

@@ -2,12 +2,16 @@
 @section @code{unlink}
 @findex unlink
 
-POSIX specification:@* @url{http://www.opengroup.org/onlinepubs/9699919799/functions/unlink.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html}
 
 Gnulib module: unlink
 
 Portability problems fixed by Gnulib:
 @itemize
+@item
+This function is declared in a different header file (namely, @code{<stdio.h>})
+on some platforms:
+MSVC 14.
 @item
 Some systems mistakenly succeed on @code{unlink("link-to-file/")}:
 GNU/Hurd, FreeBSD 7.2, AIX 7.1, Solaris 9.

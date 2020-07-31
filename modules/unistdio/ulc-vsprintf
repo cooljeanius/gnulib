@@ -22,6 +22,9 @@ endif
 Include:
 "unistdio.h"
 
+Link:
+$(LIB_MBRTOWC)
+
 License:
 LGPLv3+ or GPLv2
 

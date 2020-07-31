@@ -1,5 +1,5 @@
 /* Arabic joining group of Unicode characters.
-   Copyright (C) 2011-2019 Free Software Foundation, Inc.
+   Copyright (C) 2011-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ static const struct joining_group_stringpool_t joining_group_stringpool_contents
 
 static const int joining_group_index[] =
   {
-#define ELEM(tag,string) (int)(long)&((struct joining_group_stringpool_t *)0)->tag,
+#define ELEM(tag,string) (int)(size_t)&((struct joining_group_stringpool_t *)0)->tag,
 #include "unictype/joininggroup_name.h"
 #undef ELEM
   };

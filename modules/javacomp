@@ -16,13 +16,16 @@ classpath
 xsetenv
 sh-quote
 binary-io
+open
 safe-read
 xalloc
 xmalloca
 getline
 xconcat-filename
 fwriteerror
+fopen-gnu
 clean-temp
+stat
 error
 xvasprintf
 c-strstr
@@ -37,6 +40,10 @@ lib_SOURCES += javacomp.h javacomp.c
 
 Include:
 "javacomp.h"
+
+Link:
+$(LIB_MBRTOWC)
+$(LIB_GETRANDOM)
 
 License:
 GPL

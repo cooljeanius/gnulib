@@ -1,5 +1,5 @@
 /* Set the access and modification time of a file relative to directory fd.
-   Copyright (C) 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2009-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,10 +18,12 @@
 
 #include <config.h>
 
+/* Specification.  */
 #include <sys/stat.h>
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 #include "stat-time.h"
 #include "timespec.h"

@@ -9,14 +9,15 @@ Depends-on:
 errno
 fcntl-h
 intprops
-open
+open       [case $host_os in mingw*) false;; *) :;; esac]
 sys_stat
 unistd
 
 configure.ac:
-AC_LIBOBJ([openat-proc])
+AC_REQUIRE([AC_CANONICAL_HOST])
 
 Makefile.am:
+lib_SOURCES += openat-priv.h openat-proc.c
 
 Include:
 "openat-priv.h"

@@ -1,5 +1,5 @@
-# relocatable.m4 serial 22
-dnl Copyright (C) 2003, 2005-2007, 2009-2019 Free Software Foundation, Inc.
+# relocatable.m4 serial 23
+dnl Copyright (C) 2003, 2005-2007, 2009-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -22,13 +22,22 @@ dnl The guts of gl_RELOCATABLE. Needs to be expanded only once.
 AC_DEFUN([gl_RELOCATABLE_BODY],
 [
   AC_REQUIRE([AC_PROG_INSTALL])
+
   dnl This AC_BEFORE invocation leads to unjustified autoconf warnings
   dnl when gl_RELOCATABLE_BODY is invoked more than once.
+  dnl
   dnl We need this AC_BEFORE because AC_PROG_INSTALL is documented to
   dnl overwrite earlier settings of INSTALL and INSTALL_PROGRAM (even
   dnl though in autoconf-2.52..2.60 it doesn't do so), but we want this
   dnl macro's setting of INSTALL_PROGRAM to persist.
-  AC_BEFORE([AC_PROG_INSTALL],[gl_RELOCATABLE_BODY])
+  dnl Arghh: AC_BEFORE does not work in this setting :-(
+  dnl AC_BEFORE([AC_PROG_INSTALL],[gl_RELOCATABLE_BODY])
+  dnl
+  dnl LT_INIT sets LIBTOOL, but we want this macro's setting of LIBTOOL to
+  dnl persist.
+  dnl Arghh: AC_BEFORE does not work in this setting :-(
+  dnl AC_BEFORE([LT_INIT],[gl_RELOCATABLE_BODY])
+
   AC_REQUIRE([AC_LIB_LIBPATH])
   AC_REQUIRE([gl_RELOCATABLE_LIBRARY_BODY])
   AC_REQUIRE([AC_CANONICAL_HOST])
@@ -48,7 +57,7 @@ AC_DEFUN([gl_RELOCATABLE_BODY],
       # glibc systems, Linux with musl libc: yes. Android: no.
       linux*-android*) ;;
       linux* | kfreebsd*) use_elf_origin_trick=yes ;;
-      # Hurd: <http://lists.gnu.org/archive/html/bug-hurd/2019-02/msg00049.html>
+      # Hurd: <https://lists.gnu.org/r/bug-hurd/2019-02/msg00049.html>
       # only after the glibc commit from 2018-01-08
       # <https://sourceware.org/git/?p=glibc.git;a=commitdiff;h=311ba8dc4416467947eff2ab327854f124226309>
       gnu*)
@@ -85,7 +94,7 @@ changequote([,])dnl
       RELOCATABLE_LDFLAGS=:
       AC_SUBST([RELOCATABLE_LDFLAGS])
     else
-      if test $use_elf_origin_trick = yes; then
+      if test $use_elf_origin_trick = yes || test $use_macos_tools = yes; then
         dnl Use the dynamic linker's support for relocatable programs.
         case "$ac_aux_dir" in
           /*) reloc_ldflags="$ac_aux_dir/reloc-ldflags" ;;
@@ -93,17 +102,20 @@ changequote([,])dnl
         esac
         RELOCATABLE_LDFLAGS="\"$reloc_ldflags\" \"\$(host)\" \"\$(RELOCATABLE_LIBRARY_PATH)\""
         AC_SUBST([RELOCATABLE_LDFLAGS])
+        if test $use_macos_tools = yes; then
+          dnl Use a libtool wrapper that uses Mac OS X tools.
+          case "$ac_aux_dir" in
+            /*) LIBTOOL="${CONFIG_SHELL-$SHELL} $ac_aux_dir/libtool-reloc $LIBTOOL" ;;
+            *) LIBTOOL="${CONFIG_SHELL-$SHELL} \$(top_builddir)/$ac_aux_dir/libtool-reloc $LIBTOOL" ;;
+          esac
+        fi
       else
+        use_wrapper=yes
         dnl Unfortunately we cannot define INSTALL_PROGRAM to a command
         dnl consisting of more than one word - libtool doesn't support this.
         dnl So we abuse the INSTALL_PROGRAM_ENV hook, originally meant for the
         dnl 'install-strip' target.
-        if test $use_macos_tools = yes; then
-          INSTALL_PROGRAM_ENV="RELOC_MODE=macosx RELOC_PREFIX=\"\$(prefix)\" RELOC_DESTDIR=\"\$(DESTDIR)\" RELOC_STRIP_PROG=\"\$(RELOCATABLE_STRIP)\" RELOC_INSTALL_PROG=\"$INSTALL_PROGRAM\""
-        else
-          use_wrapper=yes
-          INSTALL_PROGRAM_ENV="RELOC_MODE=wrapper RELOC_LIBRARY_PATH_VAR=\"$shlibpath_var\" RELOC_LIBRARY_PATH_VALUE=\"\$(RELOCATABLE_LIBRARY_PATH)\" RELOC_PREFIX=\"\$(prefix)\" RELOC_DESTDIR=\"\$(DESTDIR)\" RELOC_COMPILE_COMMAND=\"\$(CC) \$(CPPFLAGS) \$(CFLAGS) \$(LDFLAGS)\" RELOC_SRCDIR=\"\$(RELOCATABLE_SRC_DIR)\" RELOC_BUILDDIR=\"\$(RELOCATABLE_BUILD_DIR)\" RELOC_CONFIG_H_DIR=\"\$(RELOCATABLE_CONFIG_H_DIR)\" RELOC_EXEEXT=\"\$(EXEEXT)\" RELOC_STRIP_PROG=\"\$(RELOCATABLE_STRIP)\" RELOC_INSTALL_PROG=\"$INSTALL_PROGRAM\""
-        fi
+        INSTALL_PROGRAM_ENV="RELOC_LIBRARY_PATH_VAR=\"$shlibpath_var\" RELOC_LIBRARY_PATH_VALUE=\"\$(RELOCATABLE_LIBRARY_PATH)\" RELOC_PREFIX=\"\$(prefix)\" RELOC_DESTDIR=\"\$(DESTDIR)\" RELOC_COMPILE_COMMAND=\"\$(CC) \$(CPPFLAGS) \$(CFLAGS) \$(LDFLAGS)\" RELOC_SRCDIR=\"\$(RELOCATABLE_SRC_DIR)\" RELOC_BUILDDIR=\"\$(RELOCATABLE_BUILD_DIR)\" RELOC_CONFIG_H_DIR=\"\$(RELOCATABLE_CONFIG_H_DIR)\" RELOC_EXEEXT=\"\$(EXEEXT)\" RELOC_STRIP_PROG=\"\$(RELOCATABLE_STRIP)\" RELOC_INSTALL_PROG=\"$INSTALL_PROGRAM\""
         AC_SUBST([INSTALL_PROGRAM_ENV])
         case "$ac_aux_dir" in
           /*) INSTALL_PROGRAM="$ac_aux_dir/install-reloc" ;;
@@ -113,7 +125,7 @@ changequote([,])dnl
     fi
   fi
   AM_CONDITIONAL([RELOCATABLE_VIA_LD],
-    [test $is_noop = yes || test $use_elf_origin_trick = yes])
+    [test $is_noop = yes || test $use_elf_origin_trick = yes || test $use_macos_tools = yes])
   AM_CONDITIONAL([RELOCATABLE_VIA_WRAPPER], [test $use_wrapper = yes])
 
   dnl RELOCATABLE_LIBRARY_PATH can be set in configure.ac. Default is empty.

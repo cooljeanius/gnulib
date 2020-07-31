@@ -1,5 +1,5 @@
-# expm1l.m4 serial 3
-dnl Copyright (C) 2010-2019 Free Software Foundation, Inc.
+# expm1l.m4 serial 7
+dnl Copyright (C) 2010-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -27,7 +27,7 @@ AC_DEFUN([gl_FUNC_EXPM1L],
              "C"
              #endif
              long double expm1l (long double);
-             long double (*funcptr) (long double) = expm1l;
+             long double (* volatile funcptr) (long double) = expm1l;
              long double x;]],
            [[return funcptr (x) > 0.5
                     || expm1l (x) > 0.5;]])],
@@ -51,7 +51,7 @@ AC_DEFUN([gl_FUNC_EXPM1L],
                "C"
                #endif
                long double expm1l (long double);
-               long double (*funcptr) (long double) = expm1l;
+               long double (* volatile funcptr) (long double) = expm1l;
                long double x;]],
              [[return funcptr (x) > 0.5
                       || expm1l (x) > 0.5;]])],
@@ -123,7 +123,7 @@ int main (int argc, char *argv[])
 {
   long double (* volatile my_expm1l) (long double) = argc ? expm1l : dummy;
   int result = 0;
-  /* This test fails on NetBSD 8.0.  */
+  /* This test fails on Mac OS X 10.5, NetBSD 8.0.  */
   {
     const long double TWO_LDBL_MANT_DIG = /* 2^LDBL_MANT_DIG */
       (long double) (1U << ((LDBL_MANT_DIG - 1) / 5))
@@ -146,10 +146,12 @@ int main (int argc, char *argv[])
             [case "$host_os" in
                               # Guess yes on glibc systems.
                *-gnu* | gnu*) gl_cv_func_expm1l_works="guessing yes" ;;
+                              # Guess yes on musl systems.
+               *-musl*)       gl_cv_func_expm1l_works="guessing yes" ;;
                               # Guess yes on native Windows.
                mingw*)        gl_cv_func_expm1l_works="guessing yes" ;;
-                              # If we don't know, assume the worst.
-               *)             gl_cv_func_expm1l_works="guessing no" ;;
+                              # If we don't know, obey --enable-cross-guesses.
+               *)             gl_cv_func_expm1l_works="$gl_cross_guess_normal" ;;
              esac
             ])
           LIBS="$save_LIBS"

@@ -10,10 +10,11 @@ m4/backupfile.m4
 
 Depends-on:
 argmatch
+attribute
+basename-lgpl
 closedir
 d-ino
 dirent-safer
-dirname-lgpl
 fcntl
 memcmp
 opendirat
@@ -32,6 +33,9 @@ lib_SOURCES += backupfile.c backup-find.c
 
 Include:
 "backupfile.h"
+
+Link:
+$(LIB_MBRTOWC)
 
 License:
 GPL

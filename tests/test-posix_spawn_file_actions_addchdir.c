@@ -1,5 +1,5 @@
 /* Test posix_spawn_file_actions_addchdir() function.
-   Copyright (C) 2018-2019 Free Software Foundation, Inc.
+   Copyright (C) 2018-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ main (void)
   ASSERT (posix_spawn_file_actions_init (&actions) == 0);
 
   ASSERT (posix_spawn_file_actions_addchdir (&actions, "/") == 0);
+
+  posix_spawn_file_actions_destroy (&actions);
 
   return 0;
 }

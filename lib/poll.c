@@ -1,7 +1,7 @@
 /* Emulation for poll(2)
    Contributed by Paolo Bonzini.
 
-   Copyright 2001-2003, 2006-2019 Free Software Foundation, Inc.
+   Copyright 2001-2003, 2006-2020 Free Software Foundation, Inc.
 
    This file is part of gnulib.
 
@@ -76,6 +76,25 @@
 
 #ifdef WINDOWS_NATIVE
 
+/* Don't assume that UNICODE is not defined.  */
+# undef GetModuleHandle
+# define GetModuleHandle GetModuleHandleA
+# undef PeekConsoleInput
+# define PeekConsoleInput PeekConsoleInputA
+# undef CreateEvent
+# define CreateEvent CreateEventA
+# undef PeekMessage
+# define PeekMessage PeekMessageA
+# undef DispatchMessage
+# define DispatchMessage DispatchMessageA
+
+/* Do *not* use the function WSAPoll
+   <https://docs.microsoft.com/en-us/windows/desktop/api/winsock2/nf-winsock2-wsapoll>
+   because there is a bug named “Windows 8 Bugs 309411 - WSAPoll does not
+   report failed connections” that Microsoft won't fix.
+   See Daniel Stenberg: "WASPoll is broken"
+   <https://daniel.haxx.se/blog/2012/10/10/wsapoll-is-broken/>.  */
+
 /* Here we need the recv() function from Windows, that takes a SOCKET as
    first argument, not any possible gnulib override.  */
 # undef recv
@@ -83,6 +102,10 @@
 /* Here we need the select() function from Windows, because we pass bit masks
    of SOCKETs, not bit masks of FDs.  */
 # undef select
+
+/* Here we need timeval from Windows since this is what the select() function
+   from Windows requires.  */
+# undef timeval
 
 /* Avoid warnings from gcc -Wcast-function-type.  */
 # define GetProcAddress \

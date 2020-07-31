@@ -1,5 +1,5 @@
 /* Getter for RLIMIT_AS.
-   Copyright (C) 2011-2019 Free Software Foundation, Inc.
+   Copyright (C) 2011-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify
@@ -176,7 +176,7 @@ get_rusage_as_via_setrlimit (void)
   const int fd = -1;
 # else /* !HAVE_MAP_ANONYMOUS */
   const int flags = MAP_FILE | MAP_PRIVATE;
-  int fd = open ("/dev/zero", O_RDONLY, 0666);
+  int fd = open ("/dev/zero", O_RDONLY | O_CLOEXEC, 0666);
   if (fd < 0)
     return 0;
 # endif
@@ -373,7 +373,7 @@ get_rusage_as_via_iterator (void)
 uintptr_t
 get_rusage_as (void)
 {
-#if (defined __APPLE__ && defined __MACH__) || defined _AIX || defined __CYGWIN__ || defined __MVS__ /* Mac OS X, AIX, Cygwin, z/OS */
+#if (defined __APPLE__ && defined __MACH__) || defined _AIX || defined __CYGWIN__ || defined __MVS__ || defined __SANITIZE_THREAD__ /* Mac OS X, AIX, Cygwin, z/OS, gcc -fsanitize=thread */
   /* get_rusage_as_via_setrlimit() does not work.
      Prefer get_rusage_as_via_iterator().  */
   return get_rusage_as_via_iterator ();

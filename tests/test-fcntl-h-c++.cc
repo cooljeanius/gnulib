@@ -1,5 +1,5 @@
 /* Test of <fcntl.h> substitute in C++ mode.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,10 @@
 
 #include "signature.h"
 
+
+#if GNULIB_TEST_CREAT
+SIGNATURE_CHECK (GNULIB_NAMESPACE::creat, int, (const char *, mode_t));
+#endif
 
 #if GNULIB_TEST_FCNTL
 SIGNATURE_CHECK (GNULIB_NAMESPACE::fcntl, int, (int, int, ...));

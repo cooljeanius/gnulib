@@ -1,5 +1,5 @@
 /* Test of rintl() function.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ main ()
   BEGIN_LONG_DOUBLE_ROUNDING ();
 
   /* Consider the current rounding mode, cf.
-     <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/float.h.html>  */
+     <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/float.h.html>  */
   if (FLT_ROUNDS == 1)
     {
       /* The current rounding mode is round-to-nearest

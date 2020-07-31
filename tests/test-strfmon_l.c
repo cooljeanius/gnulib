@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Free Software Foundation, Inc.
+ * Copyright (C) 2017-2020 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@ main (void)
     loc = newlocale (LC_ALL_MASK, "en_US.UTF-8", NULL);
     ASSERT (strfmon_l (buf, sizeof (buf), loc, "%.2n", 123.5) >= 0);
     ASSERT (strcmp (buf, expected_buf) == 0);
+    freelocale (loc);
   }
   {
     char expected_buf[80];
@@ -86,6 +87,7 @@ main (void)
     loc = newlocale (LC_ALL_MASK, "de_DE.UTF-8", NULL);
     ASSERT (strfmon_l (buf, sizeof (buf), loc, "%.2n", 123.5) >= 0);
     ASSERT (strcmp (buf, expected_buf) == 0);
+    freelocale (loc);
   }
 #endif
 

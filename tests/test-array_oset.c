@@ -1,5 +1,5 @@
 /* Test of ordered set data type implementation.
-   Copyright (C) 2006-2019 Free Software Foundation, Inc.
+   Copyright (C) 2006-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2007.
 
    This program is free software: you can redistribute it and/or modify
@@ -25,6 +25,8 @@
 #include "gl_xlist.h"
 #include "gl_array_list.h"
 #include "macros.h"
+
+#include "test-oset-update.h"
 
 static const char *objects[30] =
   {
@@ -136,6 +138,8 @@ main (int argc, char *argv[])
     gl_oset_free (set1);
     gl_list_free (set2);
   }
+
+  test_update (GL_ARRAY_OSET);
 
   return 0;
 }

@@ -1,5 +1,5 @@
 /* Map data type implemented by an array.
-   Copyright (C) 2006-2019 Free Software Foundation, Inc.
+   Copyright (C) 2006-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2018.
 
    This program is free software: you can redistribute it and/or modify
@@ -20,14 +20,11 @@
 /* Specification.  */
 #include "gl_array_map.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 /* Checked size_t computations.  */
 #include "xsize.h"
-
-#ifndef uintptr_t
-# define uintptr_t unsigned long
-#endif
 
 /* --------------------------- gl_map_t Data Type --------------------------- */
 

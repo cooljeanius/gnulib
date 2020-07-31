@@ -1,5 +1,5 @@
 /* Grapheme cluster breaks in Unicode strings.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
    Written by Ben Pfaff <blp@cs.stanford.edu>, 2010.
 
    This program is free software: you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ extern "C" {
 
 /* Property defined in Unicode Standard Annex #29, section "Grapheme Cluster
    Boundaries"
-   <http://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries> */
+   <https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries> */
 
 /* Possible values of the Grapheme_Cluster_Break property.
    This enumeration may be extended in the future.  */

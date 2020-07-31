@@ -1,5 +1,5 @@
 /* Word breaks in Unicode strings.
-   Copyright (C) 2001-2003, 2005-2019 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2005-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ extern "C" {
 /* ========================================================================= */
 
 /* Property defined in Unicode Standard Annex #29, section "Word Boundaries"
-   <http://www.unicode.org/reports/tr29/#Word_Boundaries>  */
+   <https://www.unicode.org/reports/tr29/#Word_Boundaries>  */
 
 /* Possible values of the Word_Break property.
    This enumeration may be extended in the future.  */
@@ -81,7 +81,7 @@ extern void
 extern void
        u32_wordbreaks (const uint32_t *s, size_t n, char *p);
 extern void
-       ulc_wordbreaks (const char *s, size_t n, char *p);
+       ulc_wordbreaks (const char *s, size_t n, char *_UC_RESTRICT p);
 
 /* ========================================================================= */
 

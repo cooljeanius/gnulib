@@ -2,7 +2,7 @@
 @section @code{getcwd}
 @findex getcwd
 
-POSIX specification:@* @url{http://www.opengroup.org/onlinepubs/9699919799/functions/getcwd.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/getcwd.html}
 
 Gnulib module: getcwd or getcwd-lgpl
 
@@ -23,19 +23,20 @@ instead of @code{size_t} for the size argument when using non-standard
 headers, and the declaration is missing from @code{<unistd.h>}:
 mingw, MSVC 14.
 @item
+On some platforms, @code{getcwd (buf, 0)} crashes:
+MSVC 14.
+@item
 On some platforms, @code{getcwd (buf, 0)} fails with @code{ERANGE}
 instead of the required @code{EINVAL}:
-mingw, MSVC 14.
+mingw.
 @end itemize
 
 Portability problems fixed by Gnulib module @code{getcwd}:
 @itemize
 @item
-This function is missing on some older platforms.
-@item
 This function does not handle long file names (greater than @code{PATH_MAX})
 correctly on some platforms:
-glibc on Linux 2.4.20, Mac OS X 10.5, FreeBSD 6.4, NetBSD 5.1, OpenBSD 4.9, AIX 7.1.
+glibc on Linux 2.4.20, Mac OS X 10.13, FreeBSD 6.4, NetBSD 9.0, OpenBSD 4.9, AIX 7.1.
 @end itemize
 
 Portability problems not fixed by Gnulib:

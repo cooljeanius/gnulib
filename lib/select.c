@@ -1,7 +1,7 @@
 /* Emulation for select(2)
    Contributed by Paolo Bonzini.
 
-   Copyright 2008-2019 Free Software Foundation, Inc.
+   Copyright 2008-2020 Free Software Foundation, Inc.
 
    This file is part of gnulib.
 
@@ -46,6 +46,18 @@
 #endif
 
 #undef select
+
+/* Don't assume that UNICODE is not defined.  */
+#undef GetModuleHandle
+#define GetModuleHandle GetModuleHandleA
+#undef PeekConsoleInput
+#define PeekConsoleInput PeekConsoleInputA
+#undef CreateEvent
+#define CreateEvent CreateEventA
+#undef PeekMessage
+#define PeekMessage PeekMessageA
+#undef DispatchMessage
+#define DispatchMessage DispatchMessageA
 
 /* Avoid warnings from gcc -Wcast-function-type.  */
 #define GetProcAddress \

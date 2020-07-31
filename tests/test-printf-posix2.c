@@ -1,5 +1,5 @@
 /* Test of POSIX compatible printf() function.
-   Copyright (C) 2007, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2009-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,10 @@
 
 #include <stdio.h>
 
-#if HAVE_GETRLIMIT && HAVE_SETRLIMIT
+/* This test assumes getrlimit() and setrlimit().
+   With "gcc -fcheck-pointer-bounds -mmpx -static", it produces an
+   endless loop of "Saw a #BR!" messages.  */
+#if HAVE_GETRLIMIT && HAVE_SETRLIMIT && !defined __CHKP__
 
 #include <stdlib.h>
 #include <sys/types.h>

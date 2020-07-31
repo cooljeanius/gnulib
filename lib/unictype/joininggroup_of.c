@@ -1,5 +1,5 @@
 /* Arabic joining group of Unicode characters.
-   Copyright (C) 2011-2019 Free Software Foundation, Inc.
+   Copyright (C) 2011-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ uc_joining_group (ucs4_t uc)
               unsigned int index3 = ((uc & joining_group_header_4) + lookup2) * 7;
               /* level3 contains 7-bit values, packed into 16-bit words.  */
               unsigned int lookup3 =
-                ((u_joining_group.level3[index3>>4]
+                (((unsigned int) u_joining_group.level3[index3>>4]
                   | ((unsigned int) u_joining_group.level3[(index3>>4)+1] << 16))
                  >> (index3 % 16))
                 & 0x7f;

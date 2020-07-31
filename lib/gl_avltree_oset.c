@@ -1,5 +1,5 @@
 /* Ordered set data type implemented by a binary tree.
-   Copyright (C) 2006-2007, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@
   const void *elt
 #define NODE_PAYLOAD_ASSIGN(node) \
   node->value = elt;
-#define NODE_PAYLOAD_DISPOSE \
+#define NODE_PAYLOAD_DISPOSE(container, node) \
   if (container->base.dispose_fn != NULL) \
     container->base.dispose_fn (node->value);
 
@@ -64,6 +64,7 @@ const struct gl_oset_implementation gl_avltree_oset_implementation =
     gl_tree_search_atleast,
     gl_tree_nx_add,
     gl_tree_remove,
+    gl_tree_update,
     gl_tree_oset_free,
     gl_tree_iterator,
     gl_tree_iterator_next,

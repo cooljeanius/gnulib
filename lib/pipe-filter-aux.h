@@ -1,5 +1,5 @@
 /* Auxiliary code for filtering of data through a subprocess.
-   Copyright (C) 2001-2003, 2008-2019 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2008-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify
@@ -72,6 +72,7 @@ nonintr_read (int fd, void *buf, size_t count)
 
   return retval;
 }
+#undef read /* avoid warning related to gnulib module unistd */
 #define read nonintr_read
 
 PIPE_FILTER_AUX_INLINE ssize_t

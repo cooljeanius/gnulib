@@ -1,5 +1,5 @@
 /* Create a temporary file.
-   Copyright (C) 2007, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2009-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #include <stdbool.h>
 
 #if defined _WIN32 && ! defined __CYGWIN__
-/* A native Windows platforms.  */
+/* A native Windows platform.  */
 
 # include <fcntl.h>
 # include <string.h>
@@ -50,7 +50,15 @@
    used on native Windows and Android.  */
 
 #if defined _WIN32 && ! defined __CYGWIN__
-/* A native Windows platforms.  */
+/* A native Windows platform.  */
+
+/* Don't assume that UNICODE is not defined.  */
+# undef OSVERSIONINFO
+# define OSVERSIONINFO OSVERSIONINFOA
+# undef GetVersionEx
+# define GetVersionEx GetVersionExA
+# undef GetTempPath
+# define GetTempPath GetTempPathA
 
 /* On Windows, opening a file with _O_TEMPORARY has the effect of passing
    the FILE_FLAG_DELETE_ON_CLOSE flag to CreateFile(), which has the effect
@@ -67,7 +75,7 @@ supports_delete_on_close ()
       OSVERSIONINFO v;
 
       /* According to
-         <https://msdn.microsoft.com/en-us/library/ms724451.aspx>
+         <https://docs.microsoft.com/en-us/windows/desktop/api/sysinfoapi/nf-sysinfoapi-getversionexa>
          this structure must be initialized as follows:  */
       v.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
 

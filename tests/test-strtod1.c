@@ -1,5 +1,5 @@
 /* Test of strtod() in a French locale.
-   Copyright (C) 2019 Free Software Foundation, Inc.
+   Copyright (C) 2019-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -68,8 +68,10 @@ main (int argc, char *argv[])
     double result;
     errno = 0;
     result = strtod (input, &ptr);
-    ASSERT (result == 1.0);
-    ASSERT (ptr == input + 1);
+    /* On AIX 7.2, in the French locale, '.' is recognized as an alternate
+       radix character.  */
+    ASSERT ((ptr == input + 1 && result == 1.0)
+            || (ptr == input + 3 && result == 1.5));
     ASSERT (errno == 0);
   }
   {
@@ -78,8 +80,10 @@ main (int argc, char *argv[])
     double result;
     errno = 0;
     result = strtod (input, &ptr);
-    ASSERT (result == 123.0);
-    ASSERT (ptr == input + 3);
+    /* On AIX 7.2, in the French locale, '.' is recognized as an alternate
+       radix character.  */
+    ASSERT ((ptr == input + 3 && result == 123.0)
+            || (ptr == input + 7 && result > 123.45 && result < 123.46));
     ASSERT (errno == 0);
   }
   {

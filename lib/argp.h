@@ -1,5 +1,5 @@
 /* Hierarchical argument parsing, layered over getopt.
-   Copyright (C) 1995-2019 Free Software Foundation, Inc.
+   Copyright (C) 1995-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Written by Miles Bader <miles@gnu.ai.mit.edu>.
 
@@ -32,18 +32,6 @@
 #endif
 #ifndef __NTH
 # define __NTH(fct) fct __THROW
-#endif
-
-/* The __attribute__ feature is available in gcc versions 2.5 and later.
-   The __-protected variants of the attributes 'format' and 'printf' are
-   accepted by gcc versions 2.6.4 (effectively 2.7) and later.
-   We enable _GL_ATTRIBUTE_FORMAT only if these are supported too, because
-   gnulib and libintl do '#define printf __printf__' when they override
-   the 'printf' function.  */
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7)
-# define _GL_ATTRIBUTE_FORMAT(spec) __attribute__ ((__format__ spec))
-#else
-# define _GL_ATTRIBUTE_FORMAT(spec) /* empty */
 #endif
 
 /* GCC 2.95 and later have "__restrict"; C99 compilers have

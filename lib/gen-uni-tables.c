@@ -1,7 +1,7 @@
 /* Generate Unicode conforming character classification tables and
    line break properties tables and word break property tables and
    decomposition/composition and case mapping tables from a UnicodeData file.
-   Copyright (C) 2000-2002, 2004, 2007-2019 Free Software Foundation, Inc.
+   Copyright (C) 2000-2002, 2004, 2007-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2000-2002.
 
    This program is free software: you can redistribute it and/or modify
@@ -10224,7 +10224,7 @@ is_cased (unsigned int ch)
      its General_Category is one of Nonspacing_Mark (Mn), Enclosing_Mark (Me),
      Format (Cf), Modifier_Letter (Lm), or Modifier_Symbol (Sk).
    The text marked in braces was added in Unicode 5.1.0, see
-   <http://www.unicode.org/versions/Unicode5.1.0/> section "Update of
+   <https://www.unicode.org/versions/Unicode5.1.0/> section "Update of
    Definition of case-ignorable".   */
 /* Since this predicate is only used for the "Before C" and "After C"
    conditions of FINAL_SIGMA, we exclude the "cased" characters here.

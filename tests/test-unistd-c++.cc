@@ -1,5 +1,5 @@
 /* Test of <unistd.h> substitute in C++ mode.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,10 @@
 
 #include "signature.h"
 
+
+#if GNULIB_TEST_ACCESS
+SIGNATURE_CHECK (GNULIB_NAMESPACE::access, int, (const char *, int));
+#endif
 
 #if GNULIB_TEST_CHDIR
 SIGNATURE_CHECK (GNULIB_NAMESPACE::chdir, int, (const char *));
@@ -88,6 +92,10 @@ SIGNATURE_CHECK (GNULIB_NAMESPACE::getdomainname, int, (char *, size_t));
 
 #if GNULIB_TEST_GETDTABLESIZE
 SIGNATURE_CHECK (GNULIB_NAMESPACE::getdtablesize, int, (void));
+#endif
+
+#if GNULIB_TEST_GETENTROPY
+SIGNATURE_CHECK (GNULIB_NAMESPACE::getentropy, int, (void *, size_t));
 #endif
 
 #if GNULIB_TEST_GETGROUPS

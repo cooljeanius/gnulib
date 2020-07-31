@@ -1,6 +1,6 @@
 /* A GNU-like <search.h>.
 
-   Copyright (C) 2007-2019 Free Software Foundation, Inc.
+   Copyright (C) 2007-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,8 +48,8 @@
 #  endif
 # endif
 
-/* See <http://www.opengroup.org/susv3xbd/search.h.html>,
-       <http://www.opengroup.org/susv3xsh/tsearch.html>
+/* See <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/search.h.html>
+       <https://pubs.opengroup.org/onlinepubs/9699919799/functions/tsearch.html>
    for details.  */
 
 # if !@HAVE_TYPE_VISIT@
@@ -132,21 +132,21 @@ _GL_CXXALIASWARN (tfind);
    returned.  Otherwise, NULL is returned.  */
 # if @REPLACE_TSEARCH@
 _GL_FUNCDECL_RPL (tdelete, void *,
-                  (const void *key, void **vrootp,
+                  (const void *restrict key, void **restrict vrootp,
                    _gl_search_compar_fn compar)
                   _GL_ARG_NONNULL ((1, 2, 3)));
 _GL_CXXALIAS_RPL (tdelete, void *,
-                  (const void *key, void **vrootp,
+                  (const void *restrict key, void **restrict vrootp,
                    _gl_search_compar_fn compar));
 # else
 #  if !@HAVE_TSEARCH@
 _GL_FUNCDECL_SYS (tdelete, void *,
-                  (const void *key, void **vrootp,
+                  (const void *restrict key, void **restrict vrootp,
                    _gl_search_compar_fn compar)
                   _GL_ARG_NONNULL ((1, 2, 3)));
 #  endif
 _GL_CXXALIAS_SYS (tdelete, void *,
-                  (const void *key, void **vrootp,
+                  (const void *restrict key, void **restrict vrootp,
                    _gl_search_compar_fn compar));
 # endif
 _GL_CXXALIASWARN (tdelete);

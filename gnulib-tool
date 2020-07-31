@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Copyright (C) 2002-2019 Free Software Foundation, Inc.
+# Copyright (C) 2002-2020 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,29 @@
 
 # This program is meant for authors or maintainers which want to import
 # modules from gnulib into their packages.
+
+# CODING STYLE for this file:
+# * Indentation: Indent by 2 spaces. Indent case clauses by 2 spaces as well.
+# * Shell variable references: Use double-quote around shell variable
+#   references always (except when word splitting is explicitly desired),
+#   even when you know the double-quote are not needed.  This style tends to
+#   avoid undesired word splitting caused by omitted double-quotes (the
+#   number one mistake in shell scripts).
+#   When the referenced variable can only have a finite number of possible
+#   values and these values are all simple words (e.g. true and false), it's
+#   OK to omit the double-quotes.
+# * Backquotes:
+#   - Use backquotes like in `command`, not $(command).
+#   - Don't use `command` inside double-quotes. Instead assign the result of
+#     `command` to a variable, and use the value of the variable afterwards.
+# * Functions:
+#   - All functions that don't emulate a program or shell built-in have a name
+#     that starts with 'func_'.
+#   - Document the implicit and explicit arguments of all functions, as well
+#     as their output variables and side effects.
+# * Use  test condition  instead of  [ condition ].
+# * Minimize the use of eval; when you need it, make sure the string to be
+#   evaluated has a very simple syntactic structure.
 
 progname=$0
 package=gnulib
@@ -771,6 +794,13 @@ func_relconcat ()
   done
 }
 
+# func_ensure_writable DEST
+# Ensures the file DEST is writable.
+func_ensure_writable ()
+{
+  test -w "$1" || chmod u+w "$1"
+}
+
 # func_ln_s SRC DEST
 # Like ln -s, except use cp -p if ln -s fails.
 func_ln_s ()
@@ -790,6 +820,7 @@ func_ln_s ()
     esac
 
     cp -p "$cp_src" "$2"
+    func_ensure_writable "$2"
   }
 }
 
@@ -853,6 +884,7 @@ func_hardlink ()
   ln "$1" "$2" || {
     echo "$progname: ln failed; falling back on cp -p" >&2
     cp -p "$1" "$2"
+    func_ensure_writable "$2"
   }
 }
 
@@ -1694,6 +1726,7 @@ func_lookup_file ()
     lkbase=`echo "$lkfile" | sed -e 's,^.*/,,'`
     rm -f "$tmp/$lkbase"
     cp "$lookedup_file" "$tmp/$lkbase"
+    func_ensure_writable "$tmp/$lkbase"
     save_IFS="$IFS"
     IFS="$PATH_SEPARATOR"
     for patchfile in $lkpatches; do
@@ -2271,6 +2304,7 @@ func_get_filelist ()
     fi
   fi
   echo m4/00gnulib.m4
+  echo m4/zzgnulib.m4
   echo m4/gnulib-common.m4
 }
 
@@ -3260,18 +3294,24 @@ func_modules_add_dummy ()
   for module in $modules; do
     func_verify_nontests_module
     if test -n "$module"; then
-      # Extract the value of "lib_SOURCES += ...".
-      for file in `func_get_automake_snippet "$module" | combine_lines |
-                   sed -n -e 's,^lib_SOURCES[	 ]*+=\([^#]*\).*$,\1,p'`; do
-        # Ignore .h files since they are not compiled.
-        case "$file" in
-          *.h) ;;
-          *)
-            have_lib_SOURCES=yes
-            break 2
-            ;;
-        esac
-      done
+      if test "$cond_dependencies" = true && func_cond_module_p $module; then
+        # Ignore conditional modules, since they are not guaranteed to
+        # contribute to lib_SOURCES.
+        :
+      else
+        # Extract the value of "lib_SOURCES += ...".
+        for file in `func_get_automake_snippet "$module" | combine_lines |
+                     sed -n -e 's,^lib_SOURCES[	 ]*+=\([^#]*\).*$,\1,p'`; do
+          # Ignore .h files since they are not compiled.
+          case "$file" in
+            *.h) ;;
+            *)
+              have_lib_SOURCES=yes
+              break 2
+              ;;
+          esac
+        done
+      fi
     fi
   done
   # Add the dummy module, to make sure the library will be non-empty.
@@ -4125,8 +4165,6 @@ func_emit_tests_Makefile_am ()
   echo "  -I${testsbase_inverse} -I\$(srcdir)/${testsbase_inverse} \\"
   echo "  -I${testsbase_inverse}/${sourcebase-lib} -I\$(srcdir)/${testsbase_inverse}/${sourcebase-lib}"
   echo
-  local_ldadd_before=''
-  local_ldadd_after=''
   if $use_libtests; then
     # All test programs need to be linked with libtests.a.
     # It needs to be passed to the linker before ${libname}.${libext}, since
@@ -4136,10 +4174,10 @@ func_emit_tests_Makefile_am ()
     # module whose dependency to 'progname' is voluntarily omitted).
     # The LIBTESTS_LIBDEPS can be passed to the linker once or twice, it does
     # not matter.
-    local_ldadd_before=' libtests.a'
-    local_ldadd_after=' libtests.a $(LIBTESTS_LIBDEPS)'
+    echo "LDADD = libtests.a ${testsbase_inverse}/${sourcebase-lib}/${libname}.${libext} libtests.a ${testsbase_inverse}/${sourcebase-lib}/${libname}.${libext} \$(LIBTESTS_LIBDEPS)"
+  else
+    echo "LDADD = ${testsbase_inverse}/${sourcebase-lib}/${libname}.${libext}"
   fi
-  echo "LDADD =${local_ldadd_before} ${testsbase_inverse}/${sourcebase-lib}/${libname}.${libext}${local_ldadd_after}"
   echo
   if $use_libtests; then
     echo "libtests_a_SOURCES ="
@@ -5195,6 +5233,7 @@ s,^\(.................................................[^ ]*\) *,                
     func_dest_tmpfilename "$g"
     func_lookup_file "$f"
     cp "$lookedup_file" "$tmpfile" || func_fatal_error "failed"
+    func_ensure_writable "$tmpfile"
     case "$f" in
       *.class | *.mo )
         # Don't process binary files with sed.
@@ -6283,6 +6322,7 @@ func_create_testdir ()
       func_lookup_file "$f"
       if test -n "$lookedup_tmp"; then
         cp -p "$lookedup_file" "$testdir/$g"
+        func_ensure_writable "$testdir/$g"
       else
         func_should_link
         if test "$copyaction" = symlink; then
@@ -6292,6 +6332,7 @@ func_create_testdir ()
             func_hardlink "$lookedup_file" "$testdir/$g"
           else
             cp -p "$lookedup_file" "$testdir/$g"
+            func_ensure_writable "$testdir/$g"
           fi
         fi
       fi
@@ -7287,6 +7328,7 @@ s/\([.*$]\)/[\1]/g'
     # Copy the file.
     func_dest_tmpfilename "$g"
     cp "$lookedup_file" "$tmpfile" || func_fatal_error "failed"
+    func_ensure_writable "$tmpfile"
     already_present=true
     if test -f "$destdir/$g"; then
       # The file already exists.

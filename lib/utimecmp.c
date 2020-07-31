@@ -1,6 +1,6 @@
 /* utimecmp.c -- compare file timestamps
 
-   Copyright (C) 2004-2007, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2004-2007, 2009-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@
 enum { SYSCALL_RESOLUTION = 1 };
 #elif defined _WIN32 && ! defined __CYGWIN__
 /* On native Windows, file times have 100 ns resolution. See
-   <https://msdn.microsoft.com/en-us/library/ms724284.aspx>  */
+   <https://docs.microsoft.com/en-us/windows/desktop/api/minwinbase/ns-minwinbase-filetime>  */
 enum { SYSCALL_RESOLUTION = 100 };
 #elif ((HAVE_FUTIMESAT || HAVE_WORKING_UTIMES)                  \
        && (defined HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC             \
@@ -396,8 +396,6 @@ utimecmpat (int dfd, char const *dst_name,
     }
 
   /* Compare the timestamps and return -1, 0, 1 accordingly.  */
-  return (dst_s < src_s ? -1
-          : dst_s > src_s ? 1
-          : dst_ns < src_ns ? -1
-          : dst_ns > src_ns);
+  return (_GL_CMP (dst_s, src_s)
+          + ((dst_s == src_s ? ~0 : 0) & _GL_CMP (dst_ns, src_ns)));
 }

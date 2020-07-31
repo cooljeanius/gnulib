@@ -1,5 +1,5 @@
 /* Work around platform bugs in localtime.
-   Copyright (C) 2017-2019 Free Software Foundation, Inc.
+   Copyright (C) 2017-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,28 +19,25 @@
 /* Specification.  */
 #include <time.h>
 
-/* Keep consistent with localtime-buffer.c!  */
-#if !(GETTIMEOFDAY_CLOBBERS_LOCALTIME || TZSET_CLOBBERS_LOCALTIME)
+#include <stdlib.h>
+#include <string.h>
 
-# include <stdlib.h>
-# include <string.h>
-
-# undef localtime
+#undef localtime
 
 struct tm *
 rpl_localtime (const time_t *tp)
 {
-# if defined _WIN32 && ! defined __CYGWIN__
+#if defined _WIN32 && ! defined __CYGWIN__
   /* Rectify the value of the environment variable TZ.
      There are four possible kinds of such values:
        - Traditional US time zone names, e.g. "PST8PDT".  Syntax: see
-         <https://msdn.microsoft.com/en-us/library/90s5c885.aspx>
+         <https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/tzset>
        - Time zone names based on geography, that contain one or more
          slashes, e.g. "Europe/Moscow".
        - Time zone names based on geography, without slashes, e.g.
          "Singapore".
        - Time zone names that contain explicit DST rules.  Syntax: see
-         <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html#tag_08_03>
+         <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html#tag_08_03>
      The Microsoft CRT understands only the first kind.  It produces incorrect
      results if the value of TZ is of the other kinds.
      But in a Cygwin environment, /etc/profile.d/tzset.sh sets TZ to a value
@@ -56,9 +53,7 @@ rpl_localtime (const time_t *tp)
   const char *tz = getenv ("TZ");
   if (tz != NULL && strchr (tz, '/') != NULL)
     _putenv ("TZ=");
-# endif
+#endif
 
   return localtime (tp);
 }
-
-#endif

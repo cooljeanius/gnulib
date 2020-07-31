@@ -1,5 +1,5 @@
 /* Convert string to wide string.
-   Copyright (C) 2008-2019 Free Software Foundation, Inc.
+   Copyright (C) 2008-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2008.
 
    This program is free software: you can redistribute it and/or modify
@@ -30,4 +30,8 @@
 
 extern mbstate_t _gl_mbsrtowcs_state;
 
+#define FUNC mbsnrtowcs
+#define DCHAR_T wchar_t
+#define INTERNAL_STATE _gl_mbsrtowcs_state
+#define MBRTOWC mbrtowc
 #include "mbsnrtowcs-impl.h"

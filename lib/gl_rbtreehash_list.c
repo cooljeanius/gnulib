@@ -1,5 +1,5 @@
 /* Sequential list data type implemented by a hash table with a binary tree.
-   Copyright (C) 2006, 2008-2019 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2008-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -20,15 +20,11 @@
 /* Specification.  */
 #include "gl_rbtreehash_list.h"
 
-#include <stdint.h> /* for SIZE_MAX */
+#include <stdint.h> /* for uintptr_t, SIZE_MAX */
 #include <stdlib.h>
 
 #include "gl_rbtree_oset.h"
 #include "xsize.h"
-
-#ifndef uintptr_t
-# define uintptr_t unsigned long
-#endif
 
 #define WITH_HASHTABLE 1
 

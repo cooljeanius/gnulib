@@ -2,7 +2,7 @@
 @section @code{strtold}
 @findex strtold
 
-POSIX specification:@* @url{http://www.opengroup.org/onlinepubs/9699919799/functions/strtold.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtold.html}
 
 Gnulib module: strtold
 
@@ -10,7 +10,7 @@ Portability problems fixed by Gnulib:
 @itemize
 @item
 This function is missing on some platforms:
-NetBSD 3.0, OpenBSD 3.8, Minix 3.1.8, older IRIX 6.5, OSF/1 4.0, Solaris 9, older Cygwin, MSVC 9, Interix 3.5, BeOS, Android 4.4.
+NetBSD 3.0, OpenBSD 3.8, Minix 3.1.8, older IRIX 6.5, Solaris 9, older Cygwin 1.7.x, MSVC 9, Android 4.4.
 
 @item
 This function returns a struct, not a @code{long double}, on some platforms:
@@ -62,6 +62,11 @@ IRIX 6.5, mingw.
 In hexadecimal floats, this function allows whitespace between @samp{p}
 and the exponent on some platforms:
 HP-UX 11.31/ia64.
+
+@item
+This function fails to set @code{errno} upon underflow on some platforms:
+@c https://cygwin.com/ml/cygwin/2019-12/msg00072.html
+Cygwin 2.9.
 @end itemize
 
 Portability problems not fixed by Gnulib:

@@ -2,7 +2,7 @@
 @section @code{getlogin_r}
 @findex getlogin_r
 
-POSIX specification:@* @url{http://www.opengroup.org/onlinepubs/9699919799/functions/getlogin_r.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/getlogin_r.html}
 
 Gnulib module: getlogin_r
 
@@ -18,7 +18,7 @@ HP-UX 11.
 @item
 This function returns a truncated result, instead of failing with error code
 @code{ERANGE}, when the buffer is not large enough, on some platforms:
-Mac OS X 10.12, OSF/1 5.1.
+Mac OS X 10.13.
 @end itemize
 
 Portability problems not fixed by Gnulib:

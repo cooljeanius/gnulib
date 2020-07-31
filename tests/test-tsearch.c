@@ -1,5 +1,5 @@
 /* Test program for tsearch et al.
-   Copyright (C) 1997, 2000-2001, 2007-2019 Free Software Foundation, Inc.
+   Copyright (C) 1997, 2000-2001, 2007-2020 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software: you can redistribute it and/or
@@ -223,7 +223,7 @@ mangle_tree (enum order how, enum action what, void **root, int lag)
                   error = 1;
                 }
               elem = tsearch (x + j, root, cmp_fn);
-              if (elem == 0
+              if (elem == NULL
                   || tfind (x + j, (void *const *) root, cmp_fn) == NULL)
                 {
                   fputs ("Couldn't find element after it was added.\n",

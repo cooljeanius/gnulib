@@ -1,5 +1,5 @@
 /* Test of <wchar.h> substitute in C++ mode.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -92,6 +92,11 @@ SIGNATURE_CHECK (GNULIB_NAMESPACE::wmemcpy, wchar_t *,
 
 #if GNULIB_TEST_WMEMMOVE
 SIGNATURE_CHECK (GNULIB_NAMESPACE::wmemmove, wchar_t *,
+                 (wchar_t *, const wchar_t *, size_t));
+#endif
+
+#if GNULIB_TEST_WMEMPCPY
+SIGNATURE_CHECK (GNULIB_NAMESPACE::wmempcpy, wchar_t *,
                  (wchar_t *, const wchar_t *, size_t));
 #endif
 

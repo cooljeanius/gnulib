@@ -1,5 +1,5 @@
 /* Duplicate a locale object.
-   Copyright (C) 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2009-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -67,11 +67,17 @@ rpl_duplocale (locale_t locale)
           , { LC_IDENTIFICATION, LC_IDENTIFICATION_MASK }
 #endif
         };
-      const char *base_name;
+      char base_name[SETLOCALE_NULL_MAX];
+      int err;
       locale_t base_copy;
       unsigned int i;
 
-      base_name = setlocale (LC_CTYPE, NULL);
+      err = setlocale_null_r (LC_CTYPE, base_name, sizeof (base_name));
+      if (err)
+        {
+          errno = err;
+          return NULL;
+        }
       base_copy = newlocale (LC_ALL_MASK, base_name, NULL);
       if (base_copy == NULL)
         return NULL;
@@ -80,7 +86,14 @@ rpl_duplocale (locale_t locale)
         {
           int category = categories[i].cat;
           int category_mask = categories[i].mask;
-          const char *name = setlocale (category, NULL);
+          char name[SETLOCALE_NULL_MAX];
+
+          err = setlocale_null_r (category, name, sizeof (name));
+          if (err)
+            {
+              errno = err;
+              return NULL;
+            }
           if (strcmp (name, base_name) != 0)
             {
               locale_t copy = newlocale (category_mask, name, base_copy);

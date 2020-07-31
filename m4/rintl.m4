@@ -1,5 +1,5 @@
-# rintl.m4 serial 5
-dnl Copyright (C) 2011-2019 Free Software Foundation, Inc.
+# rintl.m4 serial 8
+dnl Copyright (C) 2011-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -37,7 +37,7 @@ int main (int argc, char *argv[])
 {
   long double (* volatile my_rintl) (long double) = argc ? rintl : dummy;
   int result = 0;
-  /* This test fails on NetBSD 8.0.  */
+  /* This test fails on NetBSD 9.0.  */
   {
     volatile long double x = -0.3L;
     long double y = my_rintl (x);
@@ -52,10 +52,12 @@ int main (int argc, char *argv[])
             [case "$host_os" in
                               # Guess yes on glibc systems.
                *-gnu* | gnu*) gl_cv_func_rintl_works="guessing yes" ;;
+                              # Guess yes on musl systems.
+               *-musl*)       gl_cv_func_rintl_works="guessing yes" ;;
                               # Guess yes on native Windows.
                mingw*)        gl_cv_func_rintl_works="guessing yes" ;;
-                              # If we don't know, assume the worst.
-               *)             gl_cv_func_rintl_works="guessing no" ;;
+                              # If we don't know, obey --enable-cross-guesses.
+               *)             gl_cv_func_rintl_works="$gl_cross_guess_normal" ;;
              esac
             ])
           LIBS="$save_LIBS"

@@ -1,5 +1,5 @@
 /* Round according to the current rounding mode.
-   Copyright (C) 2007, 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2010-2020 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ RINT (DOUBLE x)
   volatile DOUBLE z = x;
 
   /* Consider the current rounding mode, cf.
-     <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/float.h.html>.
+     <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/float.h.html>.
      This implementation supports only rounds-to-nearest.  */
   if (FLT_ROUNDS != 1)
     abort ();

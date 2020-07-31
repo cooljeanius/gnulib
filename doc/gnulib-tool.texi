@@ -1,14 +1,13 @@
 @node Invoking gnulib-tool
 @chapter Invoking gnulib-tool
 
-@c Copyright (C) 2005-2019 Free Software Foundation, Inc.
+@c Copyright (C) 2005--2020 Free Software Foundation, Inc.
 
 @c Permission is granted to copy, distribute and/or modify this document
 @c under the terms of the GNU Free Documentation License, Version 1.3 or
 @c any later version published by the Free Software Foundation; with no
-@c Invariant Sections, no Front-Cover Texts, and no Back-Cover
-@c Texts.  A copy of the license is included in the ``GNU Free
-@c Documentation License'' file as part of this distribution.
+@c Invariant Sections, no Front-Cover Texts, and no Back-Cover Texts.  A
+@c copy of the license is at <https://www.gnu.org/licenses/fdl-1.3.en.html>.
 
 @pindex gnulib-tool
 @cindex invoking @command{gnulib-tool}
@@ -917,7 +916,7 @@ into the VCS, but instead added to @file{.gitignore} or equivalent.
 @item
 In projects which customarily omit from their VCS all files that are
 generated from other source files, none of these files and directories
-are added into the VCS.  As described in @ref{Modified imports}, there
+are added into the VCS@.  As described in @ref{Modified imports}, there
 are two ways to keep track of options and module names that are passed
 to @code{gnulib-tool}.  The command for restoring the omitted files
 depends on it:

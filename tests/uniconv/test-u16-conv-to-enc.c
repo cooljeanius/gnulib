@@ -1,5 +1,5 @@
 /* Test of conversion from UTF-16 to legacy encodings.
-   Copyright (C) 2007-2019 Free Software Foundation, Inc.
+   Copyright (C) 2007-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -106,6 +106,8 @@ main ()
               ASSERT (result == NULL);
               ASSERT (errno == EILSEQ);
               ASSERT (length == 0xdead);
+              if (o)
+                free (offsets);
               break;
             case iconveh_question_mark:
               {

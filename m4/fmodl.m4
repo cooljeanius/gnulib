@@ -1,5 +1,5 @@
-# fmodl.m4 serial 9
-dnl Copyright (C) 2011-2019 Free Software Foundation, Inc.
+# fmodl.m4 serial 11
+dnl Copyright (C) 2011-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -72,10 +72,12 @@ int main (int argc, char *argv[])
               [case "$host_os" in
                                 # Guess yes on glibc systems.
                  *-gnu* | gnu*) gl_cv_func_fmodl_ieee="guessing yes" ;;
+                                # Guess yes on musl systems.
+                 *-musl*)       gl_cv_func_fmodl_ieee="guessing yes" ;;
                                 # Guess yes on native Windows.
                  mingw*)        gl_cv_func_fmodl_ieee="guessing yes" ;;
-                                # If we don't know, assume the worst.
-                 *)             gl_cv_func_fmodl_ieee="guessing no" ;;
+                                # If we don't know, obey --enable-cross-guesses.
+                 *)             gl_cv_func_fmodl_ieee="$gl_cross_guess_normal" ;;
                esac
               ])
             LIBS="$save_LIBS"

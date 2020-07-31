@@ -1,6 +1,6 @@
 /* backupfile.c -- make Emacs style backup file names
 
-   Copyright (C) 1990-2006, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 1990-2006, 2009-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@
 
 #include "backup-internal.h"
 
-#include "dirname.h"
+#include "attribute.h"
+#include "basename-lgpl.h"
 #include "opendirat.h"
 #include "renameatu.h"
 #include "xalloc-oversized.h"
@@ -34,14 +35,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#ifndef FALLTHROUGH
-# if __GNUC__ < 7
-#  define FALLTHROUGH ((void) 0)
-# else
-#  define FALLTHROUGH __attribute__ ((__fallthrough__))
-# endif
-#endif
 
 #ifndef _D_EXACT_NAMLEN
 # define _D_EXACT_NAMLEN(dp) strlen ((dp)->d_name)
@@ -362,6 +355,8 @@ backupfile_internal (int dir_fd, char const *file,
             break;
 
           case BACKUP_NOMEM:
+            if (dirp)
+              closedir (dirp);
             free (s);
             errno = ENOMEM;
             return NULL;

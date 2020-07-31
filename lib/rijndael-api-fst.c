@@ -1,5 +1,5 @@
 /* rijndael-api-fst.c --- Rijndael cipher implementation.
- * Copyright (C) 2005-2006, 2009-2019 Free Software Foundation, Inc.
+ * Copyright (C) 2005-2006, 2009-2020 Free Software Foundation, Inc.
  *
  * This file is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
@@ -20,7 +20,7 @@
  *
  * Based on public domain "Optimised C code" retrieved from (SHA1
  * 7c8e4b00d06685d1dbc6724a9e0d502353de339e):
- * http://www.iaik.tu-graz.ac.at/research/krypto/AES/old/~rijmen/rijndael/rijndael-fst-3.0.zip
+ * https://web.archive.org/web/20060618010435/http://www.iaik.tu-graz.ac.at/research/krypto/AES/old/~rijmen/rijndael/rijndael-fst-3.0.zip
  */
 
 #include <config.h>

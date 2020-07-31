@@ -18,6 +18,7 @@ flexmember
 strdup
 lock
 langinfo
+setlocale-null
 
 configure.ac:
 gl_LOCALENAME
@@ -31,7 +32,7 @@ Include:
 
 Link:
 @INTL_MACOSX_LIBS@
-$(LTLIBTHREAD) when linking with libtool, $(LIBTHREAD) otherwise
+$(LIBTHREAD)
 
 License:
 LGPLv2+

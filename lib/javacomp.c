@@ -1,5 +1,5 @@
 /* Compile a Java program.
-   Copyright (C) 2001-2003, 2006-2019 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2006-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
@@ -573,7 +573,7 @@ write_temp_file (struct temp_dir *tmpdir, const char *file_name,
   FILE *fp;
 
   register_temp_file (tmpdir, file_name);
-  fp = fopen_temp (file_name, "w");
+  fp = fopen_temp (file_name, "we", false);
   if (fp == NULL)
     {
       error (0, errno, _("failed to create \"%s\""), file_name);
@@ -597,7 +597,7 @@ get_classfile_version (const char *compiled_file_name)
   int fd;
 
   /* Open the class file.  */
-  fd = open (compiled_file_name, O_RDONLY | O_BINARY, 0);
+  fd = open (compiled_file_name, O_RDONLY | O_BINARY | O_CLOEXEC, 0);
   if (fd >= 0)
     {
       /* Read its first 8 bytes.  */

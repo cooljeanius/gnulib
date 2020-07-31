@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2002-2019 Free Software Foundation, Inc.
+# Copyright (C) 2002-2020 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 # Extend the PATH so that gnulib-tool is found.
 PATH=`dirname "$0"`:$PATH; export PATH
 
-POSIX2001_URL='http://www.opengroup.org/susv3'
-POSIX2008_URL='http://www.opengroup.org/onlinepubs/9699919799'
+POSIX2001_URL='https://pubs.opengroup.org/onlinepubs/009695399'
+POSIX2008_URL='https://pubs.opengroup.org/onlinepubs/9699919799'
 
 repo_url_prefix=
 repo_url_suffix=
@@ -1521,9 +1521,9 @@ func_module ()
       s,\([^a-zA-Z_]\)'$posix_functions'() \(function\|macro\),\1<A HREF="'$POSIX2008_URL'/functions/\2.html">\2</A> \3,g
       s,\([^a-zA-Z_]\)'$posix_functions' \(function\|macro\),\1<A HREF="'$POSIX2008_URL'/functions/\2.html">\2</A> \3,g
       s,\([^a-zA-Z_]\)'$posix_functions'(),\1<A HREF="'$POSIX2008_URL'/functions/\2.html">\2</A> <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
-      s,\([^a-zA-Z_]\)'$posix2001_functions'() \(function\|macro\),\1<A HREF="'$POSIX2001_URL'xsh/\2.html">\2</A> \3,g
-      s,\([^a-zA-Z_]\)'$posix2001_functions' \(function\|macro\),\1<A HREF="'$POSIX2001_URL'xsh/\2.html">\2</A> \3,g
-      s,\([^a-zA-Z_]\)'$posix2001_functions'(),\1<A HREF="'$POSIX2001_URL'xsh/\2.html">\2</A> <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
+      s,\([^a-zA-Z_]\)'$posix2001_functions'() \(function\|macro\),\1<A HREF="'$POSIX2001_URL'/functions/\2.html">\2</A> \3,g
+      s,\([^a-zA-Z_]\)'$posix2001_functions' \(function\|macro\),\1<A HREF="'$POSIX2001_URL'/functions/\2.html">\2</A> \3,g
+      s,\([^a-zA-Z_]\)'$posix2001_functions'(),\1<A HREF="'$POSIX2001_URL'/functions/\2.html">\2</A> <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
       s,\([^a-zA-Z_]\)\([a-zA-Z_][a-zA-Z0-9_]*\)() \(function\|macro\),\1\2 \3,g
       s,\([^a-zA-Z_]\)\([a-zA-Z_][a-zA-Z0-9_]*\)(),\1\2 <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
       s, '"'"'\([a-zA-Z0-9_ -]*\)'"'"'\([^a-zA-Z0-9_]\), <CODE>\1</CODE>\2,g
@@ -1553,7 +1553,7 @@ func_module ()
       s,^#include "\(.*\)"$,#include "<A HREF="'$repo_url_prefix'lib/\1'$repo_url_suffix_repl'">\1</A>",
       s,^#include &lt;'$posix_headers'\.h&gt;$,#include \&lt;<A HREF="'$POSIX2008_URL'/basedefs/\1.h.html">\1.h</A>\&gt;,
       s,<A HREF="'$POSIX2008_URL'/basedefs/\([a-zA-Z0-9_]*\)/\([a-zA-Z0-9_]*\)\.h\.html">,<A HREF="'$POSIX2008_URL'/basedefs/\1_\2.h.html">,
-      s,^#include &lt;'$posix2001_headers'\.h&gt;$,#include \&lt;<A HREF="'$POSIX2001_URL'xbd/\1.h.html">\1.h</A>\&gt;,
+      s,^#include &lt;'$posix2001_headers'\.h&gt;$,#include \&lt;<A HREF="'$POSIX2001_URL'/basedefs/\1.h.html">\1.h</A>\&gt;,
       s/$/<BR>/
     '
     element=`echo "$includes" \
@@ -1727,7 +1727,6 @@ func_all_modules ()
 
   func_begin_table
   func_module fprintftime
-  func_module localtime-buffer
   func_module nstrftime
   func_module strftime-fixes
   func_module time_rz
@@ -1861,6 +1860,7 @@ func_all_modules ()
   func_module c-strtold
   func_module xstrtod
   func_module xstrtol
+  func_module xstrtol-error
   func_module xstrtoll
   func_module xstrtold
   func_end_table
@@ -1984,6 +1984,7 @@ func_all_modules ()
   func_module crypto/gc-md2
   func_module crypto/gc-md4
   func_module crypto/gc-md5
+  func_module crypto/gc-pbkdf2
   func_module crypto/gc-pbkdf2-sha1
   func_module crypto/gc-random
   func_module crypto/gc-rijndael
@@ -2317,6 +2318,8 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
+  func_module c-dtoastr
+  func_module c-ldtoast
   func_module dtoastr
   func_module ftoastr
   func_module intprops
@@ -2362,9 +2365,19 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
+  func_module attribute
   func_module builtin-expect
   func_module ieee754-h
   func_module limits-h
+  func_end_table
+
+  element="Support for GNU multiple precision arithmetic"
+  func_section_wrap gmp
+  func_wrap H2
+  func_echo "$element"
+
+  func_begin_table
+  func_module libgmp
   func_end_table
 
   element="Support for sharing code with the GNU C Library"
@@ -2582,7 +2595,6 @@ func_all_modules ()
   func_module d-ino
   func_module d-type
   func_module link-follow
-  func_module rename-dest-slash
   func_module rmdir-errno
   func_module timer-time
   func_module unlink-busy
@@ -2604,7 +2616,6 @@ func_all_modules ()
   func_module iconv_open-utf
   func_module unistd-safer
   func_module fnmatch
-  func_module fnmatch-posix
   func_module fnmatch-gnu
   func_module glob
   func_module exclude
@@ -2735,6 +2746,7 @@ func_all_modules ()
 
   func_begin_table
   func_module binary-io
+  func_module copy-file-range
   func_module dup3
   func_module fcntl-safer
   func_module fd-safer-flag
@@ -3135,11 +3147,12 @@ func_all_modules ()
   func_module uniname/base
   func_module uniname/uniname
   func_module unictype/base
-  func_module unictype/bidicategory-byname
-  func_module unictype/bidicategory-name
-  func_module unictype/bidicategory-of
-  func_module unictype/bidicategory-test
-  func_module unictype/bidicategory-all
+  func_module unictype/bidiclass-byname
+  func_module unictype/bidiclass-name
+  func_module unictype/bidiclass-longname
+  func_module unictype/bidiclass-of
+  func_module unictype/bidiclass-test
+  func_module unictype/bidiclass-all
   func_module unictype/block-list
   func_module unictype/block-of
   func_module unictype/block-test
@@ -3481,9 +3494,11 @@ func_all_modules ()
   func_module forkpty
   func_module getdomainname
   func_module xgetdomainname
+  func_module getentropy
   func_module getloadavg
   func_module getpagesize
   func_module getprogname
+  func_module getrandom
   func_module getusershell
   func_module lib-symbol-visibility
   func_module login_tty
@@ -3576,6 +3591,7 @@ func_all_modules ()
   func_module update-copyright
   func_module useless-if-before-free
   func_module vc-list-files
+  func_module vcs-to-changelog
   func_end_table
 
   element="Misc"
@@ -3691,7 +3707,13 @@ func_echo '<LI>A POT file and some PO files'
 func_end UL
 
 func_echo '<HR>'
-func_echo 'Generated from <CODE>MODULES.html.sh</CODE> on '`LC_ALL=C date +"%e %B %Y"`.
+git_checkout_date=`if test -d .git; then
+                     git log -n 1 --date=iso --format=fuller | sed -n -e 's/^CommitDate: //p';
+                   else
+                     sed -n -e 's/^\([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\).*/\1/p' -e 1q ChangeLog;
+                   fi`
+pretty_date=`LC_ALL=C date +"%e %B %Y" --date="$git_checkout_date"`
+func_echo "Generated by <CODE>MODULES.html.sh</CODE> from a git checkout as of ${pretty_date}."
 
 func_end BODY
 

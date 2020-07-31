@@ -5,18 +5,20 @@ Files:
 lib/canonicalize.h
 lib/canonicalize.c
 m4/canonicalize.m4
-m4/double-slash-root.m4
 
 Depends-on:
 areadlink-with-size
+double-slash-root
 errno
 extensions
 file-set
-hash-triple
+filename
+hash-triple-simple
 lstat
 memmove
 nocrash
 pathmax
+stat
 sys_stat
 xalloc
 xgetcwd

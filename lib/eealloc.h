@@ -1,5 +1,5 @@
 /* Memory allocation with expensive empty allocations.
-   Copyright (C) 2003, 2008, 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2008, 2010-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003,
    based on prior work by Jim Meyering.
 
@@ -37,13 +37,6 @@
 _GL_INLINE_HEADER_BEGIN
 #ifndef EEALLOC_INLINE
 # define EEALLOC_INLINE _GL_INLINE
-#endif
-
-#if ! defined __clang__ && \
-    (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
-# define _GL_ATTRIBUTE_ALLOC_SIZE(args) __attribute__ ((__alloc_size__ args))
-#else
-# define _GL_ATTRIBUTE_ALLOC_SIZE(args)
 #endif
 
 #if MALLOC_0_IS_NONNULL

@@ -1,5 +1,5 @@
 /* Locale dependent string transformation for comparison.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify it
    under the terms of the GNU Lesser General Public License as published
@@ -37,7 +37,8 @@ extern "C" {
    freshly allocated string is returned.  In both cases, *lengthp is set to the
    length of the returned string.
    Upon failure, return NULL, with errno set.  */
-extern char * astrxfrm (const char *s, char *resultbuf, size_t *lengthp);
+extern char * astrxfrm (const char *s,
+                        char *restrict resultbuf, size_t *lengthp);
 
 
 #ifdef __cplusplus

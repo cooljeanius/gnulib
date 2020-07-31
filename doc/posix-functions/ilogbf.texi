@@ -2,7 +2,7 @@
 @section @code{ilogbf}
 @findex ilogbf
 
-POSIX specification:@* @url{http://www.opengroup.org/onlinepubs/9699919799/functions/ilogbf.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/ilogbf.html}
 
 Gnulib module: ilogbf
 
@@ -16,7 +16,7 @@ This function returns a wrong result for a zero argument on some platforms:
 OpenBSD 4.9.
 @item
 This function returns a wrong result for an infinite argument on some platforms:
-NetBSD 5.1, OpenBSD 4.9.
+NetBSD 7.1, OpenBSD 4.9.
 @end itemize
 
 Portability problems not fixed by Gnulib:

@@ -7,9 +7,12 @@ lib/clean-temp.c
 
 Depends-on:
 stdbool
+stdint
 unistd
+lock
 error
 fatal-signal
+asyncsafe-spin
 open
 pathmax
 tmpdir
@@ -18,6 +21,7 @@ rmdir
 xalloc
 xmalloca
 linkedhash-list
+linked-list
 xlist
 gettext-h
 
@@ -29,6 +33,9 @@ lib_SOURCES += clean-temp.h clean-temp.c
 
 Include:
 "clean-temp.h"
+
+Link:
+$(LIB_GETRANDOM)
 
 License:
 GPL
