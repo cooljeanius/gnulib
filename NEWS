@@ -3,6 +3,8 @@ Important general notes
 
 Date        Modules         Changes
 
+2020-08-16  (all)           Automake >= 1.11 and Autoconf >= 2.64 are required.
+
 2019-12-11  Support for     These modules are now supported in C++ mode as well.
             ISO C or POSIX  This means, while the autoconfiguration uses the C
             functions       compiler, the resulting header files and function
@@ -57,6 +59,20 @@ User visible incompatible changes
 ---------------------------------
 
 Date        Modules         Changes
+
+2020-08-24  diffseq         If you do not define NOTE_ORDERED to true,
+                            the NOTE_DELETE and NOTE_INSERT actions might
+                            not be done in order, to help cut down worst-case
+                            recursion stack space from O(N) to O(log N).
+
+2020-08-01  libtextstyle-optional  You now need to invoke
+                                   gl_LIBTEXTSTYLE_OPTIONAL explicitly, because
+                                   this macro now takes an optional
+                                   MINIMUM-VERSION argument.
+
+2020-08-01  libtextstyle    You now need to invoke gl_LIBTEXTSTYLE explicitly,
+                            because this macro now takes an optional
+                            MINIMUM-VERSION argument.
 
 2020-06-27  clean-temp      The functions open_temp, fopen_temp now take a
                             'bool delete_on_close' argument. If in doubt, pass

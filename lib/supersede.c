@@ -78,6 +78,18 @@ open_supersede (const char *filename, int flags, mode_t mode,
                 struct supersede_final_action *action)
 {
   int fd;
+  /* Extra flags for existing devices.  */
+  int extra_flags =
+    #if defined __sun || (defined _WIN32 && !defined __CYGWIN__)
+    /* open ("/dev/null", O_TRUNC | O_WRONLY) fails with error EINVAL on Solaris
+       zones.  See <https://www.illumos.org/issues/13035>.
+       Likewise for open ("NUL", O_TRUNC | O_RDWR) on native Windows.
+       As a workaround, add the O_CREAT flag, although it ought not to be
+       necessary.  */
+    O_CREAT;
+    #else
+    0;
+    #endif
 
   if (supersede_if_exists)
     {
@@ -89,7 +101,7 @@ open_supersede (const char *filename, int flags, mode_t mode,
               && ! S_ISREG (statbuf.st_mode)
               /* The file exists and is possibly a character device, socket, or
                  something like that.  */
-              && ((fd = open (filename, flags, mode)) >= 0
+              && ((fd = open (filename, flags | extra_flags, mode)) >= 0
                   || errno != ENOENT))
             {
               if (fd >= 0)
@@ -167,7 +179,7 @@ open_supersede (const char *filename, int flags, mode_t mode,
                         {
                           /* It is possibly a character device, socket, or
                              something like that.  */
-                          fd = open (canon_filename, flags, mode);
+                          fd = open (canon_filename, flags | extra_flags, mode);
                           if (fd >= 0)
                             {
                               free (canon_filename);
@@ -197,6 +209,28 @@ open_supersede (const char *filename, int flags, mode_t mode,
               action->final_rename_temp = NULL;
               action->final_rename_dest = NULL;
             }
+          #if defined __sun || (defined _WIN32 && !defined __CYGWIN__)
+          /* See the comment regarding extra_flags, above.  */
+          else if (errno == EINVAL)
+            {
+              struct stat statbuf;
+
+              if (stat (filename, &statbuf) >= 0
+                  && ! S_ISREG (statbuf.st_mode))
+                {
+                  /* The file exists and is possibly a character device, socket,
+                     or something like that.  As a workaround, add the O_CREAT
+                     flag, although it ought not to be necessary.*/
+                  fd = open (filename, flags | extra_flags, mode);
+                  if (fd >= 0)
+                    {
+                      /* The file exists.  */
+                      action->final_rename_temp = NULL;
+                      action->final_rename_dest = NULL;
+                    }
+                }
+            }
+          #endif
           else if (errno == ENOENT)
             {
               /* The file does not exist.  Use a temporary file.  */

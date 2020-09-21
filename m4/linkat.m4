@@ -1,4 +1,4 @@
-# serial 11
+# serial 13
 # See if we need to provide linkat replacement.
 
 dnl Copyright (C) 2009-2020 Free Software Foundation, Inc.
@@ -32,9 +32,9 @@ AC_DEFUN([gl_FUNC_LINKAT],
                         [[#include <fcntl.h>
                           #include <unistd.h>
                         ]],
-                        [return linkat (AT_FDCWD, "conftest.l1", AT_FDCWD,
-                                            "conftest.l2", 0);
-                        ])],
+                        [[return linkat (AT_FDCWD, "conftest.l1", AT_FDCWD,
+                                         "conftest.l2", 0);
+                        ]])],
          [gl_cv_func_linkat_nofollow=yes],
          [gl_cv_func_linkat_nofollow=no],
          [case "$host_os" in
@@ -58,7 +58,7 @@ AC_DEFUN([gl_FUNC_LINKAT],
               #include <fcntl.h>
               #include <errno.h>
               #include <stdio.h>
-            ]],
+            ]GL_MDA_DEFINES],
             [[int result;
               int fd;
               /* Create a regular file.  */
