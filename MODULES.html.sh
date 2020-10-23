@@ -2031,6 +2031,7 @@ func_all_modules ()
   func_module readline
   func_module readtokens
   func_module readtokens0
+  func_module stack
   func_module strverscmp
   func_module filevercmp
   func_end_table
@@ -2319,7 +2320,7 @@ func_all_modules ()
 
   func_begin_table
   func_module c-dtoastr
-  func_module c-ldtoast
+  func_module c-ldtoastr
   func_module dtoastr
   func_module ftoastr
   func_module intprops
