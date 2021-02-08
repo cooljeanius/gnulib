@@ -1,5 +1,5 @@
 /* Type-safe stack data type.
-   Copyright (C) 2020 Free Software Foundation, Inc.
+   Copyright (C) 2020-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,8 +53,8 @@
    After including this file, these names will be undefined.
 
    Before including this file, you also need to include:
-     #include "<stdbool.h>"
-     #include "<stdlib.h>"
+     #include <stdbool.h>
+     #include <stdlib.h>
      #include "assure.h"
      #include "xalloc.h"
 */

@@ -15,10 +15,17 @@ Documentation:
 @uref{https://www.kernel.org/doc/man-pages/online/pages/man3/memalign.3.html,,man memalign}.
 @end itemize
 
-Gnulib module: ---
+Gnulib module: memalign
 
 Portability problems fixed by Gnulib:
 @itemize
+@item
+This function is declared in @code{<stdlib.h>} instead of @code{<malloc.h>}
+on some platforms:
+Solaris 11.
+@item
+This function doesn't accept an alignment of 1 or 2 on some platforms:
+Solaris 11.
 @end itemize
 
 Portability problems not fixed by Gnulib:

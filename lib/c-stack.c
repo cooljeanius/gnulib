@@ -1,6 +1,6 @@
 /* Stack overflow handling.
 
-   Copyright (C) 2002, 2004, 2006, 2008-2020 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2004, 2006, 2008-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,9 +37,6 @@
 
 #include "c-stack.h"
 
-#include "gettext.h"
-#define _(msgid) gettext (msgid)
-
 #include <errno.h>
 #include <inttypes.h>
 
@@ -63,6 +60,11 @@ typedef struct sigaltstack stack_t;
 #if DEBUG
 # include <stdio.h>
 #endif
+
+#include "idx.h"
+
+#include "gettext.h"
+#define _(msgid) gettext (msgid)
 
 /* Use libsigsegv only if needed; kernels like Solaris can detect
    stack overflow without the overhead of an external library.  */
@@ -134,7 +136,7 @@ die (int signo)
   size_t messagelen = strlen (message);
   static char const separator[] = {':', ' '};
   char buf[sizeof alternate_signal_stack / 16 + sizeof separator];
-  ptrdiff_t buflen;
+  idx_t buflen;
   if (prognamelen + messagelen < sizeof buf - sizeof separator)
     {
       char *p = mempcpy (buf, progname, prognamelen);

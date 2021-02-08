@@ -17,6 +17,7 @@ libc-config
 lstat
 mkdir
 stdalign
+stdbool
 stdint
 sys_stat
 time
@@ -33,6 +34,7 @@ Include:
 
 Link:
 $(LIB_GETRANDOM)
+$(LIB_CLOCK_GETTIME)
 
 License:
 LGPLv2+

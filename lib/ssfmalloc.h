@@ -1,6 +1,6 @@
 /* Simple and straight-forward malloc implementation (front end).
 
-   Copyright (C) 2020 Free Software Foundation, Inc.
+   Copyright (C) 2020-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -54,6 +54,8 @@
 
      PAGESIZE           A variable-like macro of type intptr_t or uintptr_t
                         that evaluates to the memory page size (>= 4096).
+
+     PAGESIZE_MAX       A constant that specifies an upper bound for PAGESIZE.
 
      ALLOC_PAGES        A function-like macro with the signature
                           uintptr_t ALLOC_PAGES (size_t size)
@@ -119,7 +121,8 @@ static void free_block (uintptr_t block);
  */
 
 #include <stdlib.h>
-#include <string.h>
+#include <string.h>     /* ffsll */
+#include <strings.h>    /* ffs */
 #include "flexmember.h"
 #include "glthread/lock.h"
 #include "thread-optim.h"
@@ -151,7 +154,11 @@ struct any_page_header
 /* ========================= Small and medium blocks ======================== */
 
 /* An integer type, capable of holding the values 0 .. PAGESIZE.  */
+#if PAGESIZE_MAX >= 0x10000
+typedef unsigned int   pg_offset_t;
+#else
 typedef unsigned short pg_offset_t;
+#endif
 
 /* Tree element that corresponds to a page.
    These tree elements are allocated via malloc().  */

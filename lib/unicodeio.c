@@ -1,6 +1,6 @@
 /* Unicode character output to streams with locale dependent encoding.
 
-   Copyright (C) 2000-2003, 2006, 2008-2020 Free Software Foundation, Inc.
+   Copyright (C) 2000-2003, 2006, 2008-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -142,9 +142,9 @@ unicode_to_mb (unsigned int code,
 # if !defined _LIBICONV_VERSION && (defined sgi || defined __sgi)
           || (res > 0 && code != 0 && outptr - outbuf == 1 && *outbuf == '\0')
 # endif
-          /* NetBSD iconv() and Solaris 11 iconv() insert a '?' if they cannot
-             convert.  */
-# if !defined _LIBICONV_VERSION && (defined __NetBSD__ || defined __sun)
+          /* FreeBSD iconv(), NetBSD iconv(), and Solaris 11 iconv() insert
+             a '?' if they cannot convert.  */
+# if !defined _LIBICONV_VERSION
           || (res > 0 && outptr - outbuf == 1 && *outbuf == '?')
 # endif
           /* musl libc iconv() inserts a '*' if it cannot convert.  */

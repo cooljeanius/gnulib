@@ -1,5 +1,5 @@
 /* Variable-sized buffer with on-stack default allocation.
-   Copyright (C) 2017-2020 Free Software Foundation, Inc.
+   Copyright (C) 2017-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include <libc-config.h>
 
+#define __libc_scratch_buffer_dupfree gl_scratch_buffer_dupfree
 #define __libc_scratch_buffer_grow gl_scratch_buffer_grow
 #define __libc_scratch_buffer_grow_preserve gl_scratch_buffer_grow_preserve
 #define __libc_scratch_buffer_set_array_size gl_scratch_buffer_set_array_size

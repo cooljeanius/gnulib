@@ -1,5 +1,5 @@
 /* Test of simple and straight-forward malloc implementation.
-   Copyright (C) 2020 Free Software Foundation, Inc.
+   Copyright (C) 2020-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ alloc_pages (size_t size)
   return (uintptr_t) mem;
 #else
   /* Use mmap with the MAP_ANONYMOUS or MAP_ANON flag.  */
-  void *mem = mmap (NULL, size, PROT_READ | PROT_WRITE | PROT_EXEC,
+  void *mem = mmap (NULL, size, PROT_READ | PROT_WRITE,
                     MAP_PRIVATE | MAP_ANONYMOUS | MAP_VARIABLE, -1, 0);
   if (mem == (void *)(-1))
     return 0;
@@ -118,19 +118,35 @@ free_pages (uintptr_t pages, size_t size)
 #endif
 }
 
+/* Cygwin defines PAGESIZE in <limits.h>.  */
+#undef PAGESIZE
+
 /* ======================= Instantiate the front end ======================= */
 
 #define PAGESIZE pagesize
+/* On Cygwin and Linux/PowerPC, PAGESIZE is 65536.  On macOS 11, it is 16384.
+   On all other platforms, it is either 4096 or 8192.  */
+#if defined __CYGWIN__ || (defined __linux__ && defined __powerpc__)
+# define PAGESIZE_MAX 65536
+#else
+# define PAGESIZE_MAX 16384
+#endif
+
 #define ALLOC_PAGES alloc_pages
 #define FREE_PAGES free_pages
 #define ALIGNMENT (sizeof (void *)) /* or 8 or 16 or 32 */
 #define PAGE_RESERVED_HEADER_SIZE (3 * UINTPTR_WIDTH / 8) /* = 3 * sizeof (void *) */
+
 #include "ssfmalloc.h"
 
 /* ================================= Tests ================================= */
 
+#include <limits.h>
+#include <string.h>
+
 #include "macros.h"
 
+/* Fills a block of a given size with some contents.  */
 static void
 fill_block (uintptr_t block, size_t size)
 {
@@ -138,6 +154,8 @@ fill_block (uintptr_t block, size_t size)
   memset ((char *) block, code, size);
 }
 
+/* Verifies that the contents of a block is still present
+   (i.e. has not accidentally been overwritten by other operations).  */
 static void
 verify_block (uintptr_t block, size_t size)
 {
@@ -175,12 +193,29 @@ static size_t block_sizes[] =
     64,
     65,
     71,
+    77,
     83,
+    96,
     99,
     110,
+    119,
     127,
     128,
+    130,
+    144,
+    150,
+    157,
+    161,
     169,
+    180,
+    192,
+    199,
+    204,
+    210,
+    224,
+    225,
+    236,
+    241,
     249,
     255,
     256,
@@ -254,6 +289,9 @@ main (int argc, char *argv[])
 
   init_pagesize ();
 
+  /* Randomly allocate and deallocate blocks.
+     Also verify that there are no unexpected modifications to the contents of
+     these blocks.  */
   {
     unsigned int repeat;
     char *blocks[SIZEOF (block_sizes)];

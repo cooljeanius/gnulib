@@ -1,5 +1,5 @@
 /* Test of <stdint.h> substitute.
-   Copyright (C) 2006-2020 Free Software Foundation, Inc.
+   Copyright (C) 2006-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -363,7 +363,7 @@ verify_same_types (UINTMAX_C (17), (uintmax_t)0 + 0);
   */
 #define verify_width(width, min, max) \
   _GL_VERIFY ((max) >> ((width) - 1 - ((min) < 0)) == 1, \
-              "verify_width check")
+              "verify_width check", -)
 
 /* Macros specified by ISO/IEC TS 18661-1:2014.  */
 

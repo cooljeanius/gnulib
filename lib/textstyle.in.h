@@ -1,5 +1,5 @@
 /* Dummy replacement for part of the public API of the libtextstyle library.
-   Copyright (C) 2006-2007, 2019-2020 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2019-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@ ostream_write_str (ostream_t stream, const char *string)
 static inline ptrdiff_t ostream_printf (ostream_t stream,
                                         const char *format, ...)
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1) || defined __clang__
-  __attribute__ ((__format__ (__printf__, 2, 3)))
+  __attribute__ ((__format__ (_GL_ATTRIBUTE_SPEC_PRINTF_STANDARD, 2, 3)))
 #endif
   ;
 static inline ptrdiff_t
@@ -141,7 +141,7 @@ ostream_printf (ostream_t stream, const char *format, ...)
 static inline ptrdiff_t ostream_vprintf (ostream_t stream,
                                          const char *format, va_list args)
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1) || defined __clang__
-  __attribute__ ((__format__ (__printf__, 2, 0)))
+  __attribute__ ((__format__ (_GL_ATTRIBUTE_SPEC_PRINTF_STANDARD, 2, 0)))
 #endif
   ;
 static inline ptrdiff_t

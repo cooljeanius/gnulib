@@ -1,5 +1,5 @@
-# expm1l.m4 serial 7
-dnl Copyright (C) 2010-2020 Free Software Foundation, Inc.
+# expm1l.m4 serial 9
+dnl Copyright (C) 2010-2021 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -123,7 +123,8 @@ int main (int argc, char *argv[])
 {
   long double (* volatile my_expm1l) (long double) = argc ? expm1l : dummy;
   int result = 0;
-  /* This test fails on Mac OS X 10.5, NetBSD 8.0.  */
+  /* This test fails on musl 1.2.2/arm64, musl 1.2.2/s390x, Mac OS X 10.5,
+     NetBSD 8.0.  */
   {
     const long double TWO_LDBL_MANT_DIG = /* 2^LDBL_MANT_DIG */
       (long double) (1U << ((LDBL_MANT_DIG - 1) / 5))
@@ -134,7 +135,8 @@ int main (int argc, char *argv[])
     long double x = 11.358L;
     long double y = my_expm1l (x);
     long double z = my_expm1l (- x);
-    long double err = (y + (1.0L + y) * z) * TWO_LDBL_MANT_DIG;
+    volatile long double t = (1.0L + y) * z;
+    long double err = (y + t) * TWO_LDBL_MANT_DIG;
     if (!(err >= -100.0L && err <= 100.0L))
       result |= 1;
   }
@@ -146,8 +148,8 @@ int main (int argc, char *argv[])
             [case "$host_os" in
                               # Guess yes on glibc systems.
                *-gnu* | gnu*) gl_cv_func_expm1l_works="guessing yes" ;;
-                              # Guess yes on musl systems.
-               *-musl*)       gl_cv_func_expm1l_works="guessing yes" ;;
+                              # Guess no on musl systems.
+               *-musl*)       gl_cv_func_expm1l_works="guessing no" ;;
                               # Guess yes on native Windows.
                mingw*)        gl_cv_func_expm1l_works="guessing yes" ;;
                               # If we don't know, obey --enable-cross-guesses.

@@ -1,5 +1,5 @@
 /* Test of c32islower() function.
-   Copyright (C) 2020 Free Software Foundation, Inc.
+   Copyright (C) 2020-2021 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -156,12 +156,12 @@ main (int argc, char *argv[])
           /* U+00C9 LATIN CAPITAL LETTER E WITH ACUTE */
           is = for_character ("\217\252\261", 3);
           ASSERT (is == 0);
-        #if !((defined __APPLE__ && defined __MACH__) || defined __NetBSD__ || defined __CYGWIN__)
+        #if !((defined __APPLE__ && defined __MACH__) || defined __FreeBSD__ || defined __NetBSD__ || defined __CYGWIN__)
           /* U+00DF LATIN SMALL LETTER SHARP S */
           is = for_character ("\217\251\316", 3);
           ASSERT (is != 0);
         #endif
-        #if !((defined __APPLE__ && defined __MACH__) || defined __NetBSD__)
+        #if !((defined __APPLE__ && defined __MACH__) || defined __FreeBSD__ || defined __NetBSD__)
           /* U+00E9 LATIN SMALL LETTER E WITH ACUTE */
           is = for_character ("\217\253\261", 3);
           ASSERT (is != 0);
@@ -172,7 +172,7 @@ main (int argc, char *argv[])
           /* U+0141 LATIN CAPITAL LETTER L WITH STROKE */
           is = for_character ("\217\251\250", 3);
           ASSERT (is == 0);
-        #if !((defined __APPLE__ && defined __MACH__) || defined __NetBSD__)
+        #if !((defined __APPLE__ && defined __MACH__) || defined __FreeBSD__ || defined __NetBSD__)
           /* U+0142 LATIN SMALL LETTER L WITH STROKE */
           is = for_character ("\217\251\310", 3);
           ASSERT (is != 0);
@@ -269,7 +269,7 @@ main (int argc, char *argv[])
           /* U+00B2 SUPERSCRIPT TWO */
           is = for_character ("\201\060\205\065", 4);
           ASSERT (is == 0);
-        #if !(defined __GLIBC__ || (defined __APPLE__ && defined __MACH__) || defined __NetBSD__)
+        #if !(defined __GLIBC__ || (defined __APPLE__ && defined __MACH__) || defined __FreeBSD__ || defined __NetBSD__)
           /* U+00B5 MICRO SIGN */
           is = for_character ("\201\060\205\070", 4);
           ASSERT (is == 0);
