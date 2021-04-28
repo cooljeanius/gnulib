@@ -21,7 +21,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "xalloc-oversized.h"
+#if GNULIB_XALLOC
+# include "idx.h"
+# include "intprops.h"
+#endif
 
 #ifndef _GL_INLINE_HEADER_BEGIN
  #error "Please include config.h first."
@@ -58,7 +61,11 @@ void *xcalloc (size_t n, size_t s)
       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_ALLOC_SIZE ((1, 2));
 void *xrealloc (void *p, size_t s)
       _GL_ATTRIBUTE_ALLOC_SIZE ((2));
+void *xreallocarray (void *p, size_t n, size_t s)
+      _GL_ATTRIBUTE_ALLOC_SIZE ((2, 3));
 void *x2realloc (void *p, size_t *pn);
+void *xpalloc (void *pa, idx_t *nitems, idx_t nitems_incr_min,
+               ptrdiff_t nitems_max, idx_t item_size);
 void *xmemdup (void const *p, size_t s)
       _GL_ATTRIBUTE_ALLOC_SIZE ((2));
 char *xstrdup (char const *str)
@@ -98,11 +105,10 @@ XALLOC_INLINE void *xnmalloc (size_t n, size_t s)
 XALLOC_INLINE void *
 xnmalloc (size_t n, size_t s)
 {
-  if (xalloc_oversized (n, s))
-    xalloc_die ();
-  return xmalloc (n * s);
+  return xreallocarray (NULL, n, s);
 }
 
+/* FIXME: Deprecate this in favor of xreallocarray?  */
 /* Change the size of an allocated block of memory P to an array of N
    objects each of S bytes, with error checking.  S must be nonzero.  */
 
@@ -111,9 +117,7 @@ XALLOC_INLINE void *xnrealloc (void *p, size_t n, size_t s)
 XALLOC_INLINE void *
 xnrealloc (void *p, size_t n, size_t s)
 {
-  if (xalloc_oversized (n, s))
-    xalloc_die ();
-  return xrealloc (p, n * s);
+  return xreallocarray (p, n, s);
 }
 
 /* If P is null, allocate a block of at least *PN such objects;
@@ -188,23 +192,17 @@ x2nrealloc (void *p, size_t *pn, size_t s)
           n = DEFAULT_MXFAST / s;
           n += !n;
         }
-      if (xalloc_oversized (n, s))
-        xalloc_die ();
     }
   else
     {
-      /* Set N = floor (1.5 * N) + 1 so that progress is made even if N == 0.
-         Check for overflow, so that N * S stays in both ptrdiff_t and
-         size_t range.  The check may be slightly conservative, but an
-         exact check isn't worth the trouble.  */
-      if ((PTRDIFF_MAX < SIZE_MAX ? PTRDIFF_MAX : SIZE_MAX) / 3 * 2 / s
-          <= n)
+      /* Set N = floor (1.5 * N) + 1 to make progress even if N == 0.  */
+      if (INT_ADD_WRAPV (n, (n >> 1) + 1, &n))
         xalloc_die ();
-      n += n / 2 + 1;
     }
 
+  p = xreallocarray (p, n, s);
   *pn = n;
-  return xrealloc (p, n * s);
+  return p;
 }
 
 /* Return a pointer to a new buffer of N bytes.  This is like xmalloc,
@@ -239,9 +237,16 @@ xrealloc (T *p, size_t s)
 }
 
 template <typename T> inline T *
+xreallocarray (T *p, size_t n, size_t s)
+{
+  return (T *) xreallocarray ((void *) p, n, s);
+}
+
+/* FIXME: Deprecate this in favor of xreallocarray?  */
+template <typename T> inline T *
 xnrealloc (T *p, size_t n, size_t s)
 {
-  return (T *) xnrealloc ((void *) p, n, s);
+  return xreallocarray (p, n, s);
 }
 
 template <typename T> inline T *

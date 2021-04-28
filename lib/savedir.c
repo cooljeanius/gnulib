@@ -91,12 +91,11 @@ char *
 streamsavedir (DIR *dirp, enum savedir_option option)
 {
   char *name_space = NULL;
-  size_t allocated = 0;
+  idx_t allocated = 0;
   direntry_t *entries = NULL;
   size_t entries_allocated = 0;
-  size_t entries_used = 0;
-  size_t used = 0;
-  int readdir_errno;
+  idx_t entries_used = 0;
+  idx_t used = 0;
   comparison_function cmp = comparison_function_table[option];
 
   if (dirp == NULL)
@@ -117,15 +116,12 @@ streamsavedir (DIR *dirp, enum savedir_option option)
       entry = dp->d_name;
       if (entry[entry[0] != '.' ? 0 : entry[1] != '.' ? 1 : 2] != '\0')
         {
-          size_t entry_size = _D_EXACT_NAMLEN (dp) + 1;
+          idx_t entry_size = _D_EXACT_NAMLEN (dp) + 1;
           if (cmp)
             {
               if (entries_allocated == entries_used)
-                {
-                  size_t n = entries_allocated;
-                  entries = x2nrealloc (entries, &n, sizeof *entries);
-                  entries_allocated = n;
-                }
+                entries = x2nrealloc (entries, &entries_allocated,
+                                      sizeof *entries);
               entries[entries_used].name = xstrdup (entry);
 #if D_INO_IN_DIRENT
               entries[entries_used].ino = dp->d_ino;
@@ -135,25 +131,19 @@ streamsavedir (DIR *dirp, enum savedir_option option)
           else
             {
               if (allocated - used <= entry_size)
-                {
-                  size_t n = used + entry_size;
-                  if (n < used)
-                    xalloc_die ();
-                  name_space = x2nrealloc (name_space, &n, 1);
-                  allocated = n;
-                }
+                name_space = xpalloc (name_space, &allocated,
+                                      entry_size - (allocated - used),
+                                      IDX_MAX - 1, sizeof *name_space);
               memcpy (name_space + used, entry, entry_size);
             }
           used += entry_size;
         }
     }
 
-  readdir_errno = errno;
-  if (readdir_errno != 0)
+  if (errno != 0)
     {
       free (entries);
       free (name_space);
-      errno = readdir_errno;
       return NULL;
     }
 
@@ -196,9 +186,7 @@ savedir (char const *dir, enum savedir_option option)
       char *name_space = streamsavedir (dirp, option);
       if (closedir (dirp) != 0)
         {
-          int closedir_errno = errno;
           free (name_space);
-          errno = closedir_errno;
           return NULL;
         }
       return name_space;

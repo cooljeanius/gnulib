@@ -22,6 +22,7 @@
 
 #include "backup-internal.h"
 
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -33,9 +34,9 @@
 #include "attribute.h"
 #include "basename-lgpl.h"
 #include "idx.h"
+#include "intprops.h"
 #include "opendirat.h"
 #include "renameatu.h"
-#include "xalloc-oversized.h"
 
 #ifndef _D_EXACT_NAMLEN
 # define _D_EXACT_NAMLEN(dp) strlen ((dp)->d_name)
@@ -269,8 +270,9 @@ numbered_backup (int dir_fd, char **buffer, size_t buffer_size, size_t filelen,
       size_t new_buffer_size = filelen + 2 + versionlenmax + 2;
       if (buffer_size < new_buffer_size)
         {
-          if (! xalloc_oversized (new_buffer_size, 2))
-            new_buffer_size *= 2;
+          size_t grown;
+          if (! INT_ADD_WRAPV (new_buffer_size, new_buffer_size >> 1, &grown))
+            new_buffer_size = grown;
           char *new_buf = realloc (buf, new_buffer_size);
           if (!new_buf)
             {

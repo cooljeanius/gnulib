@@ -17,14 +17,25 @@
 #include <config.h>
 
 #include <stdlib.h>
+#include <stdint.h>
 
 int
-main ()
+main (int argc, char **argv)
 {
   /* Check that realloc (NULL, 0) is not a NULL pointer.  */
-  char *p = realloc (NULL, 0);
+  void *volatile p = realloc (NULL, 0);
   if (p == NULL)
     return 1;
+
+  /* Check that realloc (p, n) fails when p is non-null and n exceeds
+     PTRDIFF_MAX.  */
+  if (PTRDIFF_MAX < SIZE_MAX)
+    {
+      size_t one = argc != 12345;
+      p = realloc (p, PTRDIFF_MAX + one);
+      if (p != NULL)
+        return 1;
+    }
 
   free (p);
   return 0;

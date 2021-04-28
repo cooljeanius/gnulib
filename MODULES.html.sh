@@ -2013,7 +2013,6 @@ func_all_modules ()
   func_module base64
   func_module check-version
   func_module crc
-  func_module diacrit
   func_module diffseq
   func_module execinfo
   func_module getline
@@ -2028,6 +2027,7 @@ func_all_modules ()
   func_module hash-pjw
   func_module hash-pjw-bare
   func_module hash
+  func_module hamt
   func_module readline
   func_module readtokens
   func_module readtokens0

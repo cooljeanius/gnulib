@@ -15,9 +15,9 @@ basename-lgpl
 c99
 closedir
 d-ino
-dirent-safer
-fcntl
+fcntl-h
 idx
+intprops
 memcmp
 opendirat
 readdir
