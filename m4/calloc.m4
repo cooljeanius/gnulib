@@ -1,4 +1,4 @@
-# calloc.m4 serial 25
+# calloc.m4 serial 27
 
 # Copyright (C) 2004-2021 Free Software Foundation, Inc.
 # This file is free software; the Free Software Foundation
@@ -58,7 +58,9 @@ AC_DEFUN([gl_FUNC_CALLOC_GNU],
 [
   AC_REQUIRE([gl_STDLIB_H_DEFAULTS])
   AC_REQUIRE([gl_FUNC_CALLOC_POSIX])
-  test $REPLACE_CALLOC = 1 || _AC_FUNC_CALLOC_IF([], [REPLACE_CALLOC=1])
+  if test $REPLACE_CALLOC = 0; then
+    _AC_FUNC_CALLOC_IF([], [REPLACE_CALLOC=1])
+  fi
 ])# gl_FUNC_CALLOC_GNU
 
 # gl_FUNC_CALLOC_POSIX
@@ -70,7 +72,9 @@ AC_DEFUN([gl_FUNC_CALLOC_POSIX],
 [
   AC_REQUIRE([gl_STDLIB_H_DEFAULTS])
   AC_REQUIRE([gl_FUNC_MALLOC_POSIX])
-  REPLACE_CALLOC=$REPLACE_MALLOC
+  if test $REPLACE_MALLOC = 1; then
+    REPLACE_CALLOC=1
+  fi
   dnl Although in theory we should also test for size_t overflow,
   dnl in practice testing for ptrdiff_t overflow suffices
   dnl since PTRDIFF_MAX <= SIZE_MAX on all known Gnulib porting targets.
