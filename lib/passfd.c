@@ -1,16 +1,16 @@
-/* Copyright (C) 2011-2021 Free Software Foundation, Inc.
+/* Copyright (C) 2011-2023 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
@@ -52,7 +52,7 @@ sendfd (int sock, int fd)
   char byte = 0;
   struct iovec iov;
   struct msghdr msg;
-# ifdef CMSG_FIRSTHDR
+# if defined CMSG_FIRSTHDR && !defined __sgi
   struct cmsghdr *cmsg;
   char buf[CMSG_SPACE (sizeof fd)];
 # endif
@@ -66,7 +66,7 @@ sendfd (int sock, int fd)
   msg.msg_name = NULL;
   msg.msg_namelen = 0;
 
-# ifdef CMSG_FIRSTHDR
+# if defined CMSG_FIRSTHDR && !defined __sgi
   msg.msg_control = buf;
   msg.msg_controllen = sizeof buf;
   cmsg = CMSG_FIRSTHDR (&msg);
@@ -90,7 +90,7 @@ sendfd (int sock, int fd)
 }
 #else
 int
-sendfd (int sock _GL_UNUSED, int fd _GL_UNUSED)
+sendfd (_GL_UNUSED int sock, _GL_UNUSED int fd)
 {
   errno = ENOSYS;
   return -1;
@@ -112,7 +112,7 @@ recvfd (int sock, int flags)
   struct msghdr msg;
   int fd = -1;
   ssize_t len;
-# ifdef CMSG_FIRSTHDR
+# if defined CMSG_FIRSTHDR && !defined __sgi
   struct cmsghdr *cmsg;
   char buf[CMSG_SPACE (sizeof fd)];
   int flags_recvmsg = flags & O_CLOEXEC ? MSG_CMSG_CLOEXEC : 0;
@@ -133,7 +133,7 @@ recvfd (int sock, int flags)
   msg.msg_name = NULL;
   msg.msg_namelen = 0;
 
-# ifdef CMSG_FIRSTHDR
+# if defined CMSG_FIRSTHDR && !defined __sgi
   msg.msg_control = buf;
   msg.msg_controllen = sizeof buf;
   cmsg = CMSG_FIRSTHDR (&msg);
@@ -193,6 +193,9 @@ recvfd (int sock, int flags)
           return -1;
         }
     }
+
+  if (fd < 0 && errno == 0)
+    errno = ENOTCONN;
 # else
   errno = ENOSYS;
 # endif
@@ -201,7 +204,7 @@ recvfd (int sock, int flags)
 }
 #else
 int
-recvfd (int sock _GL_UNUSED, int flags _GL_UNUSED)
+recvfd (_GL_UNUSED int sock, _GL_UNUSED int flags)
 {
   errno = ENOSYS;
   return -1;

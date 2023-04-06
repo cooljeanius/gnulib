@@ -1,5 +1,5 @@
-# javaexec.m4 serial 7
-dnl Copyright (C) 2001-2003, 2006, 2009-2021 Free Software Foundation, Inc.
+# javaexec.m4 serial 8
+dnl Copyright (C) 2001-2003, 2006, 2009-2023 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -96,6 +96,23 @@ AC_DEFUN([gt_JAVAEXEC],
   AC_SUBST([CONF_JAVA])
   AC_SUBST([CLASSPATH])
   AC_SUBST([CLASSPATH_SEPARATOR])
+  AC_SUBST([HAVE_JAVA_ENVVAR])
+  AC_SUBST([HAVE_GIJ])
+  AC_SUBST([HAVE_JAVA])
+  AC_SUBST([HAVE_JRE])
+  AC_SUBST([HAVE_JVIEW])
+])
+
+# Simulates gt_JAVAEXEC when no Java support is desired.
+AC_DEFUN([gt_JAVAEXEC_DISABLED],
+[
+  CONF_JAVA=
+  HAVE_JAVA_ENVVAR=
+  HAVE_GIJ=
+  HAVE_JAVA=
+  HAVE_JRE=
+  HAVE_JVIEW=
+  AC_SUBST([CONF_JAVA])
   AC_SUBST([HAVE_JAVA_ENVVAR])
   AC_SUBST([HAVE_GIJ])
   AC_SUBST([HAVE_JAVA])

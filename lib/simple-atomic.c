@@ -1,18 +1,18 @@
 /* Simple atomic operations for multithreading.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2023 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2021.  */
 
@@ -20,6 +20,10 @@
 
 /* Specification.  */
 #include "simple-atomic.h"
+
+#if 0x590 <= __SUNPRO_C && __STDC__
+# define asm __asm
+#endif
 
 #if defined _WIN32 && ! defined __CYGWIN__
 /* Native Windows.  */
@@ -63,7 +67,7 @@ atomic_compare_and_swap_ptr (uintptr_t volatile *vp,
    require to link with -latomic.  */
 
 # if (((__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) \
-       && !defined __sparc__) \
+       && !defined __sparc__ && !defined __ANDROID__) \
       || __clang_major__ >= 3) \
      && !defined __ibmxl__
 /* Use GCC built-ins (available in GCC >= 4.1, except on SPARC, and

@@ -14,7 +14,7 @@ Minix 3.1.8, HP-UX 11.00, IRIX 6.5, mingw.
 @item
 In the C or POSIX locales, this function can return @code{(size_t) -1}
 and set @code{errno} to @code{EILSEQ}:
-glibc 2.23.
+glibc 2.35.
 @item
 This function returns 0 instead of @code{(size_t) -2} when the input
 is empty:
@@ -48,7 +48,7 @@ In UTF-8 locales, this function may return wide characters up to 0x7FFFFFFF
 (that is, beyond 0x0010FFFF) on some platforms:
 @c https://sourceware.org/bugzilla/show_bug.cgi?id=2373
 @c https://sourceware.org/bugzilla/show_bug.cgi?id=26034
-glibc 2.33.
+glibc 2.34.
 @item
 On Windows and 32-bit AIX platforms, @code{wchar_t} is a 16-bit type and
 therefore cannot accommodate all Unicode characters.

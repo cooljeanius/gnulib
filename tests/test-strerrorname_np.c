@@ -1,10 +1,10 @@
 /* Test of strerrorname_np() function.
 
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2023 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -466,7 +466,7 @@ main (void)
   ASSERT (strcmp (strerrorname_np (EDIED), "EDIED") == 0);
   #endif
   /* IRIX */
-  #if defined EDIRCORRUPTED
+  #if defined EDIRCORRUPTED && EDIRCORRUPTED != EFSCORRUPTED
   ASSERT (strcmp (strerrorname_np (EDIRCORRUPTED), "EDIRCORRUPTED") == 0);
   #endif
   /* FreeBSD */
@@ -490,7 +490,7 @@ main (void)
   ASSERT (strcmp (strerrorname_np (EDONTREPLY), "EDONTREPLY") == 0);
   #endif
   /* FreeBSD */
-  #if defined EDOOFUS
+  #if defined EDOOFUS && EDOOFUS != EINVAL
   ASSERT (strcmp (strerrorname_np (EDOOFUS), "EDOOFUS") == 0);
   #endif
   /* Linux, HP-UX, Cygwin */

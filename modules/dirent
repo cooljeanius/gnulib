@@ -8,6 +8,7 @@ m4/unistd_h.m4
 m4/pid_t.m4
 
 Depends-on:
+gen-header
 include_next
 snippet/arg-nonnull
 snippet/c++defs
@@ -16,6 +17,7 @@ snippet/warn-on-use
 configure.ac:
 gl_DIRENT_H
 gl_DIRENT_H_REQUIRE_DEFAULTS
+AC_PROG_MKDIR_P
 
 Makefile.am:
 BUILT_SOURCES += dirent.h
@@ -23,9 +25,9 @@ BUILT_SOURCES += dirent.h
 # We need the following in order to create <dirent.h> when the system
 # doesn't have one that works with the given compiler.
 dirent.h: dirent.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
-	$(AM_V_GEN)rm -f $@-t $@ && \
-	{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */'; \
-	  sed -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+	$(gl_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
 	      -e 's|@''HAVE_DIRENT_H''@|$(HAVE_DIRENT_H)|g' \
 	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
 	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
@@ -55,9 +57,8 @@ dirent.h: dirent.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
 	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
-	      < $(srcdir)/dirent.in.h; \
-	} > $@-t && \
-	mv $@-t $@
+	      $(srcdir)/dirent.in.h > $@-t
+	$(AM_V_at)mv $@-t $@
 MOSTLYCLEANFILES += dirent.h dirent.h-t
 
 Include:

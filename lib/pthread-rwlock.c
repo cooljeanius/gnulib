@@ -1,18 +1,18 @@
 /* POSIX read-write locks.
-   Copyright (C) 2019-2021 Free Software Foundation, Inc.
+   Copyright (C) 2019-2023 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2019.  */
 
@@ -40,7 +40,7 @@ pthread_rwlockattr_init (pthread_rwlockattr_t *attr)
 }
 
 int
-pthread_rwlockattr_destroy (pthread_rwlockattr_t *attr _GL_UNUSED)
+pthread_rwlockattr_destroy (_GL_UNUSED pthread_rwlockattr_t *attr)
 {
   return 0;
 }
@@ -52,7 +52,7 @@ pthread_rwlockattr_destroy (pthread_rwlockattr_t *attr _GL_UNUSED)
 
 int
 pthread_rwlock_init (pthread_rwlock_t *lock,
-                     const pthread_rwlockattr_t *attr _GL_UNUSED)
+                     _GL_UNUSED const pthread_rwlockattr_t *attr)
 {
   glwthread_timedrwlock_init (lock);
   return 0;
@@ -115,7 +115,7 @@ pthread_rwlock_destroy (pthread_rwlock_t *lock)
 
 int
 pthread_rwlock_init (pthread_rwlock_t *lock,
-                     const pthread_rwlockattr_t *attr _GL_UNUSED)
+                     _GL_UNUSED const pthread_rwlockattr_t *attr)
 {
   int err;
 
@@ -485,7 +485,7 @@ pthread_rwlock_timedwrlock (pthread_rwlock_t *lock,
 
 int
 pthread_rwlock_init (pthread_rwlock_t *lock,
-                     const pthread_rwlockattr_t *attr _GL_UNUSED)
+                     _GL_UNUSED const pthread_rwlockattr_t *attr)
 {
   *lock = 0;
   return 0;
@@ -523,14 +523,14 @@ pthread_rwlock_trywrlock (pthread_rwlock_t *lock)
 
 int
 pthread_rwlock_timedrdlock (pthread_rwlock_t *lock,
-                            const struct timespec *abstime _GL_UNUSED)
+                            _GL_UNUSED const struct timespec *abstime)
 {
   return pthread_rwlock_rdlock (lock);
 }
 
 int
 pthread_rwlock_timedwrlock (pthread_rwlock_t *lock,
-                            const struct timespec *abstime _GL_UNUSED)
+                            _GL_UNUSED const struct timespec *abstime)
 {
   return pthread_rwlock_wrlock (lock);
 }

@@ -1,18 +1,18 @@
 /* Sequential list data type implemented by a binary tree.
-   Copyright (C) 2006-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Common code of gl_avltree_list.c, gl_rbtree_list.c,
@@ -60,14 +60,14 @@ gl_tree_size (gl_list_t list)
 }
 
 static const void * _GL_ATTRIBUTE_PURE
-gl_tree_node_value (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED,
+gl_tree_node_value (_GL_ATTRIBUTE_MAYBE_UNUSED gl_list_t list,
                     gl_list_node_t node)
 {
   return node->value;
 }
 
 static int
-gl_tree_node_nx_set_value (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED,
+gl_tree_node_nx_set_value (_GL_ATTRIBUTE_MAYBE_UNUSED gl_list_t list,
                            gl_list_node_t node, const void *elt)
 {
 #if WITH_HASHTABLE
@@ -103,7 +103,7 @@ gl_tree_node_nx_set_value (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED,
 }
 
 static gl_list_node_t _GL_ATTRIBUTE_PURE
-gl_tree_next_node (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED,
+gl_tree_next_node (_GL_ATTRIBUTE_MAYBE_UNUSED gl_list_t list,
                    gl_list_node_t node)
 {
   if (node->right != NULL)
@@ -122,7 +122,7 @@ gl_tree_next_node (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED,
 }
 
 static gl_list_node_t _GL_ATTRIBUTE_PURE
-gl_tree_previous_node (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED,
+gl_tree_previous_node (_GL_ATTRIBUTE_MAYBE_UNUSED gl_list_t list,
                        gl_list_node_t node)
 {
   if (node->left != NULL)
@@ -141,7 +141,7 @@ gl_tree_previous_node (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED,
 }
 
 static gl_list_node_t _GL_ATTRIBUTE_PURE
-gl_tree_first_node (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED)
+gl_tree_first_node (_GL_ATTRIBUTE_MAYBE_UNUSED gl_list_t list)
 {
   gl_list_node_t node = list->root;
 
@@ -154,7 +154,7 @@ gl_tree_first_node (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED)
 }
 
 static gl_list_node_t _GL_ATTRIBUTE_PURE
-gl_tree_last_node (gl_list_t list _GL_ATTRIBUTE_MAYBE_UNUSED)
+gl_tree_last_node (_GL_ATTRIBUTE_MAYBE_UNUSED gl_list_t list)
 {
   gl_list_node_t node = list->root;
 
@@ -658,7 +658,7 @@ gl_tree_iterator_next (gl_list_iterator_t *iterator,
 }
 
 static void
-gl_tree_iterator_free (gl_list_iterator_t *iterator  _GL_ATTRIBUTE_MAYBE_UNUSED)
+gl_tree_iterator_free (_GL_ATTRIBUTE_MAYBE_UNUSED gl_list_iterator_t *iterator)
 {
 }
 

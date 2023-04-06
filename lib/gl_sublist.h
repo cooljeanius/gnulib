@@ -1,10 +1,10 @@
 /* Sequential list data type backed by another list.
-   Copyright (C) 2006, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2009-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -35,11 +35,14 @@ extern "C" {
  */
 #if 0 /* declared in gl_xsublist.h */
 extern gl_list_t gl_sublist_create (gl_list_t whole_list,
-                                    size_t start_index, size_t end_index);
+                                    size_t start_index, size_t end_index)
+  /*_GL_ATTRIBUTE_DEALLOC (gl_list_free, 1)*/
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
 #endif
 /* Likewise.  Returns NULL upon out-of-memory.  */
 extern gl_list_t gl_sublist_nx_create (gl_list_t whole_list,
-                                       size_t start_index, size_t end_index);
+                                       size_t start_index, size_t end_index)
+  /*_GL_ATTRIBUTE_DEALLOC (gl_list_free, 1)*/;
 
 
 #ifdef __cplusplus

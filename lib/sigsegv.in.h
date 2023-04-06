@@ -1,5 +1,5 @@
 /* Page fault handling library.
-   Copyright (C) 1998-2021  Bruno Haible <bruno@clisp.org>
+   Copyright (C) 1998-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+/* Written by Bruno Haible.  */
+
 #ifndef _SIGSEGV_H
 #define _SIGSEGV_H
 
@@ -21,7 +23,7 @@
 #include <stddef.h>
 
 /* Define the fault context structure.  */
-#if defined __linux__ || defined __ANDROID__ \
+#if (defined __linux__ && !defined __ANDROID__) \
     || (defined __FreeBSD__ && (defined __arm__ || defined __armhf__ || defined __arm64__)) \
     || defined __NetBSD__ \
     || defined _AIX || defined __sun \
@@ -178,7 +180,7 @@ extern int sigsegv_leave_handler (void (*continuation) (void*, void*, void*), vo
  * on some platforms it is a 'struct sigcontext *', on others merely an
  * opaque 'void *'.
  */
-# if defined __linux__ || defined __ANDROID__ \
+# if (defined __linux__ && !defined __ANDROID__) \
      || (defined __FreeBSD__ && (defined __arm__ || defined __armhf__ || defined __arm64__)) \
      || defined __NetBSD__ \
      || (defined __APPLE__ && defined __MACH__) \
@@ -186,7 +188,7 @@ extern int sigsegv_leave_handler (void (*continuation) (void*, void*, void*), vo
      || defined __CYGWIN__ || defined __HAIKU__
 typedef ucontext_t *stackoverflow_context_t;
 # elif defined __GNU__ \
-       || defined __FreeBSD_kernel__ || (defined __FreeBSD__ && !(defined __sparc__ || defined __sparc64__)) \
+       || defined __FreeBSD_kernel__ || (defined __FreeBSD__ && !(defined __sparc__ || defined __sparc64__)) || defined __DragonFly__ \
        || defined __OpenBSD__ || defined __sgi
 typedef struct sigcontext *stackoverflow_context_t;
 # else

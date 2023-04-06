@@ -5,6 +5,9 @@ Files:
 lib/c32isdigit.c
 lib/c32is-impl.h
 m4/mbrtoc32.m4
+m4/locale-fr.m4
+m4/locale-zh.m4
+m4/codeset.m4
 
 Depends-on:
 uchar
@@ -14,7 +17,7 @@ iswdigit
 localcharset    [test $REPLACE_MBSTATE_T = 1]
 streq           [test $REPLACE_MBSTATE_T = 1]
 unictype/ctype-digit
-verify
+assert-h
 
 configure.ac:
 AC_REQUIRE([gl_UCHAR_H])
@@ -31,7 +34,7 @@ Link:
 $(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 
 License:
-LGPLv3+ or GPLv2
+LGPLv3+ or GPLv2+
 
 Maintainer:
 Bruno Haible

@@ -1,10 +1,10 @@
 /* Construct a regular expression from a literal string.
-   Copyright (C) 1995, 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 1995, 2010-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2010.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,9 +18,7 @@
 #ifndef _REGEX_QUOTE_H
 #define _REGEX_QUOTE_H
 
-#include <stddef.h>
-#include <stdbool.h>
-
+#include <stdlib.h>
 
 /* Specifies a quotation task for converting a fixed string to a regular
    expression pattern.  */
@@ -82,7 +80,9 @@ extern char *
 
 /* Returns the freshly allocated quoted string.  */
 extern char *
-       regex_quote (const char *string, const struct regex_quote_spec *spec);
+       regex_quote (const char *string, const struct regex_quote_spec *spec)
+       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+       _GL_ATTRIBUTE_RETURNS_NONNULL;
 
 
 #endif /* _REGEX_QUOTE_H */

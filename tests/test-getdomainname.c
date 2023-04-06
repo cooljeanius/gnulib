@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2008-2021 Free Software Foundation, Inc.
+ * Copyright (C) 2008-2023 Free Software Foundation, Inc.
  * Written by Simon Josefsson.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -32,7 +32,7 @@ SIGNATURE_CHECK (getdomainname, int, (char *, size_t));
 #define NODOMAINNAME "magic-gnulib-test-string"
 
 int
-main (int argc, char *argv[] _GL_UNUSED)
+main (int argc, _GL_UNUSED char *argv[])
 {
   char buf[YPMAXDOMAIN];
   int rc;

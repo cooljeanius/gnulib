@@ -1,5 +1,5 @@
 # GNU Makefile for gnulib central.
-# Copyright (C) 2006, 2009-2021 Free Software Foundation, Inc.
+# Copyright (C) 2006, 2009-2023 Free Software Foundation, Inc.
 #
 # Copying and distribution of this file, with or without modification,
 # in any medium, are permitted without royalty provided the copyright
@@ -142,7 +142,13 @@ sc_check_copyright:
 	@./check-copyright
 
 # Regenerate some files that are stored in the repository.
-regen: MODULES.html
+regen: build-aux/bootstrap MODULES.html
+
+# build-aux/bootstrap needs to be regenerated from top/bootstrap*.
+build-aux/bootstrap: top/gen-bootstrap.sed top/bootstrap top/bootstrap-funclib.sh
+	sed -f top/gen-bootstrap.sed < top/bootstrap > build-aux/bootstrap-tmp
+	chmod a+x build-aux/bootstrap-tmp
+	mv build-aux/bootstrap-tmp build-aux/bootstrap
 
 # MODULES.html is periodically being generated and copied to the web pages at
 # :ext:USER@cvs.savannah.gnu.org:/web/gnulib/gnulib/
@@ -152,6 +158,9 @@ MODULES.html: MODULES.html.sh
 
 # A perl BEGIN block to set Y to the current year number and W to Y-1.
 _year_and_prev = BEGIN{@t=localtime(time); $$y=$$t[5]+1900; $$w=$$y-1}
+
+# Which TZ setting to use when updating copyright.
+COPYRIGHT_TZ = UTC0
 
 # Run this rule once per year (usually early in January)
 # to update all FSF copyright year lists here.
@@ -164,6 +173,7 @@ _year_and_prev = BEGIN{@t=localtime(time); $$y=$$t[5]+1900; $$w=$$y-1}
 # (the current) year number in some places.
 # Also adjust version-etc.c and and gendocs.sh.
 update-copyright:
+	export TZ='$(COPYRIGHT_TZ)';					\
 	exempt=$$(mktemp);						\
 	grep -v '^#' config/srclist.txt|grep -v '^$$'			\
 	  | while read top src dst options; do				\
@@ -173,15 +183,21 @@ update-copyright:
 	    done > $$exempt;						\
 	git ls-files tests/unictype >> $$exempt;			\
 	git ls-files doc/INSTALL* >> $$exempt;				\
+	for file in $$(git ls-files); do				\
+	  test ! -h $$file || echo $$file;				\
+	done >> $$exempt;						\
 	git ls-files | grep -vFf $$exempt				\
 	  | xargs grep -L '^/\*.*GENERATED AUTOMATICALLY'		\
 	  | UPDATE_COPYRIGHT_MAX_LINE_LENGTH=79				\
 	    UPDATE_COPYRIGHT_USE_INTERVALS=1				\
 	      xargs build-aux/update-copyright
+	export TZ='$(COPYRIGHT_TZ)';					\
 	perl -pi -e '$(_year_and_prev) s/(copyright.*)\b$$w\b/$$1$$y/i'	\
 	  lib/version-etc.c doc/gnulib.texi build-aux/gendocs.sh
+	export TZ='$(COPYRIGHT_TZ)';					\
 	perl -pi -e '$(_year_and_prev) s/ $$w-$$y / $$y /g'		\
 	  doc/gendocs_template* build-aux/gendocs.sh
+	export TZ='$(COPYRIGHT_TZ)';					\
 	perl -pi -e							\
           '$(_year_and_prev) s/^(scriptversion=)$$w.*/$$1$$y-01-01.00/i' \
 	  build-aux/gendocs.sh

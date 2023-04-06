@@ -1,11 +1,11 @@
 /* Memory allocation with expensive empty allocations.
-   Copyright (C) 2003, 2008, 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2008, 2010-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003,
    based on prior work by Jim Meyering.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -43,7 +43,8 @@ _GL_INLINE_HEADER_BEGIN
 # define eemalloc malloc
 #else
 EEALLOC_INLINE void *eemalloc (size_t n)
-     _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_ALLOC_SIZE ((1));
+     _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_ALLOC_SIZE ((1))
+     _GL_ATTRIBUTE_DEALLOC_FREE;
 EEALLOC_INLINE void *
 eemalloc (size_t n)
 {

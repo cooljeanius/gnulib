@@ -12,7 +12,7 @@ uninorm/composition
 uninorm/nfkd
 
 configure.ac:
-gl_LIBUNISTRING_MODULE([0.9.8], [uninorm/nfkc])
+gl_LIBUNISTRING_MODULE([1.1], [uninorm/nfkc])
 
 Makefile.am:
 if LIBUNISTRING_COMPILE_UNINORM_NFKC
@@ -23,7 +23,7 @@ Include:
 "uninorm.h"
 
 License:
-LGPLv3+ or GPLv2
+LGPLv3+ or GPLv2+
 
 Maintainer:
 all

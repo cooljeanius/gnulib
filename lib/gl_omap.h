@@ -1,24 +1,23 @@
 /* Abstract ordered map data type.
-   Copyright (C) 2006-2007, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2018.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _GL_OMAP_H
 #define _GL_OMAP_H
 
-#include <stdbool.h>
 #include <stddef.h>
 
 #ifndef _GL_INLINE_HEADER_BEGIN
@@ -117,12 +116,15 @@ typedef const struct gl_omap_implementation * gl_omap_implementation_t;
 extern gl_omap_t gl_omap_create_empty (gl_omap_implementation_t implementation,
                                        gl_mapkey_compar_fn compar_fn,
                                        gl_mapkey_dispose_fn kdispose_fn,
-                                       gl_mapvalue_dispose_fn vdispose_fn);
+                                       gl_mapvalue_dispose_fn vdispose_fn)
+  /*_GL_ATTRIBUTE_DEALLOC (gl_omap_free, 1)*/
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
 /* Likewise.  Returns NULL upon out-of-memory.  */
 extern gl_omap_t gl_omap_nx_create_empty (gl_omap_implementation_t implementation,
                                           gl_mapkey_compar_fn compar_fn,
                                           gl_mapkey_dispose_fn kdispose_fn,
-                                          gl_mapvalue_dispose_fn vdispose_fn);
+                                          gl_mapvalue_dispose_fn vdispose_fn)
+  /*_GL_ATTRIBUTE_DEALLOC (gl_omap_free, 1)*/;
 
 /* Returns the current number of pairs in an ordered map.  */
 extern size_t gl_omap_size (gl_omap_t map);
@@ -155,8 +157,8 @@ extern bool gl_omap_search_atleast (gl_omap_t map,
 /* declared in gl_xomap.h */
 extern bool gl_omap_put (gl_omap_t map, const void *key, const void *value);
 /* Likewise.  Returns -1 upon out-of-memory.  */
-extern int gl_omap_nx_put (gl_omap_t map, const void *key, const void *value)
-  _GL_ATTRIBUTE_NODISCARD;
+_GL_ATTRIBUTE_NODISCARD
+extern int gl_omap_nx_put (gl_omap_t map, const void *key, const void *value);
 
 /* Adds a pair to an ordered map and retrieves the previous value.
    Returns true if a pair with the given key was not already in the map and so
@@ -167,9 +169,9 @@ extern int gl_omap_nx_put (gl_omap_t map, const void *key, const void *value)
 extern bool gl_omap_getput (gl_omap_t map, const void *key, const void *value,
                             const void **oldvaluep);
 /* Likewise.  Returns -1 upon out-of-memory.  */
+_GL_ATTRIBUTE_NODISCARD
 extern int gl_omap_nx_getput (gl_omap_t map, const void *key, const void *value,
-                              const void **oldvaluep)
-  _GL_ATTRIBUTE_NODISCARD;
+                              const void **oldvaluep);
 
 /* Removes a pair from an ordered map.
    Returns true if the key was found and its pair removed.
@@ -265,7 +267,9 @@ struct gl_omap_impl_base
 /* Define most functions of this file as accesses to the
    struct gl_omap_implementation.  */
 
-GL_OMAP_INLINE gl_omap_t
+GL_OMAP_INLINE
+/*_GL_ATTRIBUTE_DEALLOC (gl_omap_free, 1)*/
+gl_omap_t
 gl_omap_nx_create_empty (gl_omap_implementation_t implementation,
                          gl_mapkey_compar_fn compar_fn,
                          gl_mapkey_dispose_fn kdispose_fn,
@@ -298,7 +302,7 @@ gl_omap_search_atleast (gl_omap_t map,
          ->search_atleast (map, threshold_fn, threshold, keyp, valuep);
 }
 
-GL_OMAP_INLINE _GL_ATTRIBUTE_NODISCARD int
+_GL_ATTRIBUTE_NODISCARD GL_OMAP_INLINE int
 gl_omap_nx_getput (gl_omap_t map, const void *key, const void *value,
                    const void **oldvaluep)
 {
@@ -349,7 +353,7 @@ gl_omap_get (gl_omap_t map, const void *key)
   return value;
 }
 
-GL_OMAP_INLINE _GL_ATTRIBUTE_NODISCARD int
+_GL_ATTRIBUTE_NODISCARD GL_OMAP_INLINE int
 gl_omap_nx_put (gl_omap_t map, const void *key, const void *value)
 {
   const void *oldvalue;

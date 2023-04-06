@@ -9,8 +9,9 @@ m4/threadlib.m4
 Depends-on:
 extensions
 extern-inline
+gen-header
 sched
-time
+time-h
 snippet/c++defs
 snippet/_Noreturn
 snippet/arg-nonnull
@@ -22,6 +23,7 @@ gl_ANYTHREADLIB_EARLY
 configure.ac:
 gl_PTHREAD_H
 gl_PTHREAD_H_REQUIRE_DEFAULTS
+AC_PROG_MKDIR_P
 
 Makefile.am:
 BUILT_SOURCES += pthread.h
@@ -29,9 +31,9 @@ BUILT_SOURCES += pthread.h
 # We need the following in order to create <pthread.h> when the system
 # doesn't have one that works with the given compiler.
 pthread.h: pthread.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(_NORETURN_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
-	$(AM_V_GEN)rm -f $@-t $@ && \
-	{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */'; \
-	  sed -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
+@NMD@	$(AM_V_GEN)$(MKDIR_P) '%reldir%'
+	$(gl_V_at)$(SED_HEADER_STDOUT) \
+	      -e 's|@''GUARD_PREFIX''@|${gl_include_guard_prefix}|g' \
 	      -e 's|@''HAVE_PTHREAD_H''@|$(HAVE_PTHREAD_H)|g' \
 	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
 	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
@@ -157,9 +159,9 @@ pthread.h: pthread.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(_NORETURN_H
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
 	      -e '/definition of _Noreturn/r $(_NORETURN_H)' \
 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)'; \
-	} > $@-t && \
-	mv $@-t $@
+	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+	      > $@-t
+	$(AM_V_at)mv $@-t $@
 MOSTLYCLEANFILES += pthread.h pthread.h-t
 
 Include:

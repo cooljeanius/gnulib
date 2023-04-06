@@ -16,14 +16,14 @@ c99
 closedir
 d-ino
 fcntl-h
-idx
-intprops
+ialloc
 memcmp
 opendirat
 readdir
 realloc-gnu
 renameatu
 stdbool
+stdckdint
 stdint
 xalloc-die
 
@@ -37,7 +37,7 @@ Include:
 "backupfile.h"
 
 Link:
-$(LIB_MBRTOWC)
+$(MBRTOWC_LIB)
 
 License:
 GPL

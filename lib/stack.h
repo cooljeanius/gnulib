@@ -1,9 +1,9 @@
 /* Type-safe stack data type.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,7 +17,7 @@
 /* Written by Marc Nieper-Wißkirchen <marc@nieper-wisskirchen.de>, 2020.  */
 
 /* This header file does not have include-guards as it is meant to be
-   includeable multiple times as long as the necessary defines have
+   includable multiple times as long as the necessary defines have
    been set up.
 
    A stack is implemented with a homogenous array of elements in
@@ -36,7 +36,7 @@
      Popping:            ELEMENT element = stack_pop (&stack);
      Discarding:         stack_discard (&stack);
      Top-of-stack:       ELEMENT element = stack_top (&stack);
-     Size:               size_t size = stack_size (&stack);
+     Size:               idx_t size = stack_size (&stack);
 
    Here, ELEMENT is the type to which GL_STACK_ELEMENT was defined when
    this file was included.
@@ -53,7 +53,6 @@
    After including this file, these names will be undefined.
 
    Before including this file, you also need to include:
-     #include <stdbool.h>
      #include <stdlib.h>
      #include "assure.h"
      #include "xalloc.h"
@@ -77,8 +76,8 @@
 typedef struct
 {
   GL_STACK_ELEMENT *base;
-  size_t size;
-  size_t allocated;
+  idx_t size;
+  idx_t allocated;
 } _GL_STACK_TYPE;
 
 /* Initialize a stack.  */
@@ -119,8 +118,8 @@ GL_STACK_STORAGECLASS void
 _GL_STACK_PREFIX (push) (_GL_STACK_TYPE *stack, GL_STACK_ELEMENT item)
 {
   if (stack->size == stack->allocated)
-    stack->base = x2nrealloc (stack->base, &stack->allocated,
-                              sizeof (GL_STACK_ELEMENT));
+    stack->base = xpalloc (stack->base, &stack->allocated, 1, -1,
+                           sizeof *stack->base);
   stack->base [stack->size++] = item;
 }
 
@@ -152,7 +151,7 @@ _GL_STACK_PREFIX (top) (const _GL_STACK_TYPE *stack)
 }
 
 /* Return the currently stored number of elements in the stack.  */
-GL_STACK_STORAGECLASS _GL_ATTRIBUTE_PURE size_t
+GL_STACK_STORAGECLASS _GL_ATTRIBUTE_PURE idx_t
 _GL_STACK_PREFIX (size) (const _GL_STACK_TYPE *stack)
 {
   return stack->size;

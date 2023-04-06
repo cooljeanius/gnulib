@@ -7,6 +7,7 @@ lib/system-quote.c
 
 Depends-on:
 sh-quote
+stdbool
 xalloc
 
 configure.ac:
@@ -19,7 +20,7 @@ Include:
 "system-quote.h"
 
 Link:
-$(LIB_MBRTOWC)
+$(MBRTOWC_LIB)
 
 License:
 GPL

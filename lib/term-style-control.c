@@ -1,10 +1,10 @@
 /* Terminal control for outputting styled text to a terminal.
-   Copyright (C) 2006-2008, 2017, 2019-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006-2008, 2017, 2019-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2019.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -25,7 +25,6 @@
 
 #include <errno.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

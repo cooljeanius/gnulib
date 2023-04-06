@@ -1,10 +1,10 @@
 /* utimecmp.c -- compare file timestamps
 
-   Copyright (C) 2004-2007, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2004-2007, 2009-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -23,7 +23,6 @@
 
 #include <fcntl.h>
 #include <limits.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -34,7 +33,6 @@
 #include "hash.h"
 #include "intprops.h"
 #include "stat-time.h"
-#include "verify.h"
 
 #ifndef MAX
 # define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -147,7 +145,7 @@ utimecmpat (int dfd, char const *dst_name,
 
      time_t might be unsigned.  */
 
-  verify (TYPE_IS_INTEGER (time_t));
+  static_assert (TYPE_IS_INTEGER (time_t));
 
   /* Destination and source timestamps.  */
   time_t dst_s = dst_stat->st_mtime;

@@ -1,10 +1,10 @@
 /* Abstract ordered set data type, with out-of-memory checking.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -40,11 +40,16 @@ extern "C" {
 #if 0 /* These are defined inline below.  */
 extern gl_oset_t gl_oset_create_empty (gl_oset_implementation_t implementation,
                                        gl_setelement_compar_fn compar_fn,
-                                       gl_setelement_dispose_fn dispose_fn);
+                                       gl_setelement_dispose_fn dispose_fn)
+  /*_GL_ATTRIBUTE_DEALLOC (gl_oset_free, 1)*/
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
 extern bool gl_oset_add (gl_oset_t set, const void *elt);
 #endif
 
-GL_XOSET_INLINE gl_oset_t
+GL_XOSET_INLINE
+/*_GL_ATTRIBUTE_DEALLOC (gl_oset_free, 1)*/
+_GL_ATTRIBUTE_RETURNS_NONNULL
+gl_oset_t
 gl_oset_create_empty (gl_oset_implementation_t implementation,
                       gl_setelement_compar_fn compar_fn,
                       gl_setelement_dispose_fn dispose_fn)

@@ -1,10 +1,10 @@
 /* mountlist.c -- return a list of mounted file systems
 
-   Copyright (C) 1991-1992, 1997-2021 Free Software Foundation, Inc.
+   Copyright (C) 1991-1992, 1997-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -169,6 +169,7 @@
    || strcmp (Fs_type, "debugfs") == 0          \
    || strcmp (Fs_type, "devpts") == 0           \
    || strcmp (Fs_type, "fusectl") == 0          \
+   || strcmp (Fs_type, "fuse.portal") == 0      \
    || strcmp (Fs_type, "mqueue") == 0           \
    || strcmp (Fs_type, "rpc_pipefs") == 0       \
    || strcmp (Fs_type, "sysfs") == 0            \
@@ -201,7 +202,7 @@
 /* All cygwin mount points include ':' or start with '//'; so it
    requires a native Windows call to determine remote disks.  */
 static bool
-me_remote (char const *fs_name, char const *fs_type _GL_UNUSED)
+me_remote (char const *fs_name, _GL_UNUSED char const *fs_type)
 {
   if (fs_name[0] && fs_name[1] == ':')
     {
@@ -1088,7 +1089,7 @@ read_file_system_list (bool need_fs_type)
   return mount_list;
 
 
- free_then_fail: _GL_UNUSED_LABEL
+ free_then_fail: _GL_UNUSED_LABEL;
   {
     int saved_errno = errno;
     *mtail = NULL;

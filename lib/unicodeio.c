@@ -1,10 +1,10 @@
 /* Unicode character output to streams with locale dependent encoding.
 
-   Copyright (C) 2000-2003, 2006, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2000-2003, 2006, 2008-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -192,7 +192,7 @@ fwrite_success_callback (const char *buf, size_t buflen, void *callback_arg)
 /* Simple failure callback that displays an error and exits.  */
 static long
 exit_failure_callback (unsigned int code, const char *msg,
-                       void *callback_arg _GL_UNUSED)
+                       _GL_UNUSED void *callback_arg)
 {
   if (msg == NULL)
     error (1, 0, _("cannot convert U+%04X to local character set"), code);
@@ -206,7 +206,7 @@ exit_failure_callback (unsigned int code, const char *msg,
    ASCII, using the same notation as ISO C99 strings.  */
 static long
 fallback_failure_callback (unsigned int code,
-                           const char *msg _GL_UNUSED,
+                           _GL_UNUSED const char *msg,
                            void *callback_arg)
 {
   FILE *stream = (FILE *) callback_arg;

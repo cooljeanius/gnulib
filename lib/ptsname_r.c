@@ -1,21 +1,22 @@
 /* Determine name of the slave side of a pseudo-terminal.
-   Copyright (C) 1998, 2002, 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2010-2023 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
+/* Specification.  */
 #include <stdlib.h>
 
 #include <errno.h>
@@ -24,27 +25,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef _LIBC
-# include <paths.h>
-#else
-# ifndef _PATH_TTY
-#  define _PATH_TTY "/dev/tty"
-# endif
-# ifndef _PATH_DEV
-#  define _PATH_DEV "/dev/"
-# endif
-
-# undef __set_errno
-# undef __stat
-# undef __ttyname_r
-# undef __ptsname_r
-
-# define __set_errno(e) errno = (e)
-# define __isatty isatty
-# define __stat stat
-# define __ttyname_r ttyname_r
-# define __ptsname_r ptsname_r
-
+#ifndef _PATH_TTY
+# define _PATH_TTY "/dev/tty"
+#endif
+#ifndef _PATH_DEV
+# define _PATH_DEV "/dev/"
 #endif
 
 /* Get the major, minor macros.  */
@@ -70,12 +55,16 @@
 # include <stdio.h>
 #endif
 
+#if defined __DragonFly__
+/* Get fdevname_r().  */
+# include <stdlib.h>
+#endif
 
 /* Store at most BUFLEN characters of the pathname of the slave pseudo
    terminal associated with the master FD is open on in BUF.
    Return 0 on success, otherwise an error number.  */
 int
-__ptsname_r (int fd, char *buf, size_t buflen)
+ptsname_r (int fd, char *buf, size_t buflen)
 #undef ptsname_r
 {
 #if HAVE_ESSENTIALLY_WORKING_PTSNAME_R
@@ -84,14 +73,44 @@ __ptsname_r (int fd, char *buf, size_t buflen)
     return 0;
   else
     return errno;
+#elif defined __DragonFly__
+  int saved_errno = errno;
+  char tmpbuf[5 + 4 + 10 + 1];
+  int ret;
+  int n;
+  if (buf == NULL)
+    {
+      errno = EINVAL;
+      return errno;
+    }
+  /* The result of fdevname_r is typically of the form ptm/N.  */
+  ret = fdevname_r (fd, tmpbuf + 5, sizeof (tmpbuf) - 5);
+  if (ret < 0 || strncmp (tmpbuf + 5, "ptm/", 4) != 0)
+    {
+      errno = ENOTTY;
+      return errno;
+    }
+  /* Turn it into /dev/pts/N.  */
+  memcpy (tmpbuf, "/dev/pts/", 5 + 4);
+  n = strlen (tmpbuf);
+  if (n >= buflen)
+    {
+      errno = ERANGE;
+      return errno;
+    }
+  memcpy (buf, tmpbuf, n + 1);
+  /* Don't do a final stat(), since the file name /dev/pts/N does not actually
+     exist.  */
+  errno = saved_errno;
+  return 0;
 #else
-  int save_errno = errno;
+  int saved_errno = errno;
   struct stat st;
 
   if (buf == NULL)
     {
-      __set_errno (EINVAL);
-      return EINVAL;
+      errno = EINVAL;
+      return errno;
     }
 
 # if defined __sun /* Solaris */
@@ -168,7 +187,7 @@ __ptsname_r (int fd, char *buf, size_t buflen)
     memcpy (buf, tmpbuf, n + 1);
   }
 # else
-  if (!__isatty (fd))
+  if (!isatty (fd))
     {
 #  if ISATTY_FAILS_WITHOUT_SETTING_ERRNO && defined F_GETFL /* IRIX, Solaris */
       /* Set errno.  */
@@ -182,14 +201,14 @@ __ptsname_r (int fd, char *buf, size_t buflen)
 
   if (buflen < strlen (_PATH_TTY) + 3)
     {
-      __set_errno (ERANGE);
-      return ERANGE;
+      errno = ERANGE;
+      return errno;
     }
 
-  int err = __ttyname_r (fd, buf, buflen);
+  int err = ttyname_r (fd, buf, buflen);
   if (err != 0)
     {
-      __set_errno (err);
+      errno = err;
       return errno;
     }
 
@@ -197,10 +216,10 @@ __ptsname_r (int fd, char *buf, size_t buflen)
     buf[sizeof (_PATH_DEV) - 1] = 't';
 # endif
 
-  if (__stat (buf, &st) < 0 && errno != EOVERFLOW)
+  if (stat (buf, &st) < 0 && errno != EOVERFLOW)
     return errno;
 
-  __set_errno (save_errno);
+  errno = saved_errno;
   return 0;
 #endif
 }

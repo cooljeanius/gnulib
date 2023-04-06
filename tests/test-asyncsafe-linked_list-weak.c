@@ -1,9 +1,9 @@
 /* Test of async-safe sequential list data type implementation.
-   Copyright (C) 2021 Free Software Foundation, Inc.
+   Copyright (C) 2021-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -128,7 +128,7 @@ bag_from_list (gl_list_t list)
 }
 
 /* Returns true if and only if the given bag is empty.  */
-static bool _GL_ATTRIBUTE_MAYBE_UNUSED
+_GL_ATTRIBUTE_MAYBE_UNUSED static bool
 bag_is_empty (bag_t bag)
 {
   size_t i;
@@ -165,7 +165,7 @@ bag_equals (bag_t bag1, bag_t bag2)
 
 /* Returns a bag that contains the elements of BAG1 and the elements of
    BAG2.  */
-static bag_t _GL_ATTRIBUTE_MAYBE_UNUSED
+_GL_ATTRIBUTE_MAYBE_UNUSED static bag_t
 bag_or (bag_t bag1, bag_t bag2)
 {
   bag_t bag;
@@ -192,7 +192,7 @@ bag_xor (bag_t bag1, bag_t bag2)
 }
 
 /* Returns a bag that contains the elements of BAG1 that are not in BAG2.  */
-static bag_t _GL_ATTRIBUTE_MAYBE_UNUSED
+_GL_ATTRIBUTE_MAYBE_UNUSED static bag_t
 bag_and_not (bag_t bag1, bag_t bag2)
 {
   bag_t bag;

@@ -3,7 +3,6 @@ Substring test for UTF-8 strings.
 
 Files:
 lib/unistr/u8-strstr.c
-lib/unistr/u-strstr.h
 
 Depends-on:
 unistr/base
@@ -23,7 +22,7 @@ Include:
 "unistr.h"
 
 License:
-LGPLv3+ or GPLv2
+LGPLv3+ or GPLv2+
 
 Maintainer:
 all

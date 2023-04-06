@@ -1,6 +1,5 @@
 /* Test the stack overflow handler.
-   Copyright (C) 2002-2021  Bruno Haible <bruno@clisp.org>
-   Copyright (C) 2010 Eric Blake <eblake@redhat.com>
+   Copyright (C) 2002-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,6 +13,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible and Eric Blake.  */
 
 #include <config.h>
 
@@ -43,13 +44,13 @@
 # endif
 # include "altstack-util.h"
 
-jmp_buf mainloop;
-sigset_t mainsigset;
+static jmp_buf mainloop;
+static sigset_t mainsigset;
 
-volatile int pass = 0;
+static volatile int pass = 0;
 
-volatile char *stack_lower_bound;
-volatile char *stack_upper_bound;
+static volatile char *stack_lower_bound;
+static volatile char *stack_upper_bound;
 
 static void
 stackoverflow_handler_continuation (void *arg1, void *arg2, void *arg3)
@@ -58,7 +59,7 @@ stackoverflow_handler_continuation (void *arg1, void *arg2, void *arg3)
   longjmp (mainloop, arg);
 }
 
-void
+static void
 stackoverflow_handler (int emergency, stackoverflow_context_t scp)
 {
   char dummy;
@@ -72,7 +73,7 @@ stackoverflow_handler (int emergency, stackoverflow_context_t scp)
                          (void *) (long) (emergency ? -1 : pass), NULL, NULL);
 }
 
-volatile int *
+static volatile int *
 recurse_1 (int n, volatile int *p)
 {
   if (n < INT_MAX)
@@ -80,7 +81,7 @@ recurse_1 (int n, volatile int *p)
   return p;
 }
 
-int
+static int
 recurse (volatile int n)
 {
   return *recurse_1 (n, &n);

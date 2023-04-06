@@ -1,18 +1,18 @@
 /* Immutable data.
 
-   Copyright (C) 2021 Free Software Foundation, Inc.
+   Copyright (C) 2021-2023 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2021.  */
@@ -70,6 +70,12 @@ extern
 #  include <unistd.h>
 #  include <fcntl.h>
 
+/* Get PATH_MAX.  */
+#  include "pathmax.h"
+#  ifndef PATH_MAX
+#   define PATH_MAX 4096
+#  endif
+
 #  include "glthread/lock.h"
 
 # endif
@@ -116,14 +122,22 @@ static long file_length;
 static void
 do_init_mmap_file (void)
 {
-  char filename[100];
-  sprintf (filename, "%s/glimmdata-%d-%ld", "/tmp", getpid (), random ());
+  /* Use TMPDIR, except if it is too long.  */
+  const char *tmpdir = getenv ("TMPDIR");
+  if (tmpdir == NULL || strlen (tmpdir) > PATH_MAX)
+    tmpdir = "/tmp";
+  /* Now strlen (tmpdir) <= PATH_MAX.  */
+
+  char filename[PATH_MAX + 1 + 41 + 1];
+  sprintf (filename, "%s/glimmdata-%d-%ld", tmpdir, getpid (), random ());
+
   file_fd = open (filename, O_CREAT | O_TRUNC | O_RDWR | O_CLOEXEC, 0700);
   if (file_fd < 0)
     {
       fprintf (stderr, "glimm: Cannot open %s!\n", filename);
       abort ();
     }
+
   /* Remove the file from the file system as soon as possible, to make
      sure there is no leftover after this process terminates or crashes.  */
   unlink (filename);

@@ -36,7 +36,9 @@ Include:
 "copy-file.h"
 
 Link:
-$(LIB_MBRTOWC)
+$(LIB_ACL)
+$(QCOPY_ACL_LIB)
+$(MBRTOWC_LIB)
 
 License:
 GPL

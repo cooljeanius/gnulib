@@ -1,11 +1,11 @@
 /* savedir.c -- save the list of files in a directory in a string
 
-   Copyright (C) 1990, 1997-2001, 2003-2006, 2009-2021 Free Software
+   Copyright (C) 1990, 1997-2001, 2003-2006, 2009-2023 Free Software
    Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -93,7 +93,7 @@ streamsavedir (DIR *dirp, enum savedir_option option)
   char *name_space = NULL;
   idx_t allocated = 0;
   direntry_t *entries = NULL;
-  size_t entries_allocated = 0;
+  idx_t entries_allocated = 0;
   idx_t entries_used = 0;
   idx_t used = 0;
   comparison_function cmp = comparison_function_table[option];
@@ -120,8 +120,8 @@ streamsavedir (DIR *dirp, enum savedir_option option)
           if (cmp)
             {
               if (entries_allocated == entries_used)
-                entries = x2nrealloc (entries, &entries_allocated,
-                                      sizeof *entries);
+                entries = xpalloc (entries, &entries_allocated, 1, -1,
+                                   sizeof *entries);
               entries[entries_used].name = xstrdup (entry);
 #if D_INO_IN_DIRENT
               entries[entries_used].ino = dp->d_ino;
@@ -149,13 +149,11 @@ streamsavedir (DIR *dirp, enum savedir_option option)
 
   if (cmp)
     {
-      size_t i;
-
       if (entries_used)
         qsort (entries, entries_used, sizeof *entries, cmp);
-      name_space = xmalloc (used + 1);
+      name_space = ximalloc (used + 1);
       used = 0;
-      for (i = 0; i < entries_used; i++)
+      for (idx_t i = 0; i < entries_used; i++)
         {
           char *dest = name_space + used;
           used += stpcpy (dest, entries[i].name) - dest + 1;
@@ -164,7 +162,7 @@ streamsavedir (DIR *dirp, enum savedir_option option)
       free (entries);
     }
   else if (used == allocated)
-    name_space = xrealloc (name_space, used + 1);
+    name_space = xirealloc (name_space, used + 1);
 
   name_space[used] = '\0';
   return name_space;

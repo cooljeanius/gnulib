@@ -1,9 +1,9 @@
 /* Test of quotearg family of functions.
-   Copyright (C) 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2008-2023 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -21,7 +21,6 @@
 #include "quotearg.h"
 
 #include <locale.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,7 +59,7 @@ static struct result_groups locale_results[] = {
 #endif /* ENABLE_NLS */
 
 int
-main (int argc _GL_UNUSED, char *argv[])
+main (_GL_UNUSED int argc, char *argv[])
 {
 #if ENABLE_NLS
   /* Clean up environment.  */

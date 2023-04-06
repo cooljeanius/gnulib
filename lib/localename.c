@@ -1,5 +1,5 @@
 /* Determine name of the currently selected locale.
-   Copyright (C) 1995-2021 Free Software Foundation, Inc.
+   Copyright (C) 1995-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -18,17 +18,18 @@
 /* Native Windows code written by Tor Lillqvist <tml@iki.fi>.  */
 /* Mac OS X code written by Bruno Haible <bruno@clisp.org>.  */
 
+/* Don't use __attribute__ __nonnull__ in this compilation unit.  Otherwise gcc
+   optimizes away the locale == NULL tests below in duplocale() and freelocale(),
+   or xlclang reports -Wtautological-pointer-compare warnings for these tests.
+ */
+#define _GL_ARG_NONNULL(params)
+
 #include <config.h>
 
 /* Specification.  */
-#ifdef IN_LIBINTL
-# include "gettextP.h"
-#else
-# include "localename.h"
-#endif
+#include "localename.h"
 
 #include <limits.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <locale.h>
@@ -46,9 +47,7 @@
 # if (__GLIBC__ >= 2 && !defined __UCLIBC__) || (defined __linux__ && HAVE_LANGINFO_H) || defined __CYGWIN__
 #  include <langinfo.h>
 # endif
-# if !defined IN_LIBINTL
-#  include "glthread/lock.h"
-# endif
+# include "glthread/lock.h"
 # if defined __sun
 #  if HAVE_GETLOCALENAME_L
 /* Solaris >= 12.  */
@@ -60,6 +59,9 @@ extern char * getlocalename_l(int, locale_t);
 # if HAVE_NAMELESS_LOCALES
 #  include "localename-table.h"
 # endif
+# if defined __HAIKU__
+#  include <dlfcn.h>
+# endif
 #endif
 
 #if HAVE_CFPREFERENCESCOPYAPPVALUE
@@ -69,9 +71,7 @@ extern char * getlocalename_l(int, locale_t);
 
 #if defined _WIN32 && !defined __CYGWIN__
 # define WINDOWS_NATIVE
-# if !defined IN_LIBINTL
-#  include "glthread/lock.h"
-# endif
+# include "glthread/lock.h"
 #endif
 
 #if defined WINDOWS_NATIVE || defined __CYGWIN__ /* Native Windows or Cygwin */
@@ -3103,7 +3103,7 @@ freelocale (locale_t locale)
 static
 # endif
 const char *
-gl_locale_name_thread_unsafe (int category, const char *categoryname _GL_UNUSED)
+gl_locale_name_thread_unsafe (int category, _GL_UNUSED const char *categoryname)
 {
 # if HAVE_GOOD_USELOCALE
   {
@@ -3206,6 +3206,68 @@ gl_locale_name_thread_unsafe (int category, const char *categoryname _GL_UNUSED)
         };
         return ((struct __locale_t *) thread_locale)->categories[category];
 #   endif
+#  elif defined __HAIKU__
+        /* Since 2022, Haiku has per-thread locales.  locale_t is 'void *',
+           but in fact a 'LocaleBackendData *'.  */
+        struct LocaleBackendData {
+          int magic;
+          void /*BPrivate::Libroot::LocaleBackend*/ *backend;
+          void /*BPrivate::Libroot::LocaleDataBridge*/ *databridge;
+        };
+        void *thread_locale_backend =
+          ((struct LocaleBackendData *) thread_locale)->backend;
+        if (thread_locale_backend != NULL)
+          {
+            /* The only existing concrete subclass of
+               BPrivate::Libroot::LocaleBackend is
+               BPrivate::Libroot::ICULocaleBackend.
+               Invoke the (non-virtual) method
+               BPrivate::Libroot::ICULocaleBackend::_QueryLocale on it.
+               This method is located in a separate shared library,
+               libroot-addon-icu.so.  */
+            static void * volatile querylocale_method /* = NULL */;
+            static int volatile querylocale_found /* = 0 */;
+            /* Attempt to open this shared library, the first time we get
+               here.  */
+            if (querylocale_found == 0)
+              {
+                void *handle =
+                  dlopen ("/boot/system/lib/libroot-addon-icu.so", 0);
+                if (handle != NULL)
+                  {
+                    void *sym =
+                      dlsym (handle, "_ZN8BPrivate7Libroot16ICULocaleBackend12_QueryLocaleEi");
+                    if (sym != NULL)
+                      {
+                        querylocale_method = sym;
+                        querylocale_found = 1;
+                      }
+                    else
+                      /* Could not find the symbol.  */
+                      querylocale_found = -1;
+                  }
+                else
+                  /* Could not open the separate shared library.  */
+                  querylocale_found = -1;
+              }
+            if (querylocale_found > 0)
+              {
+                /* The _QueryLocale method is a non-static C++ method with
+                   parameters (int category) and return type 'const char *'.
+                   See
+                     haiku/headers/private/libroot/locale/ICULocaleBackend.h
+                     haiku/src/system/libroot/add-ons/icu/ICULocaleBackend.cpp
+                   This is the same as a C function with parameters
+                     (BPrivate::Libroot::LocaleBackend* this, int category)
+                   and return type 'const char *'.  Invoke it.  */
+                const char * (*querylocale_func) (void *, int) =
+                  (const char * (*) (void *, int)) querylocale_method;
+                return querylocale_func (thread_locale_backend, category);
+              }
+          }
+        else
+          /* It's the "C" or "POSIX" locale.  */
+          return "C";
 #  elif defined __ANDROID__
         return MB_CUR_MAX == 4 ? "C.UTF-8" : "C";
 #  endif
@@ -3218,7 +3280,7 @@ gl_locale_name_thread_unsafe (int category, const char *categoryname _GL_UNUSED)
 #endif
 
 const char *
-gl_locale_name_thread (int category, const char *categoryname _GL_UNUSED)
+gl_locale_name_thread (int category, _GL_UNUSED const char *categoryname)
 {
 #if HAVE_GOOD_USELOCALE
   const char *name = gl_locale_name_thread_unsafe (category, categoryname);
@@ -3242,7 +3304,7 @@ gl_locale_name_thread (int category, const char *categoryname _GL_UNUSED)
 #endif
 
 const char *
-gl_locale_name_posix (int category, const char *categoryname _GL_UNUSED)
+gl_locale_name_posix (int category, _GL_UNUSED const char *categoryname)
 {
 #if defined WINDOWS_NATIVE
   if (LC_MIN <= category && category <= LC_MAX)
@@ -3307,7 +3369,7 @@ gl_locale_name_posix (int category, const char *categoryname _GL_UNUSED)
 }
 
 const char *
-gl_locale_name_environ (int category _GL_UNUSED, const char *categoryname)
+gl_locale_name_environ (_GL_UNUSED int category, const char *categoryname)
 {
   const char *retval;
 

@@ -19,7 +19,6 @@ lib/stat.c
 lib/canonicalize-lgpl.c
 lib/scratch_buffer.h
 lib/malloc/scratch_buffer.h
-lib/malloc/scratch_buffer_dupfree.c
 lib/malloc/scratch_buffer_grow.c
 lib/malloc/scratch_buffer_grow_preserve.c
 lib/malloc/scratch_buffer_set_array_size.c
@@ -41,16 +40,24 @@ m4/canonicalize.m4
 m4/lstat.m4
 m4/eealloc.m4
 m4/environ.m4
+m4/free.m4
+m4/malloc.m4
+m4/mempcpy.m4
+m4/rawmemchr.m4
 m4/readlink.m4
+m4/realloc.m4
 m4/relocatable-lib.m4
 m4/setenv.m4
 
 Depends-on:
+alignasof
+assert-h
 c99
 double-slash-root
 eloop-threshold
 environ
 errno
+extern-inline
 fcntl-h
 filename
 idx
@@ -61,12 +68,12 @@ pathmax
 ssize_t
 stdbool
 stddef
+stdckdint
 stdint
 stdlib
 string
 sys_stat
 unistd
-verify
 xalloc-oversized
 
 configure.ac-early:

@@ -1,9 +1,9 @@
 /* (Persistent) hash array mapped tries.
-   Copyright (C) 2021 Free Software Foundation, Inc.
+   Copyright (C) 2021-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -56,16 +56,18 @@ _GL_INLINE_HEADER_BEGIN
 /* The GL_HAMT_THREAD_SAFE flag is set if the implementation of hamts
    is thread-safe as long as two threads do not simultaneously access
    the same hamt.  This is non-trivial as different hamts may share
-   some structure.  */
+   some structure.
+   We can define it only when the compiler supports _Atomic.  For GCC,
+   it is supported starting with GCC 4.9.  */
 
-#if (__STDC_VERSION__ < 201112 || defined __STD_NO_ATOMICS__) \
-  && __GNUC__ + (__GNUC_MINOR >= 9) <= 4
-# define GL_HAMT_THREAD_SAFE 0
-#else
+#if (__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) \
+    && __STDC_VERSION__ >= 201112L && !defined __STD_NO_ATOMICS__ \
+    && !defined __cplusplus
 # define GL_HAMT_THREAD_SAFE 1
+#else
+# define GL_HAMT_THREAD_SAFE 0
 #endif
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -138,19 +140,22 @@ typedef void (Hamt_freer) (Hamt_entry *elt);
 /* Creation and Destruction */
 /****************************/
 
+/* Free the resources solely allocated by HAMT and all elements solely
+   contained in it.  */
+extern void hamt_free (Hamt *hamt);
+
 /* Create and return a new and empty hash array mapped trie.  */
+_GL_ATTRIBUTE_NODISCARD
 extern Hamt *hamt_create (Hamt_hasher *hasher, Hamt_comparator *comparator,
                           Hamt_freer *freer)
-  _GL_ATTRIBUTE_NODISCARD;
+  _GL_ATTRIBUTE_DEALLOC (hamt_free, 1);
 
 /* Return a copy of HAMT, which is not the same in the sense above.
    This procedure can be used, for example, so that two threads can
    access the same data independently.  */
-extern Hamt *hamt_copy (Hamt *hamt) _GL_ATTRIBUTE_NODISCARD;
-
-/* Free the resources solely allocated by HAMT and all elements solely
-   contained in it.  */
-extern void hamt_free (Hamt *hamt);
+_GL_ATTRIBUTE_NODISCARD
+extern Hamt *hamt_copy (Hamt *hamt)
+  _GL_ATTRIBUTE_DEALLOC (hamt_free, 1);
 
 /**********/
 /* Lookup */
@@ -167,20 +172,20 @@ extern Hamt_entry *hamt_lookup (const Hamt *hamt, const void *elt);
 /* If *ELT_PTR matches an element already in HAMT, set *ELT_PTR to the
    existing element and return the original hamt.  Otherwise, insert
    *ELT_PTR into a copy of the hamt and return the copy.  */
-extern Hamt *hamt_insert (Hamt *hamt, Hamt_entry **elt_ptr)
-  _GL_ATTRIBUTE_NODISCARD;
+_GL_ATTRIBUTE_NODISCARD
+extern Hamt *hamt_insert (Hamt *hamt, Hamt_entry **elt_ptr);
 
 /* If *ELT_PTR matches an element already in HAMT, set *ELT_PTR to the
 existing element, remove the element from a copy of the hamt and
 return the copy.  Otherwise, return the original hamt.  */
-extern Hamt *hamt_remove (Hamt *hamt, Hamt_entry **elt_ptr)
-  _GL_ATTRIBUTE_NODISCARD;
+_GL_ATTRIBUTE_NODISCARD
+extern Hamt *hamt_remove (Hamt *hamt, Hamt_entry **elt_ptr);
 
 /* Insert *ELT_PTR into a copy of HAMT and return the copy.  If an
    existing element was replaced, set *ELT_PTR to this element, and to
    NULL otherwise.  */
-extern Hamt *hamt_replace (Hamt *hamt, Hamt_entry **elt_ptr)
-  _GL_ATTRIBUTE_NODISCARD;
+_GL_ATTRIBUTE_NODISCARD
+extern Hamt *hamt_replace (Hamt *hamt, Hamt_entry **elt_ptr);
 
 /*************/
 /* Iteration */

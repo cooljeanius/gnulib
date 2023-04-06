@@ -1,12 +1,12 @@
 /* git-merge-changelog - git "merge" driver for GNU style ChangeLog files.
    Copyright (C) 2008-2021 Bruno Haible <bruno@clisp.org>
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published
+   by the Free Software Foundation, either version 3 of the License,
+   or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
@@ -157,7 +157,6 @@
 
 #include <getopt.h>
 #include <limits.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -177,7 +176,6 @@
 #include "minmax.h"
 #include "c-strstr.h"
 #include "fwriteerror.h"
-#include "getprogname.h"
 
 #define ASSERT(expr) \
   do                                                                         \
@@ -1162,9 +1160,9 @@ There is NO WARRANTY, to the extent permitted by law.\n\
     {
       char buf[1000];
       printf ("First line of %%A:\n");
-      sprintf (buf, "head -1 %s", destination_file_name); system (buf);
+      sprintf (buf, "head -n 1 %s", destination_file_name); system (buf);
       printf ("First line of %%B:\n");
-      sprintf (buf, "head -1 %s", other_file_name); system (buf);
+      sprintf (buf, "head -n 1 %s", other_file_name); system (buf);
       printf ("Guessing calling convention: %s\n",
               downstream
               ? "%A = modified by user, %B = upstream"

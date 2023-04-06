@@ -10,10 +10,11 @@ Depends-on:
 uniname/base
 attribute
 memcmp
+stdbool
 c99
 
 configure.ac:
-gl_LIBUNISTRING_MODULE([0.9.8], [uniname/uniname])
+gl_LIBUNISTRING_MODULE([1.1], [uniname/uniname])
 
 Makefile.am:
 if LIBUNISTRING_COMPILE_UNINAME_UNINAME
@@ -24,7 +25,7 @@ Include:
 "uniname.h"
 
 License:
-LGPLv3+ or GPLv2
+LGPLv3+ or GPLv2+
 
 Maintainer:
 all

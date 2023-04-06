@@ -1,5 +1,5 @@
-# mbrtoc32.m4 serial 9
-dnl Copyright (C) 2014-2021 Free Software Foundation, Inc.
+# mbrtoc32.m4 serial 12
+dnl Copyright (C) 2014-2023 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -44,23 +44,37 @@ AC_DEFUN([gl_FUNC_MBRTOC32],
   fi
 ])
 
-dnl We can't use AC_CHECK_FUNC here, because mbrtoc32() is defined as a
-dnl static inline function on Haiku 2020.
 AC_DEFUN([gl_CHECK_FUNC_MBRTOC32],
 [
-  AC_CACHE_CHECK([for mbrtoc32], [gl_cv_func_mbrtoc32],
-    [AC_LINK_IFELSE(
-       [AC_LANG_PROGRAM(
-          [[#include <stdlib.h>
-            #include <uchar.h>
-          ]],
-          [[char32_t c;
-            return mbrtoc32 (&c, "", 1, NULL) == 0;
-          ]])
-       ],
-       [gl_cv_func_mbrtoc32=yes],
-       [gl_cv_func_mbrtoc32=no])
-    ])
+  dnl Cf. gl_CHECK_FUNCS_ANDROID
+  AC_CHECK_DECL([mbrtoc32], , ,
+    [[#ifdef __HAIKU__
+       #include <stdint.h>
+      #endif
+      #include <uchar.h>
+    ]])
+  if test $ac_cv_have_decl_mbrtoc32 = yes; then
+    dnl We can't use AC_CHECK_FUNC here, because mbrtoc32() is defined as a
+    dnl static inline function on Haiku 2020.
+    AC_CACHE_CHECK([for mbrtoc32], [gl_cv_func_mbrtoc32],
+      [AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+            [[#include <stdlib.h>
+              #ifdef __HAIKU__
+               #include <stdint.h>
+              #endif
+              #include <uchar.h>
+            ]],
+            [[char32_t c;
+              return mbrtoc32 (&c, "", 1, NULL) == 0;
+            ]])
+         ],
+         [gl_cv_func_mbrtoc32=yes],
+         [gl_cv_func_mbrtoc32=no])
+      ])
+  else
+    gl_cv_func_mbrtoc32=no
+  fi
 ])
 
 AC_DEFUN([gl_MBRTOC32_EMPTY_INPUT],
@@ -81,6 +95,9 @@ changequote(,)dnl
 changequote([,])dnl
       AC_RUN_IFELSE(
         [AC_LANG_SOURCE([[
+           #ifdef __HAIKU__
+            #include <stdint.h>
+           #endif
            #include <uchar.h>
            static char32_t wc;
            static mbstate_t mbs;
@@ -94,6 +111,11 @@ changequote([,])dnl
         [:])
     ])
 ])
+
+dnl <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mbrtowc.html>
+dnl POSIX:2018 says regarding mbrtowc: "In the POSIX locale an [EILSEQ] error
+dnl cannot occur since all byte values are valid characters."  It is reasonable
+dnl to expect mbrtoc32 to behave in the same way.
 
 AC_DEFUN([gl_MBRTOC32_C_LOCALE],
 [
@@ -109,6 +131,9 @@ AC_DEFUN([gl_MBRTOC32_C_LOCALE],
        [AC_LANG_PROGRAM(
           [[#include <limits.h>
             #include <locale.h>
+            #ifdef __HAIKU__
+             #include <stdint.h>
+            #endif
             #include <uchar.h>
           ]], [[
             int i;
@@ -174,6 +199,9 @@ changequote([,])dnl
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#ifdef __HAIKU__
+ #include <stdint.h>
+#endif
 #include <uchar.h>
 int main ()
 {

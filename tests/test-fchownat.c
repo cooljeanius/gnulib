@@ -1,9 +1,9 @@
 /* Tests of fchownat.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -25,7 +25,6 @@ SIGNATURE_CHECK (fchownat, int, (int, char const *, uid_t, gid_t, int));
 
 #include <fcntl.h>
 #include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -68,7 +67,7 @@ do_lchown (char const *name, uid_t user, gid_t group)
 }
 
 int
-main (int argc _GL_UNUSED, char *argv[])
+main (_GL_UNUSED int argc, char *argv[])
 {
   int result1; /* Skip because of no chown/symlink support.  */
   int result2; /* Skip because of no lchown support.  */

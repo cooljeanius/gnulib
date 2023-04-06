@@ -1,19 +1,27 @@
 /* Word breaks in Unicode strings.
-   Copyright (C) 2001-2003, 2005-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2005-2023 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2009.
 
-   This program is free software: you can redistribute it and/or modify it
-   under the terms of the GNU Lesser General Public License as published
-   by the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software.
+   It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
+   You can redistribute it and/or modify it under either
+     - the terms of the GNU Lesser General Public License as published
+       by the Free Software Foundation, either version 3, or (at your
+       option) any later version, or
+     - the terms of the GNU General Public License as published by the
+       Free Software Foundation; either version 2, or (at your option)
+       any later version, or
+     - the same dual license "the GNU LGPLv3+ or the GNU GPLv2+".
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
+   Lesser General Public License and the GNU General Public License
+   for more details.
 
-   You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public
+   License and of the GNU General Public License along with this
+   program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _UNIWBRK_H
 #define _UNIWBRK_H
@@ -55,10 +63,11 @@ enum
   WBP_SQ           = 15,
   WBP_HL           = 16,
   WBP_ZWJ          = 17,
-  WBP_EB           = 18,
-  WBP_EM           = 19,
-  WBP_GAZ          = 20,
-  WBP_EBG          = 21
+  WBP_EB           = 18, /* obsolete */
+  WBP_EM           = 19, /* obsolete */
+  WBP_GAZ          = 20, /* obsolete */
+  WBP_EBG          = 21, /* obsolete */
+  WBP_WSS          = 22
 };
 
 /* Return the Word_Break property of a Unicode character.  */

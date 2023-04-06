@@ -42,8 +42,8 @@ Include:
 "javacomp.h"
 
 Link:
-$(LIB_MBRTOWC)
-$(LIB_GETRANDOM)
+$(MBRTOWC_LIB)
+$(GETRANDOM_LIB)
 $(LIBTHREAD)
 
 License:

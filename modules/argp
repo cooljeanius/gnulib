@@ -1,11 +1,6 @@
 Description:
 Hierarchical processing of command line arguments.
 
-Notice:
-If you are using GNU gettext version 0.16.1 or older, add the following options
-to XGETTEXT_OPTIONS in your po/Makevars:
-  --flag=argp_error:2:c-format --flag=argp_failure:4:c-format
-
 Files:
 lib/argp.h
 lib/argp-ba.c
@@ -23,6 +18,7 @@ lib/argp-xinl.c
 m4/argp.m4
 
 Depends-on:
+alignasof
 alloca
 basename-lgpl
 extern-inline
@@ -36,7 +32,7 @@ strcase
 extensions
 vsnprintf
 sleep
-stdalign
+stdbool
 stdio
 strerror
 memchr

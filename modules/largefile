@@ -1,5 +1,10 @@
 Description:
-Support for files larger than 2 GB.
+Support for files 2 GiB and larger.
+
+Comment:
+This module should not be used as a dependency from a test module,
+otherwise when this module occurs as a tests-related module, it will
+have side effects on the compilation of the main modules in lib/.
 
 Files:
 m4/largefile.m4

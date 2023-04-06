@@ -1,5 +1,5 @@
 /* Table that maps a locale object to the names of the locale categories.
-   Copyright (C) 2018-2021 Free Software Foundation, Inc.
+   Copyright (C) 2018-2023 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -21,11 +21,7 @@
 # include <stddef.h>
 # include <locale.h>
 
-# ifdef IN_LIBINTL
-#  include "lock.h"
-# else
-#  include "glthread/lock.h"
-# endif
+# include "glthread/lock.h"
 
 struct locale_categories_names
   {
