@@ -27,11 +27,9 @@
 #include "malloca.h"
 #include "mbuiter.h"
 
-#define TOLOWER(Ch) (isupper (Ch) ? tolower (Ch) : (Ch))
-
 /* Knuth-Morris-Pratt algorithm.  */
 #define UNIT unsigned char
-#define CANON_ELEMENT(c) TOLOWER (c)
+#define CANON_ELEMENT(c) tolower (c)
 #include "str-kmp.h"
 
 /* Knuth-Morris-Pratt algorithm.
@@ -64,7 +62,7 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
       {
         mb_copy (&needle_mbchars[j], &mbui_cur (iter));
         if (needle_mbchars[j].wc_valid)
-          needle_mbchars[j].wc = towlower (needle_mbchars[j].wc);
+          needle_mbchars[j].wc = c32tolower (needle_mbchars[j].wc);
       }
   }
 
@@ -152,7 +150,7 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
 
         mb_copy (&c, &mbui_cur (phaystack));
         if (c.wc_valid)
-          c.wc = towlower (c.wc);
+          c.wc = c32tolower (c.wc);
         if (mb_equal (needle_mbchars[j], c))
           {
             j++;
@@ -237,7 +235,7 @@ mbscasestr (const char *haystack, const char *needle)
 
           mb_copy (&b, &mbui_cur (iter_needle));
           if (b.wc_valid)
-            b.wc = towlower (b.wc);
+            b.wc = c32tolower (b.wc);
 
           mbui_init (iter_haystack, haystack);
           for (;; mbui_advance (iter_haystack))
@@ -279,7 +277,7 @@ mbscasestr (const char *haystack, const char *needle)
               comparison_count++;
               mb_copy (&c, &mbui_cur (iter_haystack));
               if (c.wc_valid)
-                c.wc = towlower (c.wc);
+                c.wc = c32tolower (c.wc);
               if (mb_equal (c, b))
                 /* The first character matches.  */
                 {
@@ -340,7 +338,7 @@ mbscasestr (const char *haystack, const char *needle)
 
           /* Speed up the following searches of needle by caching its first
              character.  */
-          unsigned char b = TOLOWER ((unsigned char) *needle);
+          unsigned char b = tolower ((unsigned char) *needle);
 
           needle++;
           for (;; haystack++)
@@ -383,7 +381,7 @@ mbscasestr (const char *haystack, const char *needle)
 
               outer_loop_count++;
               comparison_count++;
-              if (TOLOWER ((unsigned char) *haystack) == b)
+              if (tolower ((unsigned char) *haystack) == b)
                 /* The first character matches.  */
                 {
                   const char *rhaystack = haystack + 1;
@@ -398,8 +396,8 @@ mbscasestr (const char *haystack, const char *needle)
                         /* No match.  */
                         return NULL;
                       comparison_count++;
-                      if (TOLOWER ((unsigned char) *rhaystack)
-                          != TOLOWER ((unsigned char) *rneedle))
+                      if (tolower ((unsigned char) *rhaystack)
+                          != tolower ((unsigned char) *rneedle))
                         /* Nothing in this round.  */
                         break;
                     }

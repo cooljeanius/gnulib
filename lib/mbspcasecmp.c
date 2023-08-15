@@ -22,9 +22,7 @@
 
 #include <ctype.h>
 
-#include "mbuiter.h"
-
-#define TOLOWER(Ch) (isupper (Ch) ? tolower (Ch) : (Ch))
+#include "mbuiterf.h"
 
 /* Compare the initial segment of the character string STRING consisting of
    at most mbslen (PREFIX) characters with the character string PREFIX,
@@ -46,25 +44,31 @@ mbspcasecmp (const char *string, const char *prefix)
      most often already in the very few first characters.  */
   if (MB_CUR_MAX > 1)
     {
-      mbui_iterator_t iter1;
-      mbui_iterator_t iter2;
+      mbuif_state_t state1;
+      const char *iter1;
+      mbuif_init (state1);
+      iter1 = string;
 
-      mbui_init (iter1, string);
-      mbui_init (iter2, prefix);
+      mbuif_state_t state2;
+      const char *iter2;
+      mbuif_init (state2);
+      iter2 = prefix;
 
-      while (mbui_avail (iter1) && mbui_avail (iter2))
+      while (mbuif_avail (state1, iter1) && mbuif_avail (state2, iter2))
         {
-          int cmp = mb_casecmp (mbui_cur (iter1), mbui_cur (iter2));
+          mbchar_t cur1 = mbuif_next (state1, iter1);
+          mbchar_t cur2 = mbuif_next (state2, iter2);
+          int cmp = mb_casecmp (cur1, cur2);
 
           if (cmp != 0)
             return NULL;
 
-          mbui_advance (iter1);
-          mbui_advance (iter2);
+          iter1 += mb_len (cur1);
+          iter2 += mb_len (cur2);
         }
-      if (!mbui_avail (iter2))
+      if (!mbuif_avail (state2, iter2))
         /* PREFIX equals STRING or is terminated before STRING.  */
-        return (char *) mbui_cur_ptr (iter1);
+        return (char *) iter1;
       else
         /* STRING terminated before PREFIX.  */
         return NULL;
@@ -77,8 +81,8 @@ mbspcasecmp (const char *string, const char *prefix)
 
       for (; ; p1++, p2++)
         {
-          c1 = TOLOWER (*p1);
-          c2 = TOLOWER (*p2);
+          c1 = tolower (*p1);
+          c2 = tolower (*p2);
 
           if (c2 == '\0' || c1 != c2)
             break;

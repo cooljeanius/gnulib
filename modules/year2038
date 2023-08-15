@@ -7,12 +7,14 @@ otherwise when this module occurs as a tests-related module, it will
 have side effects on the compilation of the main modules in lib/.
 
 Files:
+m4/largefile.m4
 
 Depends-on:
-largefile
+
+configure.ac-early:
+AC_REQUIRE([AC_SYS_YEAR2038])
 
 configure.ac:
-AC_REQUIRE([AC_SYS_YEAR2038])
 
 Makefile.am:
 

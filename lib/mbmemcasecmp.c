@@ -25,9 +25,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "mbiter.h"
-
-#define TOLOWER(Ch) (isupper (Ch) ? tolower (Ch) : (Ch))
+#include "mbiterf.h"
 
 int
 mbmemcasecmp (const char *s1, size_t n1, const char *s2, size_t n2)
@@ -37,26 +35,35 @@ mbmemcasecmp (const char *s1, size_t n1, const char *s2, size_t n2)
 
   if (MB_CUR_MAX > 1)
     {
-      mbi_iterator_t iter1;
-      mbi_iterator_t iter2;
+      const char *s1_end = s1 + n1;
+      mbif_state_t state1;
+      const char *iter1;
+      mbif_init (state1);
+      iter1 = s1;
 
-      mbi_init (iter1, s1, n1);
-      mbi_init (iter2, s2, n2);
+      const char *s2_end = s2 + n2;
+      mbif_state_t state2;
+      const char *iter2;
+      mbif_init (state2);
+      iter2 = s2;
 
-      while (mbi_avail (iter1) && mbi_avail (iter2))
+      while (mbif_avail (state1, iter1, s1_end)
+             && mbif_avail (state2, iter2, s2_end))
         {
-          int cmp = mb_casecmp (mbi_cur (iter1), mbi_cur (iter2));
+          mbchar_t cur1 = mbif_next (state1, iter1, s1_end);
+          mbchar_t cur2 = mbif_next (state2, iter2, s2_end);
+          int cmp = mb_casecmp (cur1, cur2);
 
           if (cmp != 0)
             return cmp;
 
-          mbi_advance (iter1);
-          mbi_advance (iter2);
+          iter1 += mb_len (cur1);
+          iter2 += mb_len (cur2);
         }
-      if (mbi_avail (iter1))
+      if (mbif_avail (state1, iter1, s1_end))
         /* s2 terminated before s1.  */
         return 1;
-      if (mbi_avail (iter2))
+      if (mbif_avail (state2, iter2, s2_end))
         /* s1 terminated before s2.  */
         return -1;
       return 0;
@@ -70,8 +77,8 @@ mbmemcasecmp (const char *s1, size_t n1, const char *s2, size_t n2)
 
       while (p1 < s1_end && p2 < s2_end)
         {
-          unsigned char c1 = TOLOWER (*p1);
-          unsigned char c2 = TOLOWER (*p2);
+          unsigned char c1 = tolower (*p1);
+          unsigned char c2 = tolower (*p2);
           if (c1 != c2)
             {
               if (UCHAR_MAX <= INT_MAX)

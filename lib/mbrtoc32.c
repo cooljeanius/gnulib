@@ -26,9 +26,20 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#if GL_CHAR32_T_IS_UNICODE
+# include "lc-charset-unicode.h"
+#endif
+
 #if GNULIB_defined_mbstate_t /* AIX, IRIX */
 /* Implement mbrtoc32() on top of mbtowc() for the non-UTF-8 locales
    and directly for the UTF-8 locales.  */
+
+/* Note: On AIX (64-bit) we can implement mbrtoc32 in two equivalent ways:
+   - in a way that parallels the override of mbrtowc; this is the code branch
+     here;
+   - in a way that invokes the overridden mbrtowc; this would be the #else
+     branch below.
+   They are equivalent.  */
 
 # if defined _WIN32 && !defined __CYGWIN__
 
@@ -115,6 +126,15 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
   size_t ret = mbrtoc32 (pwc, s, n, ps);
 #  endif
 
+#  if GNULIB_MBRTOC32_REGULAR
+  /* Verify that mbrtoc32 is regular.  */
+  if (ret < (size_t) -3 && ! mbsinit (ps))
+    /* This occurs on glibc 2.36.  */
+    mbszero (ps);
+  if (ret == (size_t) -3)
+    abort ();
+#  endif
+
 #  if MBRTOC32_IN_C_LOCALE_MAYBE_EILSEQ
   if ((size_t) -2 <= ret && n != 0 && ! hard_locale (LC_CTYPE))
     {
@@ -183,7 +203,7 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
       if (nstate >= (res > 0 ? res : 1))
         abort ();
       res -= nstate;
-      /* Set *ps to the initial state.  */
+      /* Set *ps to an initial state.  */
 #  if defined _WIN32 && !defined __CYGWIN__
       /* Native Windows.  */
       /* MSVC defines 'mbstate_t' as an 8-byte struct; the first 4 bytes matter.
@@ -235,6 +255,17 @@ mbrtoc32 (char32_t *pwc, const char *s, size_t n, mbstate_t *ps)
   /* char32_t and wchar_t are equivalent.  Use mbrtowc().  */
   wchar_t wc;
   size_t ret = mbrtowc (&wc, s, n, ps);
+#  if GL_CHAR32_T_IS_UNICODE && GL_CHAR32_T_VS_WCHAR_T_NEEDS_CONVERSION
+  if (ret < (size_t) -2 && wc != 0)
+    {
+      wc = locale_encoding_to_unicode (wc);
+      if (wc == 0)
+        {
+          ret = (size_t) -1;
+          errno = EILSEQ;
+        }
+    }
+#  endif
   if (ret < (size_t) -2 && pwc != NULL)
     *pwc = wc;
   return ret;

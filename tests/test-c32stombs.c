@@ -53,7 +53,7 @@ main (int argc, char *argv[])
 
       switch (argv[1][0])
         {
-        case '1':
+        case '2':
           /* Locale encoding is ISO-8859-1 or ISO-8859-15.  */
           {
             const char original[] = "B\374\337er"; /* "Büßer" */
@@ -78,7 +78,7 @@ main (int argc, char *argv[])
           }
           break;
 
-        case '2':
+        case '3':
           /* Locale encoding is UTF-8.  */
           {
             const char original[] = "s\303\274\303\237\360\237\230\213!"; /* "süß😋!" */
@@ -107,7 +107,7 @@ main (int argc, char *argv[])
           }
           break;
 
-        case '3':
+        case '4':
           /* Locale encoding is EUC-JP.  */
           {
             const char original[] = "<\306\374\313\334\270\354>"; /* "<日本語>" */
@@ -137,8 +137,12 @@ main (int argc, char *argv[])
           break;
 
 
-        case '4':
+        case '5':
           /* Locale encoding is GB18030.  */
+          #if GL_CHAR32_T_IS_UNICODE && (defined __NetBSD__ || defined __sun)
+          fputs ("Skipping test: The GB18030 converter in this system's iconv is broken.\n", stderr);
+          return 77;
+          #endif
           {
             const char original[] = "s\250\271\201\060\211\070\224\071\375\067!"; /* "süß😋!" */
 

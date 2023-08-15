@@ -20,9 +20,11 @@
 #ifndef XTIME_H_
 #define XTIME_H_ 1
 
-#ifndef _GL_INLINE_HEADER_BEGIN
+/* This file uses _GL_INLINE_HEADER_BEGIN, _GL_INLINE.  */
+#if !_GL_CONFIG_H_INCLUDED
  #error "Please include config.h first."
 #endif
+
 _GL_INLINE_HEADER_BEGIN
 #ifndef XTIME_INLINE
 # define XTIME_INLINE _GL_INLINE
@@ -84,5 +86,7 @@ xtime_nsec (xtime_t t)
 #ifdef  __cplusplus
 }
 #endif
+
+_GL_INLINE_HEADER_END
 
 #endif

@@ -1815,6 +1815,8 @@ func_sanitize_modulelist ()
       -e '/^TEMPLATE-EXTENDED$/d' \
       -e '/^TEMPLATE-TESTS$/d' \
       -e '/^\..*/d' \
+      -e '/\.orig$/d' \
+      -e '/\.rej$/d' \
       -e '/~$/d'
 }
 
@@ -4044,6 +4046,7 @@ XGETTEXT_OPTIONS = \
   --keyword=_ --flag=_:1:pass-c-format \
   --keyword=N_ --flag=N_:1:pass-c-format \
   --keyword='proper_name:1,"This is a proper name. See the gettext manual, section Names."' \
+  --keyword='proper_name_lite:1,"This is a proper name. See the gettext manual, section Names."' \
   --keyword='proper_name_utf8:1,"This is a proper name. See the gettext manual, section Names."' \
   --flag=error:3:c-format --flag=error_at_line:5:c-format
 
@@ -4731,7 +4734,7 @@ func_emit_autoconf_snippets ()
           func_module_shellvar_name "$module"
           echo "  $shellfunc ()"
           echo '  {'
-          echo "    if ! \$$shellvar; then"
+          echo "    if \$$shellvar; then :; else"
           func_emit_autoconf_snippet "      "
           echo "      $shellvar=true"
           deps=`func_get_dependencies $module | sed -e "$sed_dependencies_without_conditions"`
@@ -6416,10 +6419,10 @@ func_create_testdir ()
     # Except non-recursive-gnulib-prefix-hack, which represents a nonstandard
     # way of using Automake.
     # Except timevar, which lacks the required file timevar.def.
-    # Except ftruncate, mountlist, which abort the configuration on mingw. FIXME.
+    # Except mountlist, which aborts the configuration on mingw. FIXME.
     # Except lib-ignore, which leads to link errors when Sun C++ is used. FIXME.
     modules=`func_all_modules`
-    modules=`for m in $modules; do case $m in config-h | non-recursive-gnulib-prefix-hack | timevar | ftruncate | mountlist | lib-ignore) ;; *) echo $m;; esac; done`
+    modules=`for m in $modules; do case $m in config-h | non-recursive-gnulib-prefix-hack | timevar | mountlist | lib-ignore) ;; *) echo $m;; esac; done`
   fi
   specified_modules="$modules"
 

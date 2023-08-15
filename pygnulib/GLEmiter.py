@@ -283,7 +283,7 @@ class GLEmiter(object):
                         shellvar = module.getShellVar()
                         emit += '  %s ()\n' % shellfunc
                         emit += '  {\n'
-                        emit += '    if ! $%s; then\n' % shellvar
+                        emit += '    if $%s; then :; else\n' % shellvar
                         emit += self.autoconfSnippet(module, toplevel,
                                                      disable_libtool, disable_gettext, replace_auxdir, '      ')
                         emit += '      %s=true\n' % shellvar
@@ -405,6 +405,7 @@ XGETTEXT_OPTIONS = \\
   --keyword=_ --flag=_:1:pass-c-format \\
   --keyword=N_ --flag=N_:1:pass-c-format \\
   --keyword='proper_name:1,"This is a proper name. See the gettext manual, section Names."' \\
+  --keyword='proper_name_lite:1,"This is a proper name. See the gettext manual, section Names."' \\
   --keyword='proper_name_utf8:1,"This is a proper name. See the gettext manual, section Names."' \\
   --flag=error:3:c-format --flag=error_at_line:5:c-format
 

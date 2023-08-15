@@ -1,4 +1,4 @@
-# timespec_get.m4 serial 4
+# timespec_get.m4 serial 6
 dnl Copyright (C) 2021-2023 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,

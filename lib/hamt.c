@@ -197,6 +197,7 @@ free_element (const struct function_table *functions, Hamt_entry *elt)
 }
 
 /* Return the initialized element.  */
+_GL_ATTRIBUTE_MAYBE_UNUSED
 static Hamt_entry *
 init_element (Hamt_entry *elt)
 {
@@ -213,8 +214,7 @@ static struct bucket *
 alloc_bucket (size_t elt_count)
 {
   struct bucket *bucket
-    = xmalloc (FLEXSIZEOF (struct bucket, elts,
-                           sizeof (Hamt_entry) * elt_count));
+    = xmalloc (FLEXNSIZEOF (struct bucket, elts, elt_count));
   init_ref_counter (&bucket->ref_counter, bucket_entry);
   bucket->elt_count = elt_count;
   return bucket;
@@ -250,8 +250,7 @@ static struct subtrie *
 alloc_subtrie (int node_count)
 {
   struct subtrie *subtrie
-    = xmalloc (FLEXSIZEOF (struct subtrie, nodes,
-                           sizeof (Hamt_entry) * node_count));
+    = xmalloc (FLEXNSIZEOF (struct subtrie, nodes, node_count));
   init_ref_counter (&subtrie->ref_count, subtrie_entry);
   return subtrie;
 }

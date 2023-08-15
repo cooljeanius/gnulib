@@ -32,6 +32,11 @@
 #ifndef _@GUARD_PREFIX@_FNMATCH_H
 #define _@GUARD_PREFIX@_FNMATCH_H
 
+/* This file uses GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
 /* The definitions of _GL_FUNCDECL_RPL etc. are copied here.  */
 
 /* The definition of _GL_ARG_NONNULL is copied here.  */
@@ -79,6 +84,7 @@
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define fnmatch rpl_fnmatch
 #  endif
+#  define GNULIB_defined_fnmatch_function 1
 _GL_FUNCDECL_RPL (fnmatch, int,
                   (const char *pattern, const char *name, int flags)
                   _GL_ARG_NONNULL ((1, 2)));
@@ -86,6 +92,7 @@ _GL_CXXALIAS_RPL (fnmatch, int,
                   (const char *pattern, const char *name, int flags));
 # else
 #  if !@HAVE_FNMATCH@
+#   define GNULIB_defined_fnmatch_function 1
 _GL_FUNCDECL_SYS (fnmatch, int,
                   (const char *pattern, const char *name, int flags)
                   _GL_ARG_NONNULL ((1, 2)));

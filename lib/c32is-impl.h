@@ -1,26 +1,18 @@
 /* Test whether a 32-bit wide character belongs to a specific character class.
    Copyright (C) 2020-2023 Free Software Foundation, Inc.
 
-   This file is free software.
-   It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
-   You can redistribute it and/or modify it under either
-     - the terms of the GNU Lesser General Public License as published
-       by the Free Software Foundation, either version 3, or (at your
-       option) any later version, or
-     - the terms of the GNU General Public License as published by the
-       Free Software Foundation; either version 2, or (at your option)
-       any later version, or
-     - the same dual license "the GNU LGPLv3+ or the GNU GPLv2+".
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License and the GNU General Public License
-   for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Lesser General Public
-   License and of the GNU General Public License along with this
-   program.  If not, see <https://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2020.  */
 
@@ -34,6 +26,10 @@
 #if GNULIB_defined_mbstate_t
 # include "localcharset.h"
 # include "streq.h"
+#endif
+
+#if GL_CHAR32_T_IS_UNICODE
+# include "lc-charset-unicode.h"
 #endif
 
 #include "unictype.h"
@@ -61,7 +57,7 @@ FUNC (wint_t wc)
   else
     return 0;
 
-#elif HAVE_WORKING_MBRTOC32             /* glibc */
+#elif HAVE_WORKING_MBRTOC32             /* glibc, Android */
   /* mbrtoc32() is essentially defined by the system libc.  */
 
 # if _GL_WCHAR_T_IS_UCS4
@@ -100,6 +96,10 @@ FUNC (wint_t wc)
   /* char32_t and wchar_t are equivalent.  */
   static_assert (sizeof (char32_t) == sizeof (wchar_t));
 
+# if GL_CHAR32_T_IS_UNICODE && GL_CHAR32_T_VS_WCHAR_T_NEEDS_CONVERSION
+  return UCS_FUNC (wc);
+# else
   return WCHAR_FUNC (wc);
+# endif
 #endif
 }

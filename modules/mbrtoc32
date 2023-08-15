@@ -25,6 +25,8 @@ attribute       [test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1]
 c99             [{ test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1; } && test $REPLACE_MBSTATE_T = 0]
 hard-locale     [{ test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1; } && test $REPLACE_MBSTATE_T = 0]
 mbrtowc         [{ test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1; } && test $REPLACE_MBSTATE_T = 0]
+mbsinit         [{ test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1; } && test $REPLACE_MBSTATE_T = 0]
+mbszero         [{ test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1; } && test $REPLACE_MBSTATE_T = 0]
 assert-h        [test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1]
 localcharset    [test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1]
 streq           [test $HAVE_MBRTOC32 = 0 || test $REPLACE_MBRTOC32 = 1]
@@ -52,7 +54,9 @@ Include:
 <uchar.h>
 
 Link:
+$(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 $(MBRTOWC_LIB)
+$(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 
 License:
 LGPLv2+

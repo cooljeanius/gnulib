@@ -28,6 +28,7 @@ SIGNATURE_CHECK (mbrtoc32, size_t,
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "macros.h"
 
@@ -130,14 +131,50 @@ main (int argc, char *argv[])
      "C" locale.  Furthermore, when you attempt to set the "C" or "POSIX"
      locale via setlocale(), what you get is a "C" locale with UTF-8 encoding,
      that is, effectively the "C.UTF-8" locale.  */
-  if (argc > 1 && strcmp (argv[1], "5") == 0 && MB_CUR_MAX > 1)
-    argv[1] = "2";
+  if (argc > 1 && strcmp (argv[1], "1") == 0 && MB_CUR_MAX > 1)
+    argv[1] = "3";
 #endif
 
   if (argc > 1)
     switch (argv[1][0])
       {
       case '1':
+        /* C or POSIX locale.  */
+        {
+          int c;
+          char buf[1];
+
+          memset (&state, '\0', sizeof (mbstate_t));
+          for (c = 0; c < 0x100; c++)
+            if (c != 0)
+              {
+                /* We are testing all nonnull bytes.  */
+                buf[0] = c;
+
+                wc = (char32_t) 0xBADFACE;
+                ret = mbrtoc32 (&wc, buf, 1, &state);
+                /* POSIX:2018 says regarding mbrtowc: "In the POSIX locale an
+                   [EILSEQ] error cannot occur since all byte values are valid
+                   characters."  It is reasonable to expect mbrtoc32 to behave
+                   in the same way.  */
+                ASSERT (ret == 1);
+                if (c < 0x80)
+                  /* c is an ASCII character.  */
+                  ASSERT (wc == c);
+                else
+                  /* On most platforms, the bytes 0x80..0xFF map to U+0080..U+00FF.
+                     But on musl libc, the bytes 0x80..0xFF map to U+DF80..U+DFFF.  */
+                  ASSERT (wc == (btoc32 (c) == 0xDF00 + c ? btoc32 (c) : c));
+                ASSERT (mbsinit (&state));
+
+                ret = mbrtoc32 (NULL, buf, 1, &state);
+                ASSERT (ret == 1);
+                ASSERT (mbsinit (&state));
+              }
+        }
+        return 0;
+
+      case '2':
         /* Locale encoding is ISO-8859-1 or ISO-8859-15.  */
         {
           char input[] = "B\374\337er"; /* "Büßer" */
@@ -154,6 +191,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 1, 1, &state);
           ASSERT (ret == 1);
           ASSERT (c32tob (wc) == (unsigned char) '\374');
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x00FC); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[1] = '\0';
 
@@ -166,6 +206,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 2, 3, &state);
           ASSERT (ret == 1);
           ASSERT (c32tob (wc) == (unsigned char) '\337');
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x00DF); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[2] = '\0';
 
@@ -184,7 +227,7 @@ main (int argc, char *argv[])
         }
         return 0;
 
-      case '2':
+      case '3':
         /* Locale encoding is UTF-8.  */
         {
           char input[] = "s\303\274\303\237\360\237\230\213!"; /* "süß😋!" */
@@ -250,7 +293,7 @@ main (int argc, char *argv[])
         }
         return 0;
 
-      case '3':
+      case '4':
         /* Locale encoding is EUC-JP.  */
         {
           char input[] = "<\306\374\313\334\270\354>"; /* "<日本語>" */
@@ -267,6 +310,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 1, 2, &state);
           ASSERT (ret == 2);
           ASSERT (c32tob (wc) == EOF);
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x65E5); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[1] = '\0';
           input[2] = '\0';
@@ -282,6 +328,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 4, 4, &state);
           ASSERT (ret == 1);
           ASSERT (c32tob (wc) == EOF);
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x672C); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[4] = '\0';
 
@@ -294,6 +343,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 5, 3, &state);
           ASSERT (ret == 2);
           ASSERT (c32tob (wc) == EOF);
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x8A9E); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[5] = '\0';
           input[6] = '\0';
@@ -306,8 +358,12 @@ main (int argc, char *argv[])
         }
         return 0;
 
-      case '4':
+      case '5':
         /* Locale encoding is GB18030.  */
+        #if GL_CHAR32_T_IS_UNICODE && (defined __NetBSD__ || defined __sun)
+        fputs ("Skipping test: The GB18030 converter in this system's iconv is broken.\n", stderr);
+        return 77;
+        #endif
         {
           char input[] = "s\250\271\201\060\211\070\224\071\375\067!"; /* "süß😋!" */
           memset (&state, '\0', sizeof (mbstate_t));
@@ -330,6 +386,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 2, 9, &state);
           ASSERT (ret == 1);
           ASSERT (c32tob (wc) == EOF);
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x00FC); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[2] = '\0';
 
@@ -342,6 +401,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 3, 8, &state);
           ASSERT (ret == 4);
           ASSERT (c32tob (wc) == EOF);
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x00DF); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[3] = '\0';
           input[4] = '\0';
@@ -357,6 +419,9 @@ main (int argc, char *argv[])
           ret = mbrtoc32 (&wc, input + 7, 4, &state);
           ASSERT (ret == 4);
           ASSERT (c32tob (wc) == EOF);
+          #if GL_CHAR32_T_IS_UNICODE
+          ASSERT (wc == 0x1F60B); /* expect Unicode encoding */
+          #endif
           ASSERT (mbsinit (&state));
           input[7] = '\0';
           input[8] = '\0';
@@ -368,42 +433,6 @@ main (int argc, char *argv[])
           ASSERT (ret == 1);
           ASSERT (wc == '!');
           ASSERT (mbsinit (&state));
-        }
-        return 0;
-
-      case '5':
-        /* C or POSIX locale.  */
-        {
-          int c;
-          char buf[1];
-
-          memset (&state, '\0', sizeof (mbstate_t));
-          for (c = 0; c < 0x100; c++)
-            if (c != 0)
-              {
-                /* We are testing all nonnull bytes.  */
-                buf[0] = c;
-
-                wc = (char32_t) 0xBADFACE;
-                ret = mbrtoc32 (&wc, buf, 1, &state);
-                /* POSIX:2018 says regarding mbrtowc: "In the POSIX locale an
-                   [EILSEQ] error cannot occur since all byte values are valid
-                   characters."  It is reasonable to expect mbrtoc32 to behave
-                   in the same way.  */
-                ASSERT (ret == 1);
-                if (c < 0x80)
-                  /* c is an ASCII character.  */
-                  ASSERT (wc == c);
-                else
-                  /* On most platforms, the bytes 0x80..0xFF map to U+0080..U+00FF.
-                     But on musl libc, the bytes 0x80..0xFF map to U+DF80..U+DFFF.  */
-                  ASSERT (wc == (btoc32 (c) == 0xDF00 + c ? btoc32 (c) : c));
-                ASSERT (mbsinit (&state));
-
-                ret = mbrtoc32 (NULL, buf, 1, &state);
-                ASSERT (ret == 1);
-                ASSERT (mbsinit (&state));
-              }
         }
         return 0;
       }

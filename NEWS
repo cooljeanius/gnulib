@@ -74,6 +74,34 @@ User visible incompatible changes
 
 Date        Modules         Changes
 
+2023-08-08  readutmp        The result element type of the function read_utmp,
+                            STRUCT_UTMP, is no longer the same as the result
+                            value type of the function getutxent, struct utmpx.
+
+2023-08-03  readutmp        Some STRUCT_UTMP members can be char *,
+2023-08-01                  rather than fixed-length char arrays.
+                            On some platforms, the timestamp is ut_ts of type
+                            struct timespec, not ut_tv of type struct timeval,
+                            and ut_session is pid_t not long.
+                            read_utmp's 2nd arg is now idx_t * not size_t *.
+                            Link additionally with $(READUTMP_LIB).
+
+2023-07-10  dfa             The signature of the function
+                            case_folded_counterparts, declared in localeinfo.h,
+                            has changed.
+
+2023-06-10  javacomp-script  These modules now compile the Java code with option
+            javacomp          '-source 1.6' or higher. As a consequence, the
+                             compiler may emit notes "... uses unchecked or
+                             unsafe operations". To avoid these notes, add
+                             template arguments to the types or functions.
+
+2023-04-28  largefile-required
+            year2038-required
+                            Modules removed, for consistency with Autoconf
+                            master.  Use new module year2038-recommended
+                            instead of year2038-required.
+
 2023-03-25  mtx             This module no longer provides the function
                             call_once.  To get this function, use the new
                             separate module 'call_once'.

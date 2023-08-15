@@ -6,7 +6,7 @@ lib/mbmemcasecmp.h
 lib/mbmemcasecmp.c
 
 Depends-on:
-mbiter
+mbiterf
 
 configure.ac:
 
@@ -19,6 +19,7 @@ Include:
 Link:
 $(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 $(MBRTOWC_LIB)
+$(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 
 License:
 LGPL

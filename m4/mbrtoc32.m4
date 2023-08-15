@@ -1,4 +1,4 @@
-# mbrtoc32.m4 serial 12
+# mbrtoc32.m4 serial 17
 dnl Copyright (C) 2014-2023 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
@@ -9,7 +9,10 @@ AC_DEFUN([gl_FUNC_MBRTOC32],
   AC_REQUIRE([gl_UCHAR_H_DEFAULTS])
 
   AC_REQUIRE([AC_TYPE_MBSTATE_T])
-  gl_MBSTATE_T_BROKEN
+  dnl Determine REPLACE_MBSTATE_T, from which GNULIB_defined_mbstate_t is
+  dnl determined.  It describes how our overridden mbrtowc is implemented.
+  dnl We then implement mbrtoc32 accordingly.
+  AC_REQUIRE([gl_MBSTATE_T_BROKEN])
 
   AC_REQUIRE([gl_TYPE_CHAR32_T])
   AC_REQUIRE([gl_MBRTOC32_SANITYCHECK])
@@ -77,6 +80,8 @@ AC_DEFUN([gl_CHECK_FUNC_MBRTOC32],
   fi
 ])
 
+dnl Test whether mbrtoc32 returns the correct value on empty input.
+
 AC_DEFUN([gl_MBRTOC32_EMPTY_INPUT],
 [
   AC_REQUIRE([AC_PROG_CC])
@@ -84,15 +89,6 @@ AC_DEFUN([gl_MBRTOC32_EMPTY_INPUT],
   AC_CACHE_CHECK([whether mbrtoc32 works on empty input],
     [gl_cv_func_mbrtoc32_empty_input],
     [
-      dnl Initial guess, used when cross-compiling or when no suitable locale
-      dnl is present.
-changequote(,)dnl
-      case "$host_os" in
-                       # Guess no on glibc systems.
-        *-gnu* | gnu*) gl_cv_func_mbrtoc32_empty_input="guessing no" ;;
-        *)             gl_cv_func_mbrtoc32_empty_input="guessing yes" ;;
-      esac
-changequote([,])dnl
       AC_RUN_IFELSE(
         [AC_LANG_SOURCE([[
            #ifdef __HAIKU__
@@ -108,7 +104,16 @@ changequote([,])dnl
            }]])],
         [gl_cv_func_mbrtoc32_empty_input=yes],
         [gl_cv_func_mbrtoc32_empty_input=no],
-        [:])
+        [case "$host_os" in
+                            # Guess no on glibc systems.
+           *-gnu* | gnu*)   gl_cv_func_mbrtoc32_empty_input="guessing no" ;;
+                            # Guess no on Android.
+           linux*-android*) gl_cv_func_mbrtoc32_empty_input="guessing no" ;;
+                            # Guess no on native Windows.
+           mingw*)          gl_cv_func_mbrtoc32_empty_input="guessing no" ;;
+           *)               gl_cv_func_mbrtoc32_empty_input="guessing yes" ;;
+         esac
+        ])
     ])
 ])
 
@@ -122,12 +127,7 @@ AC_DEFUN([gl_MBRTOC32_C_LOCALE],
   AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
   AC_CACHE_CHECK([whether the C locale is free of encoding errors],
     [gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ],
-    [
-     dnl Initial guess, used when cross-compiling or when no suitable locale
-     dnl is present.
-     gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ="$gl_cross_guess_normal"
-
-     AC_RUN_IFELSE(
+    [AC_RUN_IFELSE(
        [AC_LANG_PROGRAM(
           [[#include <limits.h>
             #include <locale.h>
@@ -151,13 +151,14 @@ AC_DEFUN([gl_MBRTOC32_C_LOCALE],
               }
             return 0;
           ]])],
-      [gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ=yes],
-      [gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ=no],
-      [case "$host_os" in
-                 # Guess yes on native Windows.
-         mingw*) gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ="guessing yes" ;;
-       esac
-      ])
+       [gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ=yes],
+       [gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ=no],
+       [case "$host_os" in
+                  # Guess yes on native Windows.
+          mingw*) gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ="guessing yes" ;;
+          *)      gl_cv_func_mbrtoc32_C_locale_sans_EILSEQ="$gl_cross_guess_normal" ;;
+        esac
+       ])
     ])
 ])
 
@@ -209,7 +210,8 @@ int main ()
   /* This fails on native Windows:
      mbrtoc32 returns (size_t)-1.
      mbrtowc returns 1 (correct).  */
-  if (setlocale (LC_ALL, "$LOCALE_FR") != NULL)
+  if (strcmp ("$LOCALE_FR", "none") != 0
+      && setlocale (LC_ALL, "$LOCALE_FR") != NULL)
     {
       mbstate_t state;
       wchar_t wc = (wchar_t) 0xBADFACE;
@@ -225,7 +227,8 @@ int main ()
   /* This fails on FreeBSD 13.0 and Solaris 11.4:
      mbrtoc32 returns (size_t)-2 or (size_t)-1.
      mbrtowc returns 4 (correct).  */
-  if (setlocale (LC_ALL, "$LOCALE_ZH_CN") != NULL)
+  if (strcmp ("$LOCALE_ZH_CN", "none") != 0
+      && setlocale (LC_ALL, "$LOCALE_ZH_CN") != NULL)
     {
       mbstate_t state;
       wchar_t wc = (wchar_t) 0xBADFACE;

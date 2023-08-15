@@ -981,7 +981,6 @@ next:   tmp = p;
                         fts_load(sp, p);
                         if (! setup_dir(sp)) {
                                 free_dir(sp);
-                                __set_errno (ENOMEM);
                                 return (NULL);
                         }
                         goto check_for_dir;
@@ -1028,10 +1027,7 @@ check_for_dir:
                       sp->fts_dev = p->fts_statp->st_dev;
                     Dprintf (("  entering: %s\n", p->fts_path));
                     if (! enter_dir (sp, p))
-                      {
-                        __set_errno (ENOMEM);
-                        return NULL;
-                      }
+                      return NULL;
                   }
                 return p;
         }
@@ -1348,8 +1344,9 @@ fts_build (register FTS *sp, int type)
                   cur->fts_info = FTS_D;
                 else if (! enter_dir (sp, cur))
                   {
+                    int err = errno;
                     closedir_and_clear (cur->fts_dirp);
-                    __set_errno (ENOMEM);
+                    __set_errno (err);
                     return NULL;
                   }
               }
@@ -1736,11 +1733,11 @@ fd_ring_print (FTS const *sp, FILE *stream, char const *msg)
     {
       int fd = fd_ring->ir_data[i];
       if (fd < 0)
-        fprintf (stream, "%d: %d:\n", i, fd);
+        fprintf (stream, "%u: %d:\n", i, fd);
       else
         {
           struct devino wd = getdevino (fd);
-          fprintf (stream, "%d: %d: "PRINT_DEVINO"\n", i, fd, wd.dev, wd.ino);
+          fprintf (stream, "%u: %d: "PRINT_DEVINO"\n", i, fd, wd.dev, wd.ino);
         }
       if (i == fd_ring->ir_back)
         break;
@@ -1804,7 +1801,7 @@ fts_stat(FTS *sp, register FTSENT *p, bool follow)
 
         /*
          * If doing a logical walk, or application requested FTS_FOLLOW, do
-         * a stat(2).  If that fails, check for a non-existent symlink.  If
+         * a stat(2).  If that fails, check for a nonexistent symlink.  If
          * fail, set the errno from the stat call.
          */
         int flags = follow ? 0 : AT_SYMLINK_NOFOLLOW;
@@ -1937,6 +1934,7 @@ internal_function
 fts_lfree (register FTSENT *head)
 {
         register FTSENT *p;
+        int err = errno;
 
         /* Free a linked list of structures. */
         while ((p = head)) {
@@ -1945,6 +1943,8 @@ fts_lfree (register FTSENT *head)
                         closedir (p->fts_dirp);
                 free(p);
         }
+
+        __set_errno (err);
 }
 
 /*

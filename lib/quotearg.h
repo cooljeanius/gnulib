@@ -21,6 +21,11 @@
 #ifndef QUOTEARG_H_
 # define QUOTEARG_H_ 1
 
+/* This file uses _GL_ATTRIBUTE_MALLOC, _GL_ATTRIBUTE_RETURNS_NONNULL.  */
+# if !_GL_CONFIG_H_INCLUDED
+#  error "Please include config.h first."
+# endif
+
 # include <stdlib.h>
 
 /* Basic quoting styles.  For each style, an example is given on the
@@ -150,11 +155,11 @@ enum quoting_style
 
        LC_MESSAGES=C
        quotearg_buffer:
-       "`simple'", "`\\0 \\t\\n\\'\"\\033??/\\\\'", "`a:b'"
+       "'simple'", "'\\0 \\t\\n\\'\"\\033??/\\\\'", "'a:b'"
        quotearg:
-       "`simple'", "`\\0 \\t\\n\\'\"\\033??/\\\\'", "`a:b'"
+       "'simple'", "'\\0 \\t\\n\\'\"\\033??/\\\\'", "'a:b'"
        quotearg_colon:
-       "`simple'", "`\\0 \\t\\n\\'\"\\033??/\\\\'", "`a\\:b'"
+       "'simple'", "'\\0 \\t\\n\\'\"\\033??/\\\\'", "'a\\:b'"
 
        LC_MESSAGES=pt_PT.utf8
        quotearg_buffer:

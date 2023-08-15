@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "localcharset.h"
 #include "macros.h"
@@ -90,10 +91,7 @@ test_one_locale (const char *name, int codepage)
     memset (&state, '\0', sizeof (mbstate_t));
     wc = (char32_t) 0xBADFACE;
     ret = mbrtoc32 (&wc, "x", 0, &state);
-    /* gnulib's implementation returns (size_t)(-2).
-       The AIX 5.1 implementation returns (size_t)(-1).
-       glibc's implementation returns 0.  */
-    ASSERT (ret == (size_t)(-2) || ret == (size_t)(-1) || ret == 0);
+    ASSERT (ret == (size_t)(-2));
     ASSERT (mbsinit (&state));
   }
 
@@ -183,7 +181,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 1, 1, &state);
         ASSERT (ret == 1);
         ASSERT (c32tob (wc) == (unsigned char) '\374');
-        ASSERT (wc == 0x00FC);
+        ASSERT (wc == 0x00FC); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[1] = '\0';
 
@@ -196,7 +194,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 2, 3, &state);
         ASSERT (ret == 1);
         ASSERT (c32tob (wc) == (unsigned char) '\337');
-        ASSERT (wc == 0x00DF);
+        ASSERT (wc == 0x00DF); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[2] = '\0';
 
@@ -232,7 +230,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 1, 1, &state);
         ASSERT (ret == 1);
         ASSERT (c32tob (wc) == (unsigned char) '\302');
-        ASSERT (wc == 0x0622);
+        ASSERT (wc == 0x0622); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[1] = '\0';
 
@@ -245,7 +243,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 2, 3, &state);
         ASSERT (ret == 1);
         ASSERT (c32tob (wc) == (unsigned char) '\341');
-        ASSERT (wc == 0x0644);
+        ASSERT (wc == 0x0644); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[2] = '\0';
 
@@ -253,7 +251,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 3, 2, &state);
         ASSERT (ret == 1);
         ASSERT (c32tob (wc) == (unsigned char) '\346');
-        ASSERT (wc == 0x0648);
+        ASSERT (wc == 0x0648); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[3] = '\0';
 
@@ -262,323 +260,6 @@ test_one_locale (const char *name, int codepage)
         ASSERT (ret == 1);
         ASSERT (wc == 'y');
         ASSERT (mbsinit (&state));
-      }
-      return 0;
-
-    case 932:
-      /* Locale encoding is CP932, similar to Shift_JIS.  */
-      {
-        char input[] = "<\223\372\226\173\214\352>"; /* "<日本語>" */
-        memset (&state, '\0', sizeof (mbstate_t));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == '<');
-        ASSERT (mbsinit (&state));
-        input[0] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 1, 2, &state);
-        ASSERT (ret == 2);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x65E5);
-        ASSERT (mbsinit (&state));
-        input[1] = '\0';
-        input[2] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 3, 1, &state);
-        ASSERT (ret == (size_t)(-2));
-        ASSERT (wc == (char32_t) 0xBADFACE);
-        ASSERT (!mbsinit (&state));
-        input[3] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 4, 4, &state);
-        ASSERT (ret == 1);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x672C);
-        ASSERT (mbsinit (&state));
-        input[4] = '\0';
-
-        /* Test support of NULL first argument.  */
-        ret = mbrtoc32 (NULL, input + 5, 3, &state);
-        ASSERT (ret == 2);
-        ASSERT (mbsinit (&state));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 5, 3, &state);
-        ASSERT (ret == 2);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x8A9E);
-        ASSERT (mbsinit (&state));
-        input[5] = '\0';
-        input[6] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 7, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == '>');
-        ASSERT (mbsinit (&state));
-
-        /* Test some invalid input.  */
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
-        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || ret == (size_t)-2);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
-        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || (ret == 2 && wc == 0x30FB));
-      }
-      return 0;
-
-    case 950:
-      /* Locale encoding is CP950, similar to Big5.  */
-      {
-        char input[] = "<\244\351\245\273\273\171>"; /* "<日本語>" */
-        memset (&state, '\0', sizeof (mbstate_t));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == '<');
-        ASSERT (mbsinit (&state));
-        input[0] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 1, 2, &state);
-        ASSERT (ret == 2);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x65E5);
-        ASSERT (mbsinit (&state));
-        input[1] = '\0';
-        input[2] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 3, 1, &state);
-        ASSERT (ret == (size_t)(-2));
-        ASSERT (wc == (char32_t) 0xBADFACE);
-        ASSERT (!mbsinit (&state));
-        input[3] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 4, 4, &state);
-        ASSERT (ret == 1);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x672C);
-        ASSERT (mbsinit (&state));
-        input[4] = '\0';
-
-        /* Test support of NULL first argument.  */
-        ret = mbrtoc32 (NULL, input + 5, 3, &state);
-        ASSERT (ret == 2);
-        ASSERT (mbsinit (&state));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 5, 3, &state);
-        ASSERT (ret == 2);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x8A9E);
-        ASSERT (mbsinit (&state));
-        input[5] = '\0';
-        input[6] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 7, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == '>');
-        ASSERT (mbsinit (&state));
-
-        /* Test some invalid input.  */
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
-        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || ret == (size_t)-2);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
-        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || (ret == 2 && wc == '?'));
-      }
-      return 0;
-
-    case 936:
-      /* Locale encoding is CP936 = GBK, an extension of GB2312.  */
-      {
-        char input[] = "<\310\325\261\276\325\132>"; /* "<日本語>" */
-        memset (&state, '\0', sizeof (mbstate_t));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == '<');
-        ASSERT (mbsinit (&state));
-        input[0] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 1, 2, &state);
-        ASSERT (ret == 2);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x65E5);
-        ASSERT (mbsinit (&state));
-        input[1] = '\0';
-        input[2] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 3, 1, &state);
-        ASSERT (ret == (size_t)(-2));
-        ASSERT (wc == (char32_t) 0xBADFACE);
-        ASSERT (!mbsinit (&state));
-        input[3] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 4, 4, &state);
-        ASSERT (ret == 1);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x672C);
-        ASSERT (mbsinit (&state));
-        input[4] = '\0';
-
-        /* Test support of NULL first argument.  */
-        ret = mbrtoc32 (NULL, input + 5, 3, &state);
-        ASSERT (ret == 2);
-        ASSERT (mbsinit (&state));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 5, 3, &state);
-        ASSERT (ret == 2);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x8A9E);
-        ASSERT (mbsinit (&state));
-        input[5] = '\0';
-        input[6] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 7, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == '>');
-        ASSERT (mbsinit (&state));
-
-        /* Test some invalid input.  */
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
-        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || ret == (size_t)-2);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
-        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || (ret == 2 && wc == '?'));
-      }
-      return 0;
-
-    case 54936:
-      /* Locale encoding is CP54936 = GB18030.  */
-      if (strcmp (locale_charset (), "GB18030") != 0)
-        return 77;
-      {
-        char input[] = "s\250\271\201\060\211\070\224\071\375\067!"; /* "süß😋!" */
-        memset (&state, '\0', sizeof (mbstate_t));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == 's');
-        ASSERT (mbsinit (&state));
-        input[0] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 1, 1, &state);
-        ASSERT (ret == (size_t)(-2));
-        ASSERT (wc == (char32_t) 0xBADFACE);
-        ASSERT (!mbsinit (&state));
-        input[1] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 2, 9, &state);
-        ASSERT (ret == 1);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x00FC);
-        ASSERT (mbsinit (&state));
-        input[2] = '\0';
-
-        /* Test support of NULL first argument.  */
-        ret = mbrtoc32 (NULL, input + 3, 8, &state);
-        ASSERT (ret == 4);
-        ASSERT (mbsinit (&state));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 3, 8, &state);
-        ASSERT (ret == 4);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x00DF);
-        ASSERT (mbsinit (&state));
-        input[3] = '\0';
-        input[4] = '\0';
-        input[5] = '\0';
-        input[6] = '\0';
-
-        /* Test support of NULL first argument.  */
-        ret = mbrtoc32 (NULL, input + 7, 4, &state);
-        ASSERT (ret == 4);
-        ASSERT (mbsinit (&state));
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 7, 4, &state);
-        ASSERT (ret == 4);
-        ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x1F60B);
-        ASSERT (mbsinit (&state));
-        input[7] = '\0';
-        input[8] = '\0';
-        input[9] = '\0';
-        input[10] = '\0';
-
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, input + 11, 1, &state);
-        ASSERT (ret == 1);
-        ASSERT (wc == '!');
-        ASSERT (mbsinit (&state));
-
-        /* Test some invalid input.  */
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
-        ASSERT (ret == (size_t)-1);
-        ASSERT (errno == EILSEQ);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
-        ASSERT (ret == (size_t)-1);
-        ASSERT (errno == EILSEQ);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\201\045", 2, &state); /* 0x81 0x25 */
-        ASSERT (ret == (size_t)-1);
-        ASSERT (errno == EILSEQ);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\201\060\377", 3, &state); /* 0x81 0x30 0xFF */
-        ASSERT (ret == (size_t)-1);
-        ASSERT (errno == EILSEQ);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\201\060\377\064", 4, &state); /* 0x81 0x30 0xFF 0x34 */
-        ASSERT (ret == (size_t)-1);
-        ASSERT (errno == EILSEQ);
-
-        memset (&state, '\0', sizeof (mbstate_t));
-        wc = (char32_t) 0xBADFACE;
-        ret = mbrtoc32 (&wc, "\201\060\211\072", 4, &state); /* 0x81 0x30 0x89 0x3A */
-        ASSERT (ret == (size_t)-1);
-        ASSERT (errno == EILSEQ);
       }
       return 0;
 
@@ -608,7 +289,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 2, 7, &state);
         ASSERT (ret == 1);
         ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x00FC);
+        ASSERT (wc == 0x00FC); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[2] = '\0';
 
@@ -621,7 +302,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 3, 6, &state);
         ASSERT (ret == 2);
         ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x00DF);
+        ASSERT (wc == 0x00DF); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[3] = '\0';
         input[4] = '\0';
@@ -635,7 +316,7 @@ test_one_locale (const char *name, int codepage)
         ret = mbrtoc32 (&wc, input + 5, 4, &state);
         ASSERT (ret == 4);
         ASSERT (c32tob (wc) == EOF);
-        ASSERT (wc == 0x1F60B);
+        ASSERT (wc == 0x1F60B); /* expect Unicode encoding */
         ASSERT (mbsinit (&state));
         input[5] = '\0';
         input[6] = '\0';
@@ -706,6 +387,323 @@ test_one_locale (const char *name, int codepage)
         memset (&state, '\0', sizeof (mbstate_t));
         wc = (char32_t) 0xBADFACE;
         ret = mbrtoc32 (&wc, "\363\200\200\300", 4, &state); /* 0xF3 0x80 0x80 0xC0 */
+        ASSERT (ret == (size_t)-1);
+        ASSERT (errno == EILSEQ);
+      }
+      return 0;
+
+    case 932:
+      /* Locale encoding is CP932, similar to Shift_JIS.  */
+      {
+        char input[] = "<\223\372\226\173\214\352>"; /* "<日本語>" */
+        memset (&state, '\0', sizeof (mbstate_t));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == '<');
+        ASSERT (mbsinit (&state));
+        input[0] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 1, 2, &state);
+        ASSERT (ret == 2);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x65E5); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[1] = '\0';
+        input[2] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 3, 1, &state);
+        ASSERT (ret == (size_t)(-2));
+        ASSERT (wc == (char32_t) 0xBADFACE);
+        ASSERT (!mbsinit (&state));
+        input[3] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 4, 4, &state);
+        ASSERT (ret == 1);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x672C); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[4] = '\0';
+
+        /* Test support of NULL first argument.  */
+        ret = mbrtoc32 (NULL, input + 5, 3, &state);
+        ASSERT (ret == 2);
+        ASSERT (mbsinit (&state));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 5, 3, &state);
+        ASSERT (ret == 2);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x8A9E); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[5] = '\0';
+        input[6] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 7, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == '>');
+        ASSERT (mbsinit (&state));
+
+        /* Test some invalid input.  */
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
+        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || ret == (size_t)-2);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
+        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || (ret == 2 && wc == 0x30FB));
+      }
+      return 0;
+
+    case 950:
+      /* Locale encoding is CP950, similar to Big5.  */
+      {
+        char input[] = "<\244\351\245\273\273\171>"; /* "<日本語>" */
+        memset (&state, '\0', sizeof (mbstate_t));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == '<');
+        ASSERT (mbsinit (&state));
+        input[0] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 1, 2, &state);
+        ASSERT (ret == 2);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x65E5); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[1] = '\0';
+        input[2] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 3, 1, &state);
+        ASSERT (ret == (size_t)(-2));
+        ASSERT (wc == (char32_t) 0xBADFACE);
+        ASSERT (!mbsinit (&state));
+        input[3] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 4, 4, &state);
+        ASSERT (ret == 1);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x672C); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[4] = '\0';
+
+        /* Test support of NULL first argument.  */
+        ret = mbrtoc32 (NULL, input + 5, 3, &state);
+        ASSERT (ret == 2);
+        ASSERT (mbsinit (&state));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 5, 3, &state);
+        ASSERT (ret == 2);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x8A9E); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[5] = '\0';
+        input[6] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 7, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == '>');
+        ASSERT (mbsinit (&state));
+
+        /* Test some invalid input.  */
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
+        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || ret == (size_t)-2);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
+        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || (ret == 2 && wc == '?'));
+      }
+      return 0;
+
+    case 936:
+      /* Locale encoding is CP936 = GBK, an extension of GB2312.  */
+      {
+        char input[] = "<\310\325\261\276\325\132>"; /* "<日本語>" */
+        memset (&state, '\0', sizeof (mbstate_t));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == '<');
+        ASSERT (mbsinit (&state));
+        input[0] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 1, 2, &state);
+        ASSERT (ret == 2);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x65E5); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[1] = '\0';
+        input[2] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 3, 1, &state);
+        ASSERT (ret == (size_t)(-2));
+        ASSERT (wc == (char32_t) 0xBADFACE);
+        ASSERT (!mbsinit (&state));
+        input[3] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 4, 4, &state);
+        ASSERT (ret == 1);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x672C); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[4] = '\0';
+
+        /* Test support of NULL first argument.  */
+        ret = mbrtoc32 (NULL, input + 5, 3, &state);
+        ASSERT (ret == 2);
+        ASSERT (mbsinit (&state));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 5, 3, &state);
+        ASSERT (ret == 2);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x8A9E); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[5] = '\0';
+        input[6] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 7, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == '>');
+        ASSERT (mbsinit (&state));
+
+        /* Test some invalid input.  */
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
+        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || ret == (size_t)-2);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
+        ASSERT ((ret == (size_t)-1 && errno == EILSEQ) || (ret == 2 && wc == '?'));
+      }
+      return 0;
+
+    case 54936:
+      /* Locale encoding is CP54936 = GB18030.  */
+      if (strcmp (locale_charset (), "GB18030") != 0)
+        return 77;
+      {
+        char input[] = "s\250\271\201\060\211\070\224\071\375\067!"; /* "süß😋!" */
+        memset (&state, '\0', sizeof (mbstate_t));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == 's');
+        ASSERT (mbsinit (&state));
+        input[0] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 1, 1, &state);
+        ASSERT (ret == (size_t)(-2));
+        ASSERT (wc == (char32_t) 0xBADFACE);
+        ASSERT (!mbsinit (&state));
+        input[1] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 2, 9, &state);
+        ASSERT (ret == 1);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x00FC); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[2] = '\0';
+
+        /* Test support of NULL first argument.  */
+        ret = mbrtoc32 (NULL, input + 3, 8, &state);
+        ASSERT (ret == 4);
+        ASSERT (mbsinit (&state));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 3, 8, &state);
+        ASSERT (ret == 4);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x00DF); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[3] = '\0';
+        input[4] = '\0';
+        input[5] = '\0';
+        input[6] = '\0';
+
+        /* Test support of NULL first argument.  */
+        ret = mbrtoc32 (NULL, input + 7, 4, &state);
+        ASSERT (ret == 4);
+        ASSERT (mbsinit (&state));
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 7, 4, &state);
+        ASSERT (ret == 4);
+        ASSERT (c32tob (wc) == EOF);
+        ASSERT (wc == 0x1F60B); /* expect Unicode encoding */
+        ASSERT (mbsinit (&state));
+        input[7] = '\0';
+        input[8] = '\0';
+        input[9] = '\0';
+        input[10] = '\0';
+
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, input + 11, 1, &state);
+        ASSERT (ret == 1);
+        ASSERT (wc == '!');
+        ASSERT (mbsinit (&state));
+
+        /* Test some invalid input.  */
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\377", 1, &state); /* 0xFF */
+        ASSERT (ret == (size_t)-1);
+        ASSERT (errno == EILSEQ);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\225\377", 2, &state); /* 0x95 0xFF */
+        ASSERT (ret == (size_t)-1);
+        ASSERT (errno == EILSEQ);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\201\045", 2, &state); /* 0x81 0x25 */
+        ASSERT (ret == (size_t)-1);
+        ASSERT (errno == EILSEQ);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\201\060\377", 3, &state); /* 0x81 0x30 0xFF */
+        ASSERT (ret == (size_t)-1);
+        ASSERT (errno == EILSEQ);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\201\060\377\064", 4, &state); /* 0x81 0x30 0xFF 0x34 */
+        ASSERT (ret == (size_t)-1);
+        ASSERT (errno == EILSEQ);
+
+        memset (&state, '\0', sizeof (mbstate_t));
+        wc = (char32_t) 0xBADFACE;
+        ret = mbrtoc32 (&wc, "\201\060\211\072", 4, &state); /* 0x81 0x30 0x89 0x3A */
         ASSERT (ret == (size_t)-1);
         ASSERT (errno == EILSEQ);
       }
