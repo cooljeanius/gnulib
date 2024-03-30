@@ -3,9 +3,9 @@ Access from source code to variables set by "configure" or "make".
 
 Files:
 m4/configmake.m4
-m4/build-to-host.m4
 
 Depends-on:
+build-to-host
 gen-header
 
 configure.ac:
