@@ -1,5 +1,5 @@
 /* Compute cubic root of float value.
-   Copyright (C) 1997, 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 1997, 2012-2026 Free Software Foundation, Inc.
 
    Contributed by Dirk Alboth <dirka@uni-paderborn.de> and
    Ulrich Drepper <drepper@cygnus.com>, 1997.
@@ -48,18 +48,16 @@ cbrtf (float x)
 {
   if (isfinite (x) && x != 0.0f)
     {
-      float xm, ym, u, t2;
+      /* Reduce X.  XM now is in range 1.0 to 0.5.  */
       int xe;
+      float xm = frexpf (fabsf (x), &xe);
 
-      /* Reduce X.  XM now is an range 1.0 to 0.5.  */
-      xm = frexpf (fabsf (x), &xe);
+      float u = (0.492659620528969547
+                 + (0.697570460207922770 - 0.191502161678719066 * xm) * xm);
 
-      u = (0.492659620528969547
-           + (0.697570460207922770 - 0.191502161678719066 * xm) * xm);
+      float t2 = u * u * u;
 
-      t2 = u * u * u;
-
-      ym = u * (t2 + 2.0 * xm) / (2.0 * t2 + xm) * factor[2 + xe % 3];
+      float ym = u * (t2 + 2.0 * xm) / (2.0 * t2 + xm) * factor[2 + xe % 3];
 
       return ldexpf (x > 0.0 ? ym : -ym, xe / 3);
     }

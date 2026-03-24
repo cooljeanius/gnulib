@@ -3,13 +3,14 @@ Translate messages to user's native language if GNU gettext is also used.
 
 Files:
 lib/gettext.h
+m4/gettext_h.m4
 
 Depends-on:
+locale-h
 vararrays
 
 configure.ac:
-AC_SUBST([LIBINTL])
-AC_SUBST([LTLIBINTL])
+gl_GETTEXT_H
 
 Makefile.am:
 lib_SOURCES += gettext.h

@@ -1,10 +1,13 @@
 @node assert.h
 @section @file{assert.h}
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/assert.h.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/assert.h.html}
 
 Gnulib module: assert-h
+@mindex assert-h
 
+@mindex assert
+@mindex verify
 See also the Gnulib modules @code{assert} and @code{verify}.
 
 Portability problems fixed by Gnulib:
@@ -42,6 +45,11 @@ in code intended to be portable to C99 or earlier.
 In C23 and C++11 and later, @code{static_assert} is a keyword.
 In C11 and C17 it is a macro.  Any Gnulib substitute is also a macro.
 @item
-In C99 and later, @code{assert} can be applied to any scalar expression.
-In C89, the argument to @code{assert} is of type @code{int}.
+In C99 and later, the argument to @code{assert} can be of any scalar type.
+In C89, the argument is of type @code{int}.
+@item
+In C23 and C++26 and later, @code{assert} is a variadic macro that can
+be applied to any scalar expression even if it has an unparenthesized comma.
+In earlier standards, @code{assert} is a single-argument macro so its
+argument cannot contain an unparenthesized comma.
 @end itemize

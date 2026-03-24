@@ -1,5 +1,5 @@
 /* Test of dropping uid/gid privileges of the current process permanently.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -77,7 +77,6 @@ int
 main (int argc, char *argv[])
 {
   bool verbose = false;
-  int i;
 
 #if HAVE_GETUID
   int uid = getuid ();
@@ -89,10 +88,10 @@ main (int argc, char *argv[])
   /* Parse arguments.
      -v  enables verbose output.
    */
-  for (i = 1; i < argc; i++)
+  for (int i = 1; i < argc; i++)
     {
       const char *arg = argv[i];
-      if (strcmp (arg, "-v") == 0)
+      if (streq (arg, "-v"))
         verbose = true;
     }
 
@@ -148,5 +147,5 @@ main (int argc, char *argv[])
 # endif
 #endif
 
-  return 0;
+  return test_exit_status;
 }

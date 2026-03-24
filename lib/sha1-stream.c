@@ -1,7 +1,7 @@
 /* sha1.c - Functions to compute SHA1 message digest of files or
    memory blocks according to the NIST specification FIPS-180-1.
 
-   Copyright (C) 2000-2001, 2003-2006, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2000-2001, 2003-2006, 2008-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -24,9 +24,6 @@
 #include <config.h>
 
 /* Specification.  */
-#if HAVE_OPENSSL_SHA1
-# define GL_OPENSSL_INLINE _GL_EXTERN_INLINE
-#endif
 #include "sha1.h"
 
 #include <stdlib.h>
@@ -46,7 +43,7 @@
    resulting message digest number will be written into the 20 bytes
    beginning at RESBLOCK.  */
 int
-sha1_stream (FILE *stream, void *resblock)
+sha1_stream (FILE *restrict stream, void *restrict resblock)
 {
   switch (afalg_stream (stream, "sha1", resblock, SHA1_DIGEST_SIZE))
     {
@@ -54,7 +51,7 @@ sha1_stream (FILE *stream, void *resblock)
     case -EIO: return 1;
     }
 
-  char *buffer = malloc (BLOCKSIZE + 72);
+  char *buffer = malloc (BLOCKSIZE);
   if (!buffer)
     return 1;
 
@@ -68,7 +65,6 @@ sha1_stream (FILE *stream, void *resblock)
       /* We read the file in blocks of BLOCKSIZE bytes.  One call of the
          computation function processes the whole buffer so that with the
          next round of the loop another block can be read.  */
-      size_t n;
       sum = 0;
 
       /* Read block.  Take care for partial reads.  */
@@ -78,11 +74,11 @@ sha1_stream (FILE *stream, void *resblock)
              or the fread() in afalg_stream may have gotten EOF.
              We need to avoid a subsequent fread() as EOF may
              not be sticky.  For details of such systems, see:
-             https://sourceware.org/bugzilla/show_bug.cgi?id=1190  */
+             https://sourceware.org/PR1190  */
           if (feof (stream))
             goto process_partial_block;
 
-          n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
+          size_t n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
 
           sum += n;
 
@@ -120,10 +116,3 @@ sha1_stream (FILE *stream, void *resblock)
   free (buffer);
   return 0;
 }
-
-/*
- * Hey Emacs!
- * Local Variables:
- * coding: utf-8
- * End:
- */

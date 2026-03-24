@@ -1,5 +1,5 @@
 /* Formatted output to UTF-32 strings.
-   Copyright (C) 1999, 2002, 2006-2007, 2009-2023 Free Software Foundation,
+   Copyright (C) 1999, 2002, 2006-2007, 2009-2026 Free Software Foundation,
    Inc.
 
    This file is free software.
@@ -48,6 +48,7 @@
 #define DCHAR_T uint32_t
 #define DCHAR_CPY u32_cpy
 #define DCHAR_SET u32_set
+#define DCHAR_STRLEN u32_strlen
 #define DCHAR_MBSNLEN u32_mbsnlen
 #define DCHAR_IS_UINT32_T 1
 #define U8_TO_DCHAR u8_to_u32

@@ -1,5 +1,5 @@
 /* Test of uN_strtok() functions.
-   Copyright (C) 2015-2023 Free Software Foundation, Inc.
+   Copyright (C) 2015-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,15 +50,17 @@ test_u_strtok (void)
         'A', 'B', 'C', 'D', 'A', 'B', 'C', 'D', 'A', 'B', 'D', 'E', 0
       };
     ucs4_t u_delim[] = { 0x3000, 0x3001, 0 };
-    size_t input_len = 6 * SIZEOF (u_input);
-    UNIT *input = (UNIT *) malloc (input_len);
-    size_t delim_len = 6 * SIZEOF (u_delim);
-    UNIT *delim = (UNIT *) malloc (delim_len);
+    /* Convert ucs4_t[] to UNIT[].
+       Every ucs4_t yields at most 4 / sizeof (UNIT) units.  */
+    size_t input_len = countof (u_input) * (4 / sizeof (UNIT));
+    UNIT *input = (UNIT *) malloc (input_len * sizeof (UNIT));
+    size_t delim_len = countof (u_delim) * (4 / sizeof (UNIT));
+    UNIT *delim = (UNIT *) malloc (delim_len * sizeof (UNIT));
     UNIT *state;
     const UNIT *result;
     UNIT *ptr, *first_ptr, *second_ptr;
     size_t i;
-    for (i = 0, ptr = input; i < SIZEOF (u_input) && u_input[i] != 0; i++)
+    for (i = 0, ptr = input; i < countof (u_input) && u_input[i] != 0; i++)
       {
         int ret = U_UCTOMB (ptr, u_input[i], input_len - (ptr - input));
         if (i == 4)
@@ -68,7 +70,7 @@ test_u_strtok (void)
         ptr += ret;
       }
     *ptr = 0;
-    for (i = 0, ptr = delim; i < SIZEOF (u_delim) && u_delim[i] != 0; i++)
+    for (i = 0, ptr = delim; i < countof (u_delim) && u_delim[i] != 0; i++)
       {
         int ret = U_UCTOMB (ptr, u_delim[i], delim_len - (ptr - delim));
         ptr += ret;

@@ -1,5 +1,5 @@
 /* Convert multibyte character and return next 16-bit wide character.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -28,7 +28,7 @@
    interfering with the existing use of the mbstate_t in mbrtoc32.  */
 static_assert (sizeof (mbstate_t) >= 4);
 
-#if GNULIB_defined_mbstate_t                              /* AIX, IRIX */
+#if GNULIB_defined_mbstate_t                              /* AIX */
 /* mbstate_t has at least 4 bytes.  They are used as coded in
    gnulib/lib/mbrtowc.c.  */
 # define SET_EXTRA_STATE(ps, c16) \
@@ -45,7 +45,7 @@ static_assert (sizeof (mbstate_t) >= 4);
 /* mbstate_t is defined in <bits/types/__mbstate_t.h>.
    For more details, see glibc/iconv/skeleton.c.  */
 # define SET_EXTRA_STATE(ps, c16) \
-    ((ps)->__count |= (c16 << 16))
+    ((ps)->__count |= ((unsigned int) (c16) << 16))
 # define GET_EXTRA_STATE(ps) \
     (((unsigned int) (ps)->__count) >> 16)
 # define RESET_EXTRA_STATE(ps) \

@@ -1,5 +1,5 @@
 /* Test changing the protections of a file relative to an open directory.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ main (void)
   /* Test behaviour for invalid file descriptors.  */
   {
     errno = 0;
-    ASSERT (fchmodat (-1, "foo", 0600, 0) == -1);
+    ASSERT (fchmodat (AT_FDCWD == -2 ? -1 : -2, "foo", 0600, 0) == -1);
     ASSERT (errno == EBADF);
   }
   {
@@ -93,5 +93,5 @@ main (void)
     ASSERT (unlink (BASE "file") == 0);
   }
 
-  return 0;
+  return test_exit_status;
 }

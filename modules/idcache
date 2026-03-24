@@ -8,6 +8,7 @@ m4/idcache.m4
 
 Depends-on:
 flexmember
+streq
 xalloc
 
 configure.ac:
@@ -18,6 +19,9 @@ lib_SOURCES += idcache.c
 
 Include:
 "idcache.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

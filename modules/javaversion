@@ -9,11 +9,12 @@ lib/javaversion.class
 
 Depends-on:
 javaexec
-stdbool
+bool
 spawn-pipe
 wait-process
 getline
 gettext-h
+gnulib-i18n
 configmake
 
 configure.ac:
@@ -28,6 +29,7 @@ Include:
 Link:
 $(MBRTOWC_LIB)
 $(LIBTHREAD)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

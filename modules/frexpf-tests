@@ -3,14 +3,15 @@ tests/test-frexpf.c
 tests/test-frexp.h
 tests/minus-zero.h
 tests/infinity.h
-tests/nan.h
 tests/signature.h
 tests/macros.h
 tests/randomf.c
 
 Depends-on:
 isnanf-nolibm
-signbit
+nan
+signbit-no-c++
+stdcountof-h
 
 configure.ac:
 

@@ -1,5 +1,5 @@
 /* Test of fdatasync() function.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,12 +29,11 @@ SIGNATURE_CHECK (fdatasync, int, (int));
 int
 main (void)
 {
-  int fd;
   const char *file = "test-fdatasync.txt";
 
   /* Assuming stdin and stdout are ttys, fdatasync is allowed to fail, but
      may succeed as an extension.  */
-  for (fd = 0; fd < 2; fd++)
+  for (int fd = 0; fd < 2; fd++)
     if (fdatasync (fd) != 0)
       {
         ASSERT (errno == EINVAL /* POSIX */
@@ -56,26 +55,37 @@ main (void)
     ASSERT (fdatasync (99) == -1);
     ASSERT (errno == EBADF);
   }
+#ifdef AT_FDCWD
+  {
+    errno = 0;
+    ASSERT (fdatasync (AT_FDCWD) == -1);
+    ASSERT (errno == EBADF);
+  }
+#endif
 
-  fd = open (file, O_WRONLY|O_CREAT|O_TRUNC, 0644);
-  ASSERT (0 <= fd);
-  ASSERT (write (fd, "hello", 5) == 5);
-  ASSERT (fdatasync (fd) == 0);
-  ASSERT (close (fd) == 0);
+  {
+    int fd = open (file, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+    ASSERT (0 <= fd);
+    ASSERT (write (fd, "hello", 5) == 5);
+    ASSERT (fdatasync (fd) == 0);
+    ASSERT (close (fd) == 0);
+  }
 
 #if 0
   /* POSIX is self-contradictory on whether fdatasync must fail on
      read-only file descriptors.  Glibc allows it, as does our
      implementation if fsync allows it.  */
-  fd = open (file, O_RDONLY);
-  ASSERT (0 <= fd);
-  errno = 0;
-  ASSERT (fdatasync (fd) == -1);
-  ASSERT (errno == EBADF);
-  ASSERT (close (fd) == 0);
+  {
+    int fd = open (file, O_RDONLY);
+    ASSERT (0 <= fd);
+    errno = 0;
+    ASSERT (fdatasync (fd) == -1);
+    ASSERT (errno == EBADF);
+    ASSERT (close (fd) == 0);
+  }
 #endif
 
   ASSERT (unlink (file) == 0);
 
-  return 0;
+  return test_exit_status;
 }

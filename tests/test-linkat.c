@@ -1,5 +1,5 @@
 /* Tests of linkat.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -76,9 +76,9 @@ check_same_link (char const *name1, char const *name2)
   contents2 = areadlink_with_size (name2, st2.st_size);
   ASSERT (contents1);
   ASSERT (contents2);
-  ASSERT (strcmp (contents1, contents2) == 0);
+  ASSERT (streq (contents1, contents2));
   if (EXPECT_LINK_HARDLINKS_SYMLINKS)
-    ASSERT (SAME_INODE (st1, st2));
+    ASSERT (psame_inode (&st1, &st2));
   free (contents1);
   free (contents2);
 }
@@ -86,7 +86,6 @@ check_same_link (char const *name1, char const *name2)
 int
 main (void)
 {
-  int i;
   int dfd;
   char *cwd;
   int result;
@@ -97,7 +96,7 @@ main (void)
   /* Test behaviour for invalid file descriptors.  */
   {
     errno = 0;
-    ASSERT (linkat (-1, "foo", AT_FDCWD, "bar", 0) == -1);
+    ASSERT (linkat (AT_FDCWD == -2 ? -1 : -2, "foo", AT_FDCWD, "bar", 0) == -1);
     ASSERT (errno == EBADF);
   }
   {
@@ -109,7 +108,8 @@ main (void)
   ASSERT (close (creat (BASE "oo", 0600)) == 0);
   {
     errno = 0;
-    ASSERT (linkat (AT_FDCWD, BASE "oo", -1, "bar", 0) == -1);
+    ASSERT (linkat (AT_FDCWD, BASE "oo", AT_FDCWD == -2 ? -1 : -2, "bar", 0)
+            == -1);
     ASSERT (errno == EBADF);
   }
   {
@@ -141,7 +141,7 @@ main (void)
   /* Skip the rest of the test if the file system does not support hard links
      and symlinks.  */
   if (result)
-    return result;
+    return test_exit_status ? test_exit_status : result;
 
   /* Create locations to manipulate.  */
   ASSERT (mkdir (BASE "sub1", 0700) == 0);
@@ -166,7 +166,7 @@ main (void)
      last scenario (two relative paths given, neither one AT_FDCWD)
      has two paths, based on whether the two fds are equivalent, so we
      do the other variant after the loop.  */
-  for (i = 0; i < 32; i++)
+  for (int i = 0; i < 32; i++)
     {
       int fd1 = (i & 8) ? dfd : AT_FDCWD;
       char *file1 = mfile_name_concat ((i & 4) ? ".." : cwd, BASE "xx", NULL);
@@ -202,10 +202,11 @@ main (void)
       ASSERT (rmdir (BASE "sub1") == 0);
       ASSERT (rmdir (BASE "sub2") == 0);
       free (cwd);
-      if (!result)
-        fputs ("skipping test: symlinks not supported on this file system\n",
-               stderr);
-      return result;
+      if (test_exit_status != EXIT_SUCCESS)
+        return test_exit_status;
+      fputs ("skipping test: symlinks not supported on this file system\n",
+             stderr);
+      return 77;
     }
   dfd = open (".", O_RDONLY);
   ASSERT (0 <= dfd);
@@ -383,5 +384,6 @@ main (void)
   ASSERT (unlink (BASE "link4") == 0);
   ASSERT (unlink (BASE "link5") == 0);
   free (cwd);
-  return result;
+
+  return test_exit_status;
 }

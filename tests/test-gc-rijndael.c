@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,7 +43,6 @@ main (int argc, char *argv[])
     char ct[] = "\xC3\x4C\x05\x2C\xC0\xDA\x8D\x73"
       "\x45\x1A\xFE\x5F\x03\xBE\x29\x7F";
     gc_cipher_handle ctx;
-    size_t i;
 
     rc = gc_cipher_open (GC_AES128, GC_ECB, &ctx);
     if (rc != GC_OK)
@@ -55,7 +54,7 @@ main (int argc, char *argv[])
 
     memcpy (buf, pt, 16);
 
-    for (i = 0; i < 10000; i++)
+    for (size_t round = 0; round < 10000; round++)
       {
         rc = gc_cipher_encrypt_inline (ctx, 16, buf);
         if (rc != GC_OK)
@@ -65,20 +64,19 @@ main (int argc, char *argv[])
           }
       }
 
-    if (memcmp (buf, ct, 16) != 0)
+    if (!memeq (buf, ct, 16))
       {
-        size_t i;
         printf ("expected:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", ct[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", buf[i] & 0xFF);
         printf ("\n");
         return 1;
       }
 
-    for (i = 0; i < 10000; i++)
+    for (size_t round = 0; round < 10000; round++)
       {
         rc = gc_cipher_decrypt_inline (ctx, 16, buf);
         if (rc != GC_OK)
@@ -88,14 +86,13 @@ main (int argc, char *argv[])
           }
       }
 
-    if (memcmp (buf, pt, 16) != 0)
+    if (!memeq (buf, pt, 16))
       {
-        size_t i;
         printf ("expected:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", pt[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", buf[i] & 0xFF);
         printf ("\n");
         return 1;
@@ -116,7 +113,6 @@ main (int argc, char *argv[])
     char ct[] = "\x66\xe9\x4b\xd4\xef\x8a\x2c\x3b"
       "\x88\x4c\xfa\x59\xca\x34\x2b\x2e";
     gc_cipher_handle ctx;
-    size_t i;
 
     rc = gc_cipher_open (GC_AES128, GC_CBC, &ctx);
     if (rc != GC_OK)
@@ -132,7 +128,7 @@ main (int argc, char *argv[])
 
     memcpy (buf, pt, 16);
 
-    for (i = 0; i < 10000; i++)
+    for (size_t round = 0; round < 10000; round++)
       {
         rc = gc_cipher_encrypt_inline (ctx, 16, buf);
         if (rc != GC_OK)
@@ -142,14 +138,13 @@ main (int argc, char *argv[])
           }
       }
 
-    if (memcmp (buf, ct, 16) != 0)
+    if (!memeq (buf, ct, 16))
       {
-        size_t i;
         printf ("expected:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", ct[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", buf[i] & 0xFF);
         printf ("\n");
         return 1;

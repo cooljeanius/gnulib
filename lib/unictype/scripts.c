@@ -1,5 +1,5 @@
 /* Scripts of Unicode characters.
-   Copyright (C) 2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2007.
 
    This file is free software: you can redistribute it and/or modify
@@ -35,11 +35,11 @@ uc_script (ucs4_t uc)
       if (lookup1 >= 0)
         {
           unsigned int index2 = (uc >> script_header_2) & script_header_3;
-          int lookup2 = u_script.level2[lookup1 + index2];
-          if (lookup2 >= 0)
+          unsigned int lookup2 = u_script.level2[lookup1 + index2];
+          if (lookup2 > 0)
             {
               unsigned int index3 = (uc & script_header_4);
-              unsigned char lookup3 = u_script.level3[lookup2 + index3];
+              unsigned char lookup3 = u_script.level3[(lookup2 - 1) + index3];
 
               if (lookup3 != 0xff)
                 return &scripts[lookup3];
@@ -52,9 +52,8 @@ uc_script (ucs4_t uc)
 const uc_script_t *
 uc_script_byname (const char *script_name)
 {
-  const struct named_script *found;
-
-  found = uc_script_lookup (script_name, strlen (script_name));
+  const struct named_script *found =
+    uc_script_lookup (script_name, strlen (script_name));
   if (found != NULL)
     return &scripts[found->index];
   else

@@ -1,5 +1,5 @@
 /* Ordered {set,map} data type implemented by a binary tree.
-   Copyright (C) 2006-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This file is free software: you can redistribute it and/or modify
@@ -126,8 +126,6 @@ rebalance_after_add (CONTAINER_T container, NODE_T node, NODE_T parent)
       /* At this point, parent = node->parent != NULL.
          Think of node->color being RED (although node->color is not yet
          assigned.)  */
-      NODE_T grandparent;
-      NODE_T uncle;
 
       if (parent->color == BLACK)
         {
@@ -136,10 +134,11 @@ rebalance_after_add (CONTAINER_T container, NODE_T node, NODE_T parent)
           return;
         }
 
-      grandparent = parent->parent;
+      NODE_T grandparent = parent->parent;
       /* Since parent is RED, we know that
          grandparent is != NULL and colored BLACK.  */
 
+      NODE_T uncle;
       if (grandparent->left == parent)
         uncle = grandparent->right;
       else if (grandparent->right == parent)
@@ -699,19 +698,16 @@ gl_tree_remove_node_no_free (CONTAINER_T container, NODE_T node)
   else
     {
       /* Replace node with the rightmost element of the node->left subtree.  */
-      NODE_T subst;
-      NODE_T subst_parent;
-      NODE_T child;
-      color_t removed_color;
 
+      NODE_T subst;
       for (subst = node->left; subst->right != NULL; )
         subst = subst->right;
 
-      subst_parent = subst->parent;
+      NODE_T subst_parent = subst->parent;
 
-      child = subst->left;
+      NODE_T child = subst->left;
 
-      removed_color = subst->color;
+      color_t removed_color = subst->color;
 
       /* The case subst_parent == node is special:  If we do nothing special,
          we get confusion about node->left, subst->left and child->parent.

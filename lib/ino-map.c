@@ -1,6 +1,6 @@
 /* Map an ino_t inode number to a small integer.
 
-   Copyright 2009-2023 Free Software Foundation, Inc.
+   Copyright 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -59,9 +59,8 @@ ino_hash (void const *x, size_t table_size)
      This avoids loss of info, without applying % to the wider type,
      which could be quite slow on some systems.  */
   size_t h = ino;
-  unsigned int i;
   unsigned int n_words = sizeof ino / sizeof h + (sizeof ino % sizeof h != 0);
-  for (i = 1; i < n_words; i++)
+  for (unsigned int i = 1; i < n_words; i++)
     h ^= ino >> CHAR_BIT * sizeof h * i;
 
   return h % table_size;
@@ -117,8 +116,6 @@ ino_map_free (struct ino_map *map)
 size_t
 ino_map_insert (struct ino_map *im, ino_t ino)
 {
-  struct ino_map_ent *ent;
-
   /* Find space for the probe, reusing the cache if available.  */
   struct ino_map_ent *probe = im->probe;
   if (probe)
@@ -135,7 +132,7 @@ ino_map_insert (struct ino_map *im, ino_t ino)
     }
 
   probe->ino = ino;
-  ent = hash_insert (im->map, probe);
+  struct ino_map_ent *ent = hash_insert (im->map, probe);
   if (! ent)
     return INO_MAP_INSERT_FAILURE;
 

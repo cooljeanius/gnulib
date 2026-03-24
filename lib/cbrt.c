@@ -1,5 +1,5 @@
 /* Compute cubic root of double value.
-   Copyright (C) 1997, 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 1997, 2012-2026 Free Software Foundation, Inc.
 
    Contributed by Dirk Alboth <dirka@uni-paderborn.de> and
    Ulrich Drepper <drepper@cygnus.com>, 1997.
@@ -48,27 +48,25 @@ cbrt (double x)
 {
   if (isfinite (x) && x != 0.0)
     {
-      double xm, ym, u, t2;
+      /* Reduce X.  XM now is in range 1.0 to 0.5.  */
       int xe;
+      double xm = frexp (fabs (x), &xe);
 
-      /* Reduce X.  XM now is an range 1.0 to 0.5.  */
-      xm = frexp (fabs (x), &xe);
+      double u = (0.354895765043919860
+                  + ((1.50819193781584896
+                      + ((-2.11499494167371287
+                          + ((2.44693122563534430
+                              + ((-1.83469277483613086
+                                  + (0.784932344976639262 - 0.145263899385486377 * xm)
+                                    * xm)
+                                 * xm))
+                             * xm))
+                         * xm))
+                     * xm));
 
-      u = (0.354895765043919860
-           + ((1.50819193781584896
-               + ((-2.11499494167371287
-                   + ((2.44693122563534430
-                       + ((-1.83469277483613086
-                           + (0.784932344976639262 - 0.145263899385486377 * xm)
-                             * xm)
-                          * xm))
-                      * xm))
-                  * xm))
-              * xm));
+      double t2 = u * u * u;
 
-      t2 = u * u * u;
-
-      ym = u * (t2 + 2.0 * xm) / (2.0 * t2 + xm) * factor[2 + xe % 3];
+      double ym = u * (t2 + 2.0 * xm) / (2.0 * t2 + xm) * factor[2 + xe % 3];
 
       return ldexp (x > 0.0 ? ym : -ym, xe / 3);
     }

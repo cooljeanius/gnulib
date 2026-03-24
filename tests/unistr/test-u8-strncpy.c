@@ -1,5 +1,5 @@
 /* Test of u8_strncpy() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "unistr.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "zerosize-ptr.h"
@@ -45,8 +46,8 @@ main ()
         0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, ',',
         0xED, 0x95, 0x9C, 0xEA, 0xB8, 0x80, '\0'
       };
-    check (input, SIZEOF (input));
+    check (input, countof (input));
   }
 
-  return 0;
+  return test_exit_status;
 }

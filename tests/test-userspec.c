@@ -1,5 +1,5 @@
 /* Test userspec.c
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "userspec.h"
 
+#include <stdcountof.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -29,8 +30,6 @@
 #include <grp.h>
 
 #include "xalloc.h"
-
-#define ARRAY_CARDINALITY(Array) (sizeof (Array) / sizeof *(Array))
 
 struct test
 {
@@ -76,8 +75,6 @@ static struct test T[] =
     { "" /* placeholder */,    -1, -1,     "",     "", NULL},
   };
 
-#define STREQ(a, b) (strcmp (a, b) == 0)
-
 static char const *
 maybe_null (char const *s)
 {
@@ -91,49 +88,45 @@ same_diag (char const *s, char const *t)
     return true;
   if (s == NULL || t == NULL)
     return false;
-  return STREQ (s, t);
+  return streq (s, t);
 }
 
 int
 main (void)
 {
-  unsigned int i;
   int fail = 0;
 
   /* Find a UID that has both a user name and login group name,
      but skip UID 0.  */
-  {
-    uid_t uid;
-    for (uid = 1200; 0 < uid; uid--)
-      {
-        struct group *gr;
-        struct passwd *pw = getpwuid (uid);
-        unsigned int j;
-        size_t len;
-        if (!pw || !pw->pw_name || !(gr = getgrgid (pw->pw_gid)) || !gr->gr_name)
-          continue;
-        j = ARRAY_CARDINALITY (T) - 1;
-        len = strlen (pw->pw_name);
-        if (sizeof T[j].in - 2 < len)
-          continue;
+  for (uid_t uid = 1200; 0 < uid; uid--)
+    {
+      struct group *gr;
+      struct passwd *pw = getpwuid (uid);
+      unsigned int j;
+      size_t len;
+      if (!pw || !pw->pw_name || !(gr = getgrgid (pw->pw_gid)) || !gr->gr_name)
+        continue;
+      j = countof (T) - 1;
+      len = strlen (pw->pw_name);
+      if (sizeof T[j].in - 2 < len)
+        continue;
 
-        /* Store "username:" in T[j].in.  */
-        memcpy(T[j].in, pw->pw_name, len);
-        strcpy(T[j].in + len, ":");
+      /* Store "username:" in T[j].in.  */
+      memcpy(T[j].in, pw->pw_name, len);
+      strcpy(T[j].in + len, ":");
 
-        T[j].uid = uid;
-        T[j].gid = gr->gr_gid;
-        T[j].user_name = xstrdup (pw->pw_name);
-        T[j].group_name = xstrdup (gr->gr_name);
-        T[j].result = NULL;
-        break;
-      }
-  }
+      T[j].uid = uid;
+      T[j].gid = gr->gr_gid;
+      T[j].user_name = xstrdup (pw->pw_name);
+      T[j].group_name = xstrdup (gr->gr_name);
+      T[j].result = NULL;
+      break;
+    }
 
   char *user_name = NULL;
   char *group_name = NULL;
 
-  for (i = 0; i < ARRAY_CARDINALITY (T); i++)
+  for (unsigned int i = 0; i < countof (T); i++)
     {
       uid_t uid = (uid_t) -1;
       gid_t gid = (gid_t) -1;
@@ -191,9 +184,9 @@ main (void)
                 printf ("%s did not warn\n", T[i].in);
               else if (! (uid == uid2 && gid == gid2
                           && !!user_name == !!user_name2
-                          && (!user_name || STREQ (user_name, user_name2))
+                          && (!user_name || streq (user_name, user_name2))
                           && !!group_name == !!group_name2
-                          && (!group_name || STREQ (group_name, group_name2))))
+                          && (!group_name || streq (group_name, group_name2))))
                 printf ("%s treated differently than with colon\n", T[i].in);
 
               free (user_name2);

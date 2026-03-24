@@ -1,5 +1,5 @@
 /* Self tests for base64.
-   Copyright (C) 2004, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2008-2026 Free Software Foundation, Inc.
    Written by Simon Josefsson.
 
    This program is free software: you can redistribute it and/or modify
@@ -42,39 +42,39 @@ main (void)
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 1, out, 1);
-  ASSERT (memcmp (out, "YQ==", 1) == 0);
+  ASSERT (memeq (out, "YQ==", 1));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 1, out, 2);
-  ASSERT (memcmp (out, "YQ==", 2) == 0);
+  ASSERT (memeq (out, "YQ==", 2));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 1, out, 3);
-  ASSERT (memcmp (out, "YQ==", 3) == 0);
+  ASSERT (memeq (out, "YQ==", 3));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 1, out, 4);
-  ASSERT (memcmp (out, "YQ==", 4) == 0);
+  ASSERT (memeq (out, "YQ==", 4));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 1, out, 8);
-  ASSERT (memcmp (out, "YQ==", 4) == 0);
+  ASSERT (memeq (out, "YQ==", 4));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 2, out, 4);
-  ASSERT (memcmp (out, "YWI=", 4) == 0);
+  ASSERT (memeq (out, "YWI=", 4));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 3, out, 4);
-  ASSERT (memcmp (out, "YWJj", 4) == 0);
+  ASSERT (memeq (out, "YWJj", 4));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 4, out, 5);
-  ASSERT (memcmp (out, "YWJjZA==", 5) == 0);
+  ASSERT (memeq (out, "YWJjZA==", 5));
 
   memset (out, 0x42, sizeof (out));
   base64_encode (in, 4, out, 100);
-  ASSERT (memcmp (out, "YWJjZA==", 6) == 0);
+  ASSERT (memeq (out, "YWJjZA==", 6));
 
   /* Decode. */
 
@@ -89,41 +89,41 @@ main (void)
   ok = base64_decode (b64in, 4, out, &len);
   ASSERT (ok);
   ASSERT (len == 1);
-  ASSERT (memcmp (out, "abcdefg", 1) == 0);
+  ASSERT (memeq (out, "abcdefg", 1));
 
   memset (out, 0x42, sizeof (out));
   len = 2;
   ok = base64_decode (b64in, 4, out, &len);
   ASSERT (ok);
   ASSERT (len == 2);
-  ASSERT (memcmp (out, "abcdefg", 2) == 0);
+  ASSERT (memeq (out, "abcdefg", 2));
 
   memset (out, 0x42, sizeof (out));
   len = 3;
   ok = base64_decode (b64in, 4, out, &len);
   ASSERT (ok);
   ASSERT (len == 3);
-  ASSERT (memcmp (out, "abcdefg", 3) == 0);
+  ASSERT (memeq (out, "abcdefg", 3));
 
   memset (out, 0x42, sizeof (out));
   len = 4;
   ok = base64_decode (b64in, 4, out, &len);
   ASSERT (ok);
   ASSERT (len == 3);
-  ASSERT (memcmp (out, "abcdefg", 3) == 0);
+  ASSERT (memeq (out, "abcdefg", 3));
 
   memset (out, 0x42, sizeof (out));
   len = 100;
   ok = base64_decode (b64in, strlen (b64in), out, &len);
   ASSERT (ok);
   ASSERT (len == 7);
-  ASSERT (memcmp (out, "abcdefg", 7) == 0);
+  ASSERT (memeq (out, "abcdefg", 7));
 
   /* Allocating encode */
 
   len = base64_encode_alloc (in, strlen (in), &p);
   ASSERT (len == 24);
-  ASSERT (strcmp (p, "YWJjZGVmZ2hpamtsbW5vcA==") == 0);
+  ASSERT (streq (p, "YWJjZGVmZ2hpamtsbW5vcA=="));
   free (p);
 
   len = base64_encode_alloc (in, IDX_MAX - 5, &p);
@@ -139,7 +139,7 @@ main (void)
     ok = base64_decode_ctx (&ctx, b64in, strlen (b64in), out, &len);
     ASSERT (ok);
     ASSERT (len == 7);
-    ASSERT (memcmp (out, "abcdefg", len) == 0);
+    ASSERT (memeq (out, "abcdefg", len));
   }
 
   /* Allocating decode context function */
@@ -147,7 +147,7 @@ main (void)
   ok = base64_decode_alloc_ctx (NULL, b64in, strlen (b64in), &p, &len);
   ASSERT (ok);
   ASSERT (len == 7);
-  ASSERT (memcmp (out, "abcdefg", len) == 0);
+  ASSERT (memeq (out, "abcdefg", len));
   free (p);
 
   {
@@ -159,7 +159,7 @@ main (void)
     ok = base64_decode_alloc_ctx (&ctx, newlineb64, strlen (newlineb64), &p, &len);
     ASSERT (ok);
     ASSERT (len == strlen (in));
-    ASSERT (memcmp (p, in, len) == 0);
+    ASSERT (memeq (p, in, len));
     free (p);
   }
 
@@ -170,7 +170,7 @@ main (void)
     ok = base64_decode_alloc_ctx (&ctx, "YW\nJjZGVmZ2hp", 13, &p, &len);
     ASSERT (ok);
     ASSERT (len == 9);
-    ASSERT (memcmp (p, "abcdefghi", len) == 0);
+    ASSERT (memeq (p, "abcdefghi", len));
     free (p);
 
     base64_decode_ctx_init (&ctx);
@@ -183,13 +183,13 @@ main (void)
     ok = base64_decode_alloc_ctx (&ctx, "JjZGVmZ2", 8, &p, &len);
     ASSERT (ok);
     ASSERT (len == 6);
-    ASSERT (memcmp (p, "abcdef", len) == 0);
+    ASSERT (memeq (p, "abcdef", len));
     free (p);
 
     ok = base64_decode_alloc_ctx (&ctx, "hp", 2, &p, &len);
     ASSERT (ok);
     ASSERT (len == 3);
-    ASSERT (memcmp (p, "ghi", len) == 0);
+    ASSERT (memeq (p, "ghi", len));
     free (p);
 
     ok = base64_decode_alloc_ctx (&ctx, "", 0, &p, &len);
@@ -233,5 +233,14 @@ main (void)
   ok = base64_decode_alloc_ctx (NULL, "aax=X", 5, &p, &len);
   ASSERT (!ok);
 
-  return 0;
+  ok = base64_decode_alloc_ctx (NULL, "SGVsbG9=", 8, &p, &len);
+  ASSERT (!ok);
+
+  ok = base64_decode_alloc_ctx (NULL, "TR==", 4, &p, &len);
+  ASSERT (!ok);
+
+  ok = base64_decode_alloc_ctx (NULL, "TWF=TWE=", 8, &p, &len);
+  ASSERT (!ok);
+
+  return test_exit_status;
 }

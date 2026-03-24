@@ -1,5 +1,5 @@
 /* Convert string to wide string.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2020.
 
    This file is free software: you can redistribute it and/or modify
@@ -27,7 +27,6 @@ size_t
 mbstowcs (wchar_t *dest, const char *src, size_t len)
 {
   mbstate_t state;
-
   mbszero (&state);
   return mbsrtowcs (dest, &src, len, &state);
 }

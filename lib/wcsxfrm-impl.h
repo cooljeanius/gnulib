@@ -1,5 +1,5 @@
 /* Transform wide string for comparison using the current locale.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This file is free software: you can redistribute it and/or modify
@@ -18,18 +18,14 @@
 size_t
 wcsxfrm (wchar_t *s1, const wchar_t *s2, size_t n)
 {
-  char mbbuf2[1024];
-  char *mbs2;
-
   {
     int saved_errno = errno;
-    size_t result;
+    char mbbuf2[1024];
+    char *mbs2;
 
     /* Convert s2 to a multibyte string, trying to avoid malloc().  */
     {
-      size_t ret;
-
-      ret = wcstombs (mbbuf2, s2, sizeof (mbbuf2));
+      size_t ret = wcstombs (mbbuf2, s2, sizeof (mbbuf2));
       if (ret == (size_t)-1)
         goto failed;
       if (ret < sizeof (mbbuf2))
@@ -50,7 +46,7 @@ wcsxfrm (wchar_t *s1, const wchar_t *s2, size_t n)
 
     /* Transform the multibyte string.  */
     errno = 0;
-    result = strxfrm ((char *)s1, mbs2, n);
+    size_t result = strxfrm ((char *)s1, mbs2, n);
     if (errno != 0)
       {
         /* An error occurred.  */

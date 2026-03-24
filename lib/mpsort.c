@@ -1,6 +1,6 @@
 /* Sort a vector of pointers to data.
 
-   Copyright (C) 2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,14 +44,12 @@ mpsort_into_tmp (void const **restrict base, size_t n,
   size_t alim = n1;
   size_t b = n1;
   size_t blim = n;
-  void const *ba;
-  void const *bb;
 
   mpsort_with_tmp (base + n1, n2, tmp, cmp);
   mpsort_with_tmp (base, n1, tmp, cmp);
 
-  ba = base[a];
-  bb = base[b];
+  void const *ba = base[a];
+  void const *bb = base[b];
 
   for (;;)
     if (cmp (ba, bb) <= 0)
@@ -104,13 +102,10 @@ mpsort_with_tmp (void const **restrict base, size_t n,
     {
       size_t n1 = n / 2;
       size_t n2 = n - n1;
-      size_t i;
       size_t t = 0;
       size_t tlim = n1;
       size_t b = n1;
       size_t blim = n;
-      void const *bb;
-      void const *tt;
 
       mpsort_with_tmp (base + n1, n2, tmp, cmp);
 
@@ -119,10 +114,10 @@ mpsort_with_tmp (void const **restrict base, size_t n,
       else
         mpsort_into_tmp (base, n1, tmp, cmp);
 
-      tt = tmp[t];
-      bb = base[b];
+      void const *tt = tmp[t];
+      void const *bb = base[b];
 
-      for (i = 0; ; )
+      for (size_t i = 0; ; )
         if (cmp (tt, bb) <= 0)
           {
             base[i++] = tt;

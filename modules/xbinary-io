@@ -11,7 +11,8 @@ error
 exitfail
 extern-inline
 gettext-h
-stdbool
+gnulib-i18n
+bool
 verify
 
 configure.ac:
@@ -21,6 +22,9 @@ lib_SOURCES += xbinary-io.h xbinary-io.c
 
 Include:
 "xbinary-io.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 LGPL

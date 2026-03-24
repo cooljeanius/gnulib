@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2002-2005, 2007, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2002-2005, 2007, 2010-2026 Free Software Foundation, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,11 +80,10 @@ const struct pkcs5 pkcs5[] = {
 int
 main (int argc, char *argv[])
 {
-  size_t i;
   int rc;
   char out[BUFSIZ];
 
-  for (i = 0; i < sizeof (pkcs5) / sizeof (pkcs5[0]); i++)
+  for (size_t i = 0; i < sizeof (pkcs5) / sizeof (pkcs5[0]); i++)
     {
       rc = gc_pbkdf2_sha1 (pkcs5[i].password, strlen (pkcs5[i].password),
                            pkcs5[i].salt, strlen (pkcs5[i].salt),
@@ -96,7 +95,7 @@ main (int argc, char *argv[])
           return 1;
         }
 
-      if (memcmp (pkcs5[i].expected, out, pkcs5[i].dklen) != 0)
+      if (!memeq (pkcs5[i].expected, out, pkcs5[i].dklen))
         {
           printf ("PKCS5 entry %ld failed\n", (unsigned long) i);
           return 1;

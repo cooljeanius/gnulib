@@ -1,5 +1,5 @@
 /* Test of getting user name.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,10 +18,13 @@
 
 #include <config.h>
 
+/* Specification.  */
 #include <unistd.h>
 
 #include "signature.h"
+#if !defined __sun /* On Solaris, the second parameter is of type 'int'.  */
 SIGNATURE_CHECK (getlogin_r, int, (char *, size_t));
+#endif
 
 #include "test-getlogin.h"
 
@@ -46,9 +49,8 @@ main (void)
   {
     char smallbuf[1024];
     size_t n = strlen (buf);
-    size_t i;
 
-    for (i = 0; i <= n; i++)
+    for (size_t i = 0; i <= n; i++)
       {
         err = getlogin_r (smallbuf, i);
         if (i == 0)
@@ -63,8 +65,16 @@ main (void)
     static char hugebuf[70000];
 
     ASSERT (getlogin_r (hugebuf, sizeof (hugebuf)) == 0);
-    ASSERT (strcmp (hugebuf, buf) == 0);
+    ASSERT (streq (hugebuf, buf));
   }
 
-  return 0;
+  /* Check that getlogin_r() does not merely return getenv ("LOGNAME").  */
+  {
+    static char set_LOGNAME[] = "LOGNAME=ygvfibmslhkmvoetbrcegzwydorcke";
+    putenv (set_LOGNAME);
+    err = getlogin_r (buf, sizeof buf);
+    ASSERT (!(err == 0 && streq (buf, "ygvfibmslhkmvoetbrcegzwydorcke")));
+  }
+
+  return test_exit_status;
 }

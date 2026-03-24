@@ -9,6 +9,7 @@ openat-h
 error
 exitfail
 gettext-h
+gnulib-i18n
 snippet/_Noreturn
 
 configure.ac:
@@ -18,6 +19,9 @@ lib_SOURCES += openat-die.c
 
 Include:
 "openat.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

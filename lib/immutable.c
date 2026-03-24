@@ -1,6 +1,6 @@
 /* Immutable data.
 
-   Copyright (C) 2021-2023 Free Software Foundation, Inc.
+   Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -76,7 +76,7 @@ extern
 #   define PATH_MAX 4096
 #  endif
 
-#  include "glthread/lock.h"
+#  include "glthread/once.h"
 
 # endif
 
@@ -267,7 +267,7 @@ free_pages (uintptr_t pages, size_t size)
 # define PAGESIZE pagesize
 /* On Cygwin and Linux/PowerPC, PAGESIZE is 65536.  On macOS 11, it is 16384.
    On all other platforms, it is either 4096 or 8192.  */
-# if defined __CYGWIN__ || (defined __linux__ && defined __powerpc__)
+# if defined __CYGWIN__ || (defined __linux__ && defined _ARCH_PPC)
 #  define PAGESIZE_MAX 65536
 # else
 #  define PAGESIZE_MAX 16384
@@ -275,6 +275,8 @@ free_pages (uintptr_t pages, size_t size)
 
 # define ALLOC_PAGES alloc_pages
 # define FREE_PAGES free_pages
+/* AIX defines a macro ALIGNMENT in <sys/socket.h>.  Undefine it.  */
+# undef ALIGNMENT
 # define ALIGNMENT sizeof (void *)
 # define PAGE_RESERVED_HEADER_SIZE SHARED_LINK_HEADER_SIZE
 

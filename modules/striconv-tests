@@ -3,6 +3,8 @@ tests/test-striconv.c
 tests/macros.h
 
 Depends-on:
+streq
+memeq
 
 configure.ac:
 

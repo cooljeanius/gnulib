@@ -11,7 +11,7 @@ areadlink
 careadlinkat
 readlinkat
 at-internal
-errno
+errno-h
 extensions
 fchdir
 fcntl-h
@@ -28,6 +28,9 @@ lib_SOURCES += areadlinkat.c
 
 Include:
 "areadlink.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

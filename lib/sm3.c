@@ -3,9 +3,9 @@
    SM3, published by State Encryption Management Bureau, China.
 
    SM3 cryptographic hash algorithm.
-   <http://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>
+   <https://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>
 
-   Copyright (C) 2017-2023 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -91,12 +91,11 @@ set_uint32 (char *cp, uint32_t v)
 /* Put result from CTX in first 32 bytes following RESBUF.  The result
    must be in little endian byte order.  */
 void *
-sm3_read_ctx (const struct sm3_ctx *ctx, void *resbuf)
+sm3_read_ctx (struct sm3_ctx const *restrict ctx, void *restrict resbuf)
 {
-  int i;
   char *r = resbuf;
 
-  for (i = 0; i < 8; i++)
+  for (int i = 0; i < 8; i++)
     set_uint32 (r + i * sizeof ctx->state[0], SWAP (ctx->state[i]));
 
   return resbuf;
@@ -131,7 +130,7 @@ sm3_conclude_ctx (struct sm3_ctx *ctx)
 }
 
 void *
-sm3_finish_ctx (struct sm3_ctx *ctx, void *resbuf)
+sm3_finish_ctx (struct sm3_ctx *restrict ctx, void *restrict resbuf)
 {
   sm3_conclude_ctx (ctx);
   return sm3_read_ctx (ctx, resbuf);
@@ -142,7 +141,7 @@ sm3_finish_ctx (struct sm3_ctx *ctx, void *resbuf)
    output yields to the wanted ASCII representation of the message
    digest.  */
 void *
-sm3_buffer (const char *buffer, size_t len, void *resblock)
+sm3_buffer (char const *restrict buffer, size_t len, void *restrict resblock)
 {
   struct sm3_ctx ctx;
 
@@ -157,7 +156,8 @@ sm3_buffer (const char *buffer, size_t len, void *resblock)
 }
 
 void
-sm3_process_bytes (const void *buffer, size_t len, struct sm3_ctx *ctx)
+sm3_process_bytes (void const *restrict buffer, size_t len,
+                   struct sm3_ctx *restrict ctx)
 {
   /* When we already have some bits in our internal buffer concatenate
      both inputs first.  */
@@ -259,7 +259,8 @@ static const uint32_t sm3_round_constants[64] = {
    Most of this code comes from David Madore's sha256.c.  */
 
 void
-sm3_process_block (const void *buffer, size_t len, struct sm3_ctx *ctx)
+sm3_process_block (void const *restrict buffer, size_t len,
+                   struct sm3_ctx *restrict ctx)
 {
   const uint32_t *words = buffer;
   size_t nwords = len / sizeof (uint32_t);
@@ -295,8 +296,8 @@ sm3_process_block (const void *buffer, size_t len, struct sm3_ctx *ctx)
        if (++j) \
          dbg_printf("%2d %08x %08x %08x %08x %08x %08x %08x %08x\n", \
                     j-1, A, B, C, D, E, F, G, H); \
-       ss1 = rol(rol(A,12) + E + T,7); \
-       ss2 = ss1 ^ rol(A,12); \
+       uint32_t ss1 = rol(rol(A,12) + E + T,7); \
+       uint32_t ss2 = ss1 ^ rol(A,12); \
        D += FF##i(A,B,C) + ss2 + (W1 ^ W2); \
        H += GG##i(E,F,G) + ss1 + W1; \
        B = rol(B,9); \
@@ -309,22 +310,20 @@ sm3_process_block (const void *buffer, size_t len, struct sm3_ctx *ctx)
 
   while (words < endp)
     {
-      uint32_t tw;
-      uint32_t ss1, ss2;
-      int j;
-
-      for (j = 0; j < 16; j++)
+      for (int j = 0; j < 16; j++)
         {
           x[j] = SWAP (*words);
           words++;
         }
 
-      j = -1;
+      int j = -1;
 
       dbg_printf (" j    A        B        C        D        E  "
                   "      F        G        H\n"
                   "   %08x %08x %08x %08x %08x %08x %08x %08x\n",
                   a, b, c, d, e, f, g, h);
+
+      uint32_t tw;
 
       R1( a, b, c, d, e, f, g, h, T( 0), W1( 0), W1( 4) );
       R1( d, a, b, c, h, e, f, g, T( 1), W1( 1), W1( 5) );

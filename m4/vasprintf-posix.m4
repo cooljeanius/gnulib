@@ -1,8 +1,10 @@
-# vasprintf-posix.m4 serial 17
-dnl Copyright (C) 2007-2023 Free Software Foundation, Inc.
+# vasprintf-posix.m4
+# serial 22
+dnl Copyright (C) 2007-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_VASPRINTF_POSIX],
 [
@@ -26,17 +28,20 @@ AC_DEFUN([gl_FUNC_VASPRINTF_IS_POSIX],
   AC_REQUIRE([gl_PRINTF_DIRECTIVE_A])
   AC_REQUIRE([gl_PRINTF_DIRECTIVE_B])
   AC_REQUIRE([gl_PRINTF_DIRECTIVE_F])
-  AC_REQUIRE([gl_PRINTF_DIRECTIVE_N])
+  m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],[AC_REQUIRE([gl_PRINTF_DIRECTIVE_N])])
   AC_REQUIRE([gl_PRINTF_DIRECTIVE_LS])
   AC_REQUIRE([gl_PRINTF_DIRECTIVE_LC])
   AC_REQUIRE([gl_PRINTF_POSITIONS])
   AC_REQUIRE([gl_PRINTF_FLAG_GROUPING])
+  AC_REQUIRE([gl_PRINTF_FLAG_GROUPING_INT_PRECISION])
+  AC_REQUIRE([gl_PRINTF_FLAG_GROUPING_MULTIBYTE])
   AC_REQUIRE([gl_PRINTF_FLAG_LEFTADJUST])
   AC_REQUIRE([gl_PRINTF_FLAG_ZERO])
+  AC_REQUIRE([gl_PRINTF_FLAG_ALT_PRECISION_ZERO])
   AC_REQUIRE([gl_PRINTF_PRECISION])
   AC_REQUIRE([gl_PRINTF_ENOMEM])
   gl_cv_func_vasprintf_posix=no
-  AC_CHECK_FUNCS([vasprintf])
+  AC_CHECK_FUNCS_ONCE([vasprintf])
   case "$gl_cv_func_printf_sizes_c99" in
     *yes)
       case "$gl_cv_func_printf_sizes_c23" in
@@ -53,7 +58,7 @@ AC_DEFUN([gl_FUNC_VASPRINTF_IS_POSIX],
                             *yes)
                               case "$gl_cv_func_printf_directive_f" in
                                 *yes)
-                                  case "$gl_cv_func_printf_directive_n" in
+                                  case m4_ifdef([gl_PRINTF_SUPPORT_N_DIRECTIVE],["$gl_cv_func_printf_directive_n"],["yes"]) in
                                     *yes)
                                       case "$gl_cv_func_printf_directive_ls" in
                                         *yes)
@@ -63,19 +68,31 @@ AC_DEFUN([gl_FUNC_VASPRINTF_IS_POSIX],
                                                 *yes)
                                                   case "$gl_cv_func_printf_flag_grouping" in
                                                     *yes)
-                                                      case "$gl_cv_func_printf_flag_leftadjust" in
+                                                      case "$gl_cv_func_printf_flag_grouping_int_precision" in
                                                         *yes)
-                                                          case "$gl_cv_func_printf_flag_zero" in
+                                                          case "$gl_cv_func_printf_flag_grouping_multibyte" in
                                                             *yes)
-                                                              case "$gl_cv_func_printf_precision" in
+                                                              case "$gl_cv_func_printf_flag_leftadjust" in
                                                                 *yes)
-                                                                  case "$gl_cv_func_printf_enomem" in
+                                                                  case "$gl_cv_func_printf_flag_zero" in
                                                                     *yes)
-                                                                      if test $ac_cv_func_vasprintf = yes; then
-                                                                        # vasprintf exists and is
-                                                                        # already POSIX compliant.
-                                                                        gl_cv_func_vasprintf_posix=yes
-                                                                      fi
+                                                                      case "$gl_cv_func_printf_flag_alt_precision_zero" in
+                                                                        *yes)
+                                                                          case "$gl_cv_func_printf_precision" in
+                                                                            *yes)
+                                                                              case "$gl_cv_func_printf_enomem" in
+                                                                                *yes)
+                                                                                  if test $ac_cv_func_vasprintf = yes; then
+                                                                                    # vasprintf exists and is
+                                                                                    # already POSIX compliant.
+                                                                                    gl_cv_func_vasprintf_posix=yes
+                                                                                  fi
+                                                                                  ;;
+                                                                              esac
+                                                                              ;;
+                                                                          esac
+                                                                          ;;
+                                                                      esac
                                                                       ;;
                                                                   esac
                                                                   ;;

@@ -5,7 +5,7 @@
 @c For double-sided printing, uncomment:
 @c @setchapternewpage odd
 @c This date is automagically updated when you save this file:
-@set lastupdate June 8, 2023
+@set lastupdate October 25, 2025
 @c %**end of header
 @documentencoding UTF-8
 
@@ -311,9 +311,14 @@ distribute the package, and the standing to defend its GPL-covered
 status in court if necessary.
 
 GNU packages need not be FSF-copyrighted; this is up to the author(s),
-generally at the time the package is dubbed GNU@.  When copyright is
-assigned to the FSF, the FSF can act to stop GPL violations about the
-package.  Otherwise, legal actions are up to the author(s).  The rest
+generally at the time the package is dubbed GNU@.   When copyright is
+assigned to the FSF, the FSF has authority to act to stop GPL
+violations about the package (otherwise, legal actions are up to the
+author(s)).   It also allows the FSF to grant additional permissions on a
+package, such as an exception, if the need should arise.  Additionally,
+holding the copyright allows the FSF to upgrade the license of a package
+even if it had been initially released under "GPLv2 only" (instead of
+the "or later" licensing option as recommended by the FSF).  The rest
 of this section is about the case when a package is FSF-copyrighted.
 
 @emph{Before} incorporating significant changes, make sure that the
@@ -683,10 +688,12 @@ files.  If a file has been explicitly placed in the public domain, then
 instead of a copyright notice, it should have a notice saying explicitly
 that it is in the public domain.
 
-Even image files and sound files should contain copyright notices and
-license notices, if their format permits.  Some formats do not have
-room for textual annotations; for these files, state the copyright and
-copying permissions in a @file{README} file in the same directory.
+All files, including images, sound, and plain text, should contain
+copyright and license notices, if their formats allow them.  When the
+file format doesn't permit these notices or if adding a header would
+be very inconvenient, place the copyright and license notices in a
+@file{README} file, preferably in the same directory, and be clear in
+@file{README} which files those notices apply to.
 
 Change log files should have a copyright notice and license notice at
 the end, since new material is added at the beginning but the end
@@ -739,7 +746,13 @@ You can use a range (@samp{2008-2010}) instead of listing individual
 years (@samp{2008, 2009, 2010}) if and only if: 1)@tie{}every year in
 the range, inclusive, really is a ``copyrightable'' year that would be
 listed individually; @emph{and} 2)@tie{}you make an explicit statement
-in a @file{README} file about this usage.
+in a @file{README} file about this usage:
+
+@example
+For any copyright year range specified as YYYY-ZZZZ in this package
+note that the range specifies every single year in that closed
+interval.
+@end example
 
 For files which are regularly copied from another project (such as
 @samp{gnulib}), leave the copyright notice as it is in the original.
@@ -982,7 +995,7 @@ section which explains the importance of free documentation.  Write to
 
 When you distribute several manuals together in one software package,
 their on-line forms can share a single copy of the GFDL (see
-section@tie{}6).  However, the printed (@samp{.dvi}, @samp{.pdf},
+section@tie{}6).  However, the printed (@samp{.pdf},
 @dots{}) forms should each contain a copy of the GFDL, unless they are
 set up to be printed and published only together.  Therefore, it is
 usually simplest to include the GFDL in each manual.
@@ -1027,7 +1040,22 @@ license for these macros.
 These kinds of files can also be put in the public domain.  If
 publishing in the US, it is enough to insert a notice saying so.
 Otherwise, use Creative Commons's CC0---See
-@url{https://creativecommons.org/choose/zero/}.
+@url{https://creativecommons.org/public-domain/cc0/}.  But don't use
+CC0 for software code; it is not designed for such material.
+
+If you use CC0, please include a copy of its ``legal text''
+in a file named COPYING.CC0.  See
+@url{https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt}.
+Unfortunately, that file doesn't include licensing terms for the
+text of CC0, so please add this at the top of that file:
+
+@smallexample
+According to Creative Commons
+(https://creativecommons.org/publicdomain/zero/1.0/legalcode.en):
+
+The text of the Creative Commons public licenses is dedicated to the public
+domain under the CC0 Public Domain Dedication.
+@end smallexample
 
 @node External Libraries
 @section External Libraries
@@ -1685,7 +1713,7 @@ installing the diffs).
 
 The purpose of having diffs is that they are small.  To keep them
 small, exclude files that the user can easily update.  For example,
-exclude info files, DVI files, tags tables, output files of Bison or
+exclude info files, PDF files, tags tables, output files of Bison or
 Flex.  In Emacs diffs, we exclude compiled Lisp files, leaving it up
 to the installer to recompile the patched sources.
 
@@ -2459,7 +2487,7 @@ there.
 @cindex formats for documentation, desired
 
 The web pages for the package should include its manuals, in HTML,
-DVI, Info, PDF, plain ASCII, and the source Texinfo.  All of these can
+Info, PDF, plain ASCII, and the source Texinfo.  All of these can
 be generated automatically from Texinfo using Makeinfo and other
 programs.  If the Texinfo itself is generated from some other source
 format, include that too.
@@ -2530,7 +2558,7 @@ gendocs.sh --email bug-texinfo@@gnu.org texinfo "GNU Texinfo manual"
 
 @command{gendocs.sh} creates a subdirectory @file{manual/} containing
 the manual generated in all the standard output formats: Info, HTML,
-DVI, and so on, as well as the Texinfo source.  You then need to move
+and so on, as well as the Texinfo source.  You then need to move
 all those files, retaining the subdirectories, into the web pages for
 your package.
 
@@ -2569,7 +2597,7 @@ The template files will automatically produce entries for additional
 HTML output generated by @command{texi2html} (i.e., split by sections
 and chapters).
 
-You can set the environment variables @env{MAKEINFO}, @env{TEXI2DVI},
+You can set the environment variables @env{MAKEINFO}, @env{TEXI2PDF},
 etc., to control the programs that get executed, and
 @env{GENDOCS_TEMPLATE_DIR} to control where the
 @file{gendocs_template} file is found.
@@ -2578,7 +2606,7 @@ As usual, run @samp{gendocs.sh --help} for a description of all the
 options, environment variables, and more information.
 
 Please email bug reports, enhancement requests, or other
-correspondence about @command{gendocs} to @email{bug-texinfo@@gnu.org}.
+correspondence about @command{gendocs} to @email{bug-gnulib@@gnu.org}.
 
 
 @node CVS Keywords in Web Pages

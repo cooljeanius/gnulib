@@ -1,5 +1,5 @@
 /* Sequential list data type implemented by a binary tree.
-   Copyright (C) 2006-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This file is free software: you can redistribute it and/or modify
@@ -232,8 +232,6 @@ rebalance_after_add (gl_list_t list, gl_list_node_t node, gl_list_node_t parent)
       /* At this point, parent = node->parent != NULL.
          Think of node->color being RED (although node->color is not yet
          assigned.)  */
-      gl_list_node_t grandparent;
-      gl_list_node_t uncle;
 
       if (parent->color == BLACK)
         {
@@ -242,10 +240,11 @@ rebalance_after_add (gl_list_t list, gl_list_node_t node, gl_list_node_t parent)
           return;
         }
 
-      grandparent = parent->parent;
+      gl_list_node_t grandparent = parent->parent;
       /* Since parent is RED, we know that
          grandparent is != NULL and colored BLACK.  */
 
+      gl_list_node_t uncle;
       if (grandparent->left == parent)
         uncle = grandparent->right;
       else if (grandparent->right == parent)
@@ -659,12 +658,8 @@ gl_tree_remove_node_from_tree (gl_list_t list, gl_list_node_t node)
             parent->right = child;
 
           /* Update branch_size fields of the parent nodes.  */
-          {
-            gl_list_node_t p;
-
-            for (p = parent; p != NULL; p = p->parent)
-              p->branch_size--;
-          }
+          for (gl_list_node_t p = parent; p != NULL; p = p->parent)
+            p->branch_size--;
 
           if (child == NULL && node->color == BLACK)
             rebalance_after_remove (list, child, parent);
@@ -691,30 +686,23 @@ gl_tree_remove_node_from_tree (gl_list_t list, gl_list_node_t node)
             parent->right = child;
 
           /* Update branch_size fields of the parent nodes.  */
-          {
-            gl_list_node_t p;
-
-            for (p = parent; p != NULL; p = p->parent)
-              p->branch_size--;
-          }
+          for (gl_list_node_t p = parent; p != NULL; p = p->parent)
+            p->branch_size--;
         }
     }
   else
     {
       /* Replace node with the rightmost element of the node->left subtree.  */
-      gl_list_node_t subst;
-      gl_list_node_t subst_parent;
-      gl_list_node_t child;
-      color_t removed_color;
 
+      gl_list_node_t subst;
       for (subst = node->left; subst->right != NULL; )
         subst = subst->right;
 
-      subst_parent = subst->parent;
+      gl_list_node_t subst_parent = subst->parent;
 
-      child = subst->left;
+      gl_list_node_t child = subst->left;
 
-      removed_color = subst->color;
+      color_t removed_color = subst->color;
 
       /* The case subst_parent == node is special:  If we do nothing special,
          we get confusion about node->left, subst->left and child->parent.
@@ -735,12 +723,8 @@ gl_tree_remove_node_from_tree (gl_list_t list, gl_list_node_t node)
         }
 
       /* Update branch_size fields of the parent nodes.  */
-      {
-        gl_list_node_t p;
-
-        for (p = subst_parent; p != NULL; p = p->parent)
-          p->branch_size--;
-      }
+      for (gl_list_node_t p = subst_parent; p != NULL; p = p->parent)
+        p->branch_size--;
 
       /* Copy subst into node's position.
          (This is safer than to copy subst's value into node, keep node in
@@ -808,7 +792,6 @@ gl_tree_nx_add_first (gl_list_t list, const void *elt)
   else
     {
       gl_list_node_t node;
-
       for (node = list->root; node->left != NULL; )
         node = node->left;
 
@@ -816,12 +799,8 @@ gl_tree_nx_add_first (gl_list_t list, const void *elt)
       new_node->parent = node;
 
       /* Update branch_size fields of the parent nodes.  */
-      {
-        gl_list_node_t p;
-
-        for (p = node; p != NULL; p = p->parent)
-          p->branch_size++;
-      }
+      for (gl_list_node_t p = node; p != NULL; p = p->parent)
+        p->branch_size++;
 
       /* Color and rebalance.  */
       rebalance_after_add (list, new_node, node);
@@ -874,7 +853,6 @@ gl_tree_nx_add_last (gl_list_t list, const void *elt)
   else
     {
       gl_list_node_t node;
-
       for (node = list->root; node->right != NULL; )
         node = node->right;
 
@@ -882,12 +860,8 @@ gl_tree_nx_add_last (gl_list_t list, const void *elt)
       new_node->parent = node;
 
       /* Update branch_size fields of the parent nodes.  */
-      {
-        gl_list_node_t p;
-
-        for (p = node; p != NULL; p = p->parent)
-          p->branch_size++;
-      }
+      for (gl_list_node_t p = node; p != NULL; p = p->parent)
+        p->branch_size++;
 
       /* Color and rebalance.  */
       rebalance_after_add (list, new_node, node);
@@ -942,12 +916,8 @@ gl_tree_nx_add_before (gl_list_t list, gl_list_node_t node, const void *elt)
   new_node->parent = node;
 
   /* Update branch_size fields of the parent nodes.  */
-  {
-    gl_list_node_t p;
-
-    for (p = node; p != NULL; p = p->parent)
-      p->branch_size++;
-  }
+  for (gl_list_node_t p = node; p != NULL; p = p->parent)
+    p->branch_size++;
 
   /* Color and rebalance.  */
   rebalance_after_add (list, new_node, node);
@@ -1001,12 +971,8 @@ gl_tree_nx_add_after (gl_list_t list, gl_list_node_t node, const void *elt)
   new_node->parent = node;
 
   /* Update branch_size fields of the parent nodes.  */
-  {
-    gl_list_node_t p;
-
-    for (p = node; p != NULL; p = p->parent)
-      p->branch_size++;
-  }
+  for (gl_list_node_t p = node; p != NULL; p = p->parent)
+    p->branch_size++;
 
   /* Color and rebalance.  */
   rebalance_after_add (list, new_node, node);

@@ -1,5 +1,5 @@
 /* execve() function: Execute a program, replacing the current process.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -59,8 +59,7 @@ execve (const char *program, char * const *argv, char * const *env)
          can't do so since we have no way to enumerate them.  */
       {
         unsigned int fdmax = _getmaxstdio ();
-        unsigned int fd;
-        for (fd = 0; fd < fdmax; fd++)
+        for (unsigned int fd = 0; fd < fdmax; fd++)
           close (fd);
       }
 

@@ -1,5 +1,5 @@
 /* Test suite for argp.
-   Copyright (C) 2006-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2026 Free Software Foundation, Inc.
    This file is part of the GNUlib Library.
 
    This program is free software: you can redistribute it and/or modify
@@ -221,12 +221,11 @@ static error_t
 parse_opt (int key, char *arg, struct argp_state *state)
 {
   struct test_args *args = state->input;
-  int i;
 
   switch (key)
     {
     case ARGP_KEY_INIT:
-      for (i = 0; state->root_argp->children[i].argp; i++)
+      for (int i = 0; state->root_argp->children[i].argp; i++)
         state->child_inputs[i] = args;
       break;
 
@@ -313,7 +312,7 @@ test_file (struct argp *argp, int argc, char **argv, struct test_args *args)
     fail ("argp_parse failed");
   else if (!args->file)
     fail ("option not processed");
-  else if (strcmp (args->file, "FILE"))
+  else if (!streq (args->file, "FILE"))
     fail ("option processed incorrectly");
 }
 
@@ -360,14 +359,14 @@ test_optional (struct argp *argp, int argc, char **argv,
       if (args->optional)
         fail ("option processed incorrectly");
     }
-  else if (strcmp (args->optional, val))
+  else if (!streq (args->optional, val))
     fail ("option processed incorrectly");
 
   if (a)
     {
       if (index == argc)
         fail ("expected command line argument not found");
-      else if (strcmp (argv[index], a))
+      else if (!streq (argv[index], a))
         fail ("expected command line argument does not match");
     }
 }
@@ -458,7 +457,6 @@ int
 main (int argc, char **argv)
 {
   struct argp_child argp_children[3], group1_children[2], group2_children[2];
-  test_fp *fun;
 
   group1_children[0] = group1_1_child;
   group1_children[1].argp = NULL;
@@ -480,11 +478,11 @@ main (int argc, char **argv)
       return argp_parse (&test_argp, argc, argv, 0, NULL, &test_args);
     }
 
-  for (fun = test_fun; *fun; fun++)
+  for (test_fp *fun = test_fun; *fun; fun++)
     (*fun) (&test_argp);
 
   if (failure_count)
     return 1;
 
-  return 0;
+  return test_exit_status;
 }

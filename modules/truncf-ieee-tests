@@ -2,13 +2,13 @@ Files:
 tests/test-truncf-ieee.c
 tests/minus-zero.h
 tests/infinity.h
-tests/nan.h
 tests/macros.h
 
 Depends-on:
 isnanf-nolibm
-float
-signbit
+float-h
+nan
+signbit-no-c++
 
 configure.ac:
 

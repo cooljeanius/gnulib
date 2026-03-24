@@ -3,7 +3,9 @@ tests/test-filenamecat.c
 
 Depends-on:
 idx
-stdbool
+bool
+streq
+memeq
 
 configure.ac:
 

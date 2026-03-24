@@ -1,5 +1,5 @@
 /* Set data type implemented by an array.
-   Copyright (C) 2006-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2018.
 
    This program is free software: you can redistribute it and/or modify
@@ -78,17 +78,13 @@ gl_array_search (gl_set_t set, const void *elt)
       const void **elements = set->elements;
       if (equals != NULL)
         {
-          size_t i;
-
-          for (i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
             if (equals (elements[i], elt))
               return true;
         }
       else
         {
-          size_t i;
-
-          for (i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
             if (elements[i] == elt)
               return true;
         }
@@ -101,17 +97,13 @@ gl_array_search (gl_set_t set, const void *elt)
 static int
 grow (gl_set_t set)
 {
-  size_t new_allocated;
-  size_t memory_size;
-  const void **memory;
-
-  new_allocated = xtimes (set->allocated, 2);
+  size_t new_allocated = xtimes (set->allocated, 2);
   new_allocated = xsum (new_allocated, 1);
-  memory_size = xtimes (new_allocated, sizeof (const void *));
+  size_t memory_size = xtimes (new_allocated, sizeof (const void *));
   if (size_overflow_p (memory_size))
     /* Overflow, would lead to out of memory.  */
     return -1;
-  memory = (const void **) realloc (set->elements, memory_size);
+  const void **memory = (const void **) realloc (set->elements, memory_size);
   if (memory == NULL)
     /* Out of memory.  */
     return -1;
@@ -145,11 +137,10 @@ gl_array_remove_at (gl_set_t set, size_t position)
 {
   size_t count = set->count;
   const void **elements = set->elements;
-  size_t i;
 
   if (set->base.dispose_fn != NULL)
     set->base.dispose_fn (elements[position]);
-  for (i = position + 1; i < count; i++)
+  for (size_t i = position + 1; i < count; i++)
     elements[i - 1] = elements[i];
   set->count = count - 1;
 }
@@ -166,9 +157,7 @@ gl_array_remove (gl_set_t set, const void *elt)
 
       if (equals != NULL)
         {
-          size_t i;
-
-          for (i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
             if (equals (elements[i], elt))
               {
                 gl_array_remove_at (set, i);
@@ -177,9 +166,7 @@ gl_array_remove (gl_set_t set, const void *elt)
         }
       else
         {
-          size_t i;
-
-          for (i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
             if (elements[i] == elt)
               {
                 gl_array_remove_at (set, i);

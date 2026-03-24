@@ -1,5 +1,5 @@
 /* Test of times function.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -71,11 +71,10 @@ main (int argc, char *argv[])
     {
       size_t size = atoi (argv[1]);
       double *base;
-      size_t i;
 
       base = malloc (size * sizeof (double));
 
-      for (i = 0; i < size; i++)
+      for (size_t i = 0; i < size; i++)
         base[i] = i * i;
 
       qsort (base, size, sizeof (double), doublecmp);

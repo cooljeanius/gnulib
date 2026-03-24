@@ -1,8 +1,10 @@
-# fma.m4 serial 4
-dnl Copyright (C) 2011-2023 Free Software Foundation, Inc.
+# fma.m4
+# serial 9
+dnl Copyright (C) 2011-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_FMA],
 [
@@ -18,16 +20,10 @@ AC_DEFUN([gl_FUNC_FMA],
     ])
   if test $gl_cv_func_fma_no_libm = yes \
      || test $gl_cv_func_fma_in_libm = yes; then
-    dnl Also check whether it's declared.
-    dnl IRIX 6.5 has fma() in libm but doesn't declare it in <math.h>,
-    dnl and the function is buggy.
-    AC_CHECK_DECL([fma], , [REPLACE_FMA=1], [[#include <math.h>]])
-    if test $REPLACE_FMA = 0; then
-      gl_FUNC_FMA_WORKS
-      case "$gl_cv_func_fma_works" in
-        *no) REPLACE_FMA=1 ;;
-      esac
-    fi
+    gl_FUNC_FMA_WORKS
+    case "$gl_cv_func_fma_works" in
+      *no) REPLACE_FMA=1 ;;
+    esac
   else
     HAVE_FMA=0
   fi
@@ -62,7 +58,7 @@ AC_DEFUN([gl_FUNC_FMA_WORKS],
   AC_REQUIRE([AC_PROG_CC])
   AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
   AC_REQUIRE([gl_FUNC_LDEXP])
-  save_LIBS="$LIBS"
+  saved_LIBS="$LIBS"
   LIBS="$LIBS $FMA_LIBM $LDEXP_LIBM"
   AC_CACHE_CHECK([whether fma works], [gl_cv_func_fma_works],
     [
@@ -70,6 +66,7 @@ AC_DEFUN([gl_FUNC_FMA_WORKS],
         [AC_LANG_SOURCE([[
 #include <float.h>
 #include <math.h>
+double (* volatile my_fma) (double, double, double) = fma;
 double p0 = 0.0;
 int main()
 {
@@ -84,7 +81,7 @@ int main()
        and is closer to (2^52 + 1) * 2^2, therefore the rounding
        must round up and produce (2^52 + 1) * 2^2.  */
     volatile double expected = z + 4.0;
-    volatile double result = fma (x, y, z);
+    volatile double result = my_fma (x, y, z);
     if (result != expected)
       failed_tests |= 1;
   }
@@ -97,7 +94,7 @@ int main()
        and is closer to (2^53 - 1) * 2^1, therefore the rounding
        must round down and produce (2^53 - 1) * 2^1.  */
     volatile double expected = (ldexp (1.0, DBL_MANT_DIG) - 1.0) * 2.0;
-    volatile double result = fma (x, y, z);
+    volatile double result = my_fma (x, y, z);
     if (result != expected)
       failed_tests |= 2;
   }
@@ -110,7 +107,7 @@ int main()
        and is closer to (2^52 + 2^50 + 1) * 2^-50, therefore the rounding
        must round up and produce (2^52 + 2^50 + 1) * 2^-50.  */
     volatile double expected = 4.0 + 1.0 + ldexp (1.0, 3 - DBL_MANT_DIG);
-    volatile double result = fma (x, y, z);
+    volatile double result = my_fma (x, y, z);
     if (result != expected)
       failed_tests |= 4;
   }
@@ -124,7 +121,7 @@ int main()
        (2^52 + 2^51 + 2^50 - 1) * 2^-50, therefore the rounding
        must round down and produce (2^52 + 2^51 + 2^50 - 1) * 2^-50.  */
     volatile double expected = 7.0 - ldexp (1.0, 3 - DBL_MANT_DIG);
-    volatile double result = fma (x, y, z);
+    volatile double result = my_fma (x, y, z);
     if (result != expected)
       failed_tests |= 8;
   }
@@ -136,10 +133,11 @@ int main()
        Lies between (2^53 - 2^0) and 2^53 and is closer to (2^53 - 2^0),
        therefore the rounding must round down and produce (2^53 - 2^0).  */
     volatile double expected = ldexp (1.0, DBL_MANT_DIG) - 1.0;
-    volatile double result = fma (x, y, z);
+    volatile double result = my_fma (x, y, z);
     if (result != expected)
       failed_tests |= 16;
   }
+  /* This test fails on OpenBSD 7.4/arm64.  */
   if ((DBL_MANT_DIG % 2) == 1)
     {
       volatile double x = 1.0 + ldexp (1.0, - (DBL_MANT_DIG + 1) / 2); /* 2^0 + 2^-27 */
@@ -150,7 +148,7 @@ int main()
          (2^53 - 1) * 2^-53, therefore the rounding must round down and
          produce (2^53 - 1) * 2^-53.  */
       volatile double expected = 1.0 - ldexp (1.0, - DBL_MANT_DIG);
-      volatile double result = fma (x, y, z);
+      volatile double result = my_fma (x, y, z);
       if (result != expected)
         failed_tests |= 32;
     }
@@ -159,7 +157,7 @@ int main()
     volatile double x = ldexp (1.0, DBL_MAX_EXP - 1);
     volatile double y = ldexp (1.0, DBL_MAX_EXP - 1);
     volatile double z = minus_inf;
-    volatile double result = fma (x, y, z);
+    volatile double result = my_fma (x, y, z);
     if (!(result == minus_inf))
       failed_tests |= 64;
   }
@@ -171,7 +169,10 @@ int main()
          dnl Otherwise guess no, even on glibc systems.
          gl_cv_func_fma_works="$gl_cross_guess_normal"
          case "$host_os" in
-           mingw*)
+           windows*-msvc*)
+             gl_cv_func_fma_works="guessing yes"
+             ;;
+           mingw* | windows*)
              AC_EGREP_CPP([Known], [
 #ifdef _MSC_VER
  Known
@@ -181,7 +182,7 @@ int main()
          esac
         ])
     ])
-  LIBS="$save_LIBS"
+  LIBS="$saved_LIBS"
 ])
 
 # Prerequisites of lib/fma.c.

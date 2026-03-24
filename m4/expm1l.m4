@@ -1,8 +1,10 @@
-# expm1l.m4 serial 10
-dnl Copyright (C) 2010-2023 Free Software Foundation, Inc.
+# expm1l.m4
+# serial 15
+dnl Copyright (C) 2010-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_EXPM1L],
 [
@@ -38,7 +40,7 @@ AC_DEFUN([gl_FUNC_EXPM1L],
     AC_CACHE_CHECK([whether expm1l() can be used with libm],
       [gl_cv_func_expm1l_in_libm],
       [
-        save_LIBS="$LIBS"
+        saved_LIBS="$LIBS"
         LIBS="$LIBS -lm"
         AC_LINK_IFELSE(
           [AC_LANG_PROGRAM(
@@ -57,7 +59,7 @@ AC_DEFUN([gl_FUNC_EXPM1L],
                       || expm1l (x) > 0.5;]])],
           [gl_cv_func_expm1l_in_libm=yes],
           [gl_cv_func_expm1l_in_libm=no])
-        LIBS="$save_LIBS"
+        LIBS="$saved_LIBS"
       ])
     if test $gl_cv_func_expm1l_in_libm = yes; then
       EXPM1L_LIBM=-lm
@@ -66,15 +68,12 @@ AC_DEFUN([gl_FUNC_EXPM1L],
   if test $gl_cv_func_expm1l_no_libm = yes \
      || test $gl_cv_func_expm1l_in_libm = yes; then
     HAVE_EXPM1L=1
-    dnl Also check whether it's declared.
-    dnl IRIX 6.5 has expm1l() in libm but doesn't declare it in <math.h>.
-    AC_CHECK_DECL([expm1l], , [HAVE_DECL_EXPM1L=0], [[#include <math.h>]])
     if test $REPLACE_EXPM1L = 0; then
       AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
       AC_CACHE_CHECK([whether expm1l works],
         [gl_cv_func_expm1l_works],
         [
-          save_LIBS="$LIBS"
+          saved_LIBS="$LIBS"
           LIBS="$LIBS $EXPM1L_LIBM"
           AC_RUN_IFELSE(
             [AC_LANG_SOURCE([[
@@ -104,14 +103,6 @@ AC_DEFUN([gl_FUNC_EXPM1L],
 # undef LDBL_MIN_EXP
 # define LDBL_MIN_EXP DBL_MIN_EXP
 #endif
-#if defined __sgi && (LDBL_MANT_DIG >= 106)
-# undef LDBL_MANT_DIG
-# define LDBL_MANT_DIG 106
-# if defined __GNUC__
-#  undef LDBL_MIN_EXP
-#  define LDBL_MIN_EXP DBL_MIN_EXP
-# endif
-#endif
 #undef expm1l
 extern
 #ifdef __cplusplus
@@ -124,7 +115,7 @@ int main (int argc, char *argv[])
   long double (* volatile my_expm1l) (long double) = argc ? expm1l : dummy;
   int result = 0;
   /* This test fails on musl 1.2.2/arm64, musl 1.2.2/s390x, Mac OS X 10.5,
-     NetBSD 8.0.  */
+     NetBSD 10.0/x86_64.  */
   {
     const long double TWO_LDBL_MANT_DIG = /* 2^LDBL_MANT_DIG */
       (long double) (1U << ((LDBL_MANT_DIG - 1) / 5))
@@ -140,6 +131,18 @@ int main (int argc, char *argv[])
     if (!(err >= -100.0L && err <= 100.0L))
       result |= 1;
   }
+  /* This test fails on NetBSD 10.0/i386.  */
+  {
+    int i;
+    long double x;
+    volatile long double y;
+    for (i = -1, x = 0.5L; i > LDBL_MIN_EXP; i--, x *= 0.5L)
+      ;
+    /* Here i = LDBL_MIN_EXP, x = 2^LDBL_MIN_EXP.  */
+    y = my_expm1l (x);
+    if (!(y >= x))
+      result |= 2;
+  }
   return result;
 }
             ]])],
@@ -150,13 +153,15 @@ int main (int argc, char *argv[])
                *-gnu* | gnu*)      gl_cv_func_expm1l_works="guessing yes" ;;
                                    # Guess no on musl systems.
                *-musl* | midipix*) gl_cv_func_expm1l_works="guessing no" ;;
+                                   # Guess no on NetBSD.
+               netbsd*)            gl_cv_func_expm1l_works="guessing no" ;;
                                    # Guess yes on native Windows.
-               mingw*)             gl_cv_func_expm1l_works="guessing yes" ;;
+               mingw* | windows*)  gl_cv_func_expm1l_works="guessing yes" ;;
                                    # If we don't know, obey --enable-cross-guesses.
                *)                  gl_cv_func_expm1l_works="$gl_cross_guess_normal" ;;
              esac
             ])
-          LIBS="$save_LIBS"
+          LIBS="$saved_LIBS"
         ])
       case "$gl_cv_func_expm1l_works" in
         *yes) ;;
@@ -165,7 +170,6 @@ int main (int argc, char *argv[])
     fi
   else
     HAVE_EXPM1L=0
-    HAVE_DECL_EXPM1L=0
   fi
   if test $HAVE_EXPM1L = 0 || test $REPLACE_EXPM1L = 1; then
     dnl Find libraries needed to link lib/expm1l.c.

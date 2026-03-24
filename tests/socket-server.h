@@ -1,5 +1,5 @@
 /* Create sockets for use in tests (server side).
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ create_server (int port, unsigned int max_backlog, int *pport)
   {
     struct sockaddr_in addr;
 
-    memset (&addr, 0, sizeof (addr)); /* needed on AIX and OSF/1 */
+    memset (&addr, 0, sizeof (addr)); /* needed on AIX */
     addr.sin_family = AF_INET;
     #if 0 /* Unoptimized */
     inet_pton (AF_INET, "127.0.0.1", &addr.sin_addr);

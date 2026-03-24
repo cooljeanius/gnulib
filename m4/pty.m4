@@ -1,8 +1,10 @@
-# pty.m4 serial 19
-dnl Copyright (C) 2010-2023 Free Software Foundation, Inc.
+# pty.m4
+# serial 21
+dnl Copyright (C) 2010-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 # gl_PTY_LIB
 # ----------
@@ -15,13 +17,13 @@ AC_DEFUN([gl_PTY_LIB],
   case "$host_os" in
     haiku*) PTY_LIB='-lbsd' ;;
     *)
-      save_LIBS="$LIBS"
+      saved_LIBS="$LIBS"
       AC_SEARCH_LIBS([forkpty], [util],
         [if test "$ac_cv_search_forkpty" != "none required"; then
            PTY_LIB="$ac_cv_search_forkpty"
          fi
         ])
-      LIBS="$save_LIBS"
+      LIBS="$saved_LIBS"
       ;;
   esac
   AC_SUBST([PTY_LIB])
@@ -152,7 +154,6 @@ AC_DEFUN([gl_FUNC_OPENPTY],
     dnl The system does not have openpty.
     HAVE_OPENPTY=0
     dnl Prerequisites of lib/openpty.c in this case.
-    AC_CHECK_FUNCS([_getpty])
     gl_CHECK_FUNCS_ANDROID([posix_openpt], [[#include <stdlib.h>]])
   fi
 ])

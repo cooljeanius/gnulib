@@ -1,5 +1,5 @@
 /* Sequential list data type backed by another list.
-   Copyright (C) 2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,11 @@
 
 #ifndef _GL_SUBLIST_H
 #define _GL_SUBLIST_H
+
+/* This file uses _GL_ATTRIBUTE_DEALLOC, _GL_ATTRIBUTE_RETURNS_NONNULL.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 #include "gl_list.h"
 

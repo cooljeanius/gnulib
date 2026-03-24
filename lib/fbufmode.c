@@ -1,5 +1,5 @@
 /* Retrieve information about a FILE stream.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -33,19 +33,22 @@ fbufmode (FILE *fp)
   /* Most systems provide FILE as a struct and the necessary bitmask in
      <stdio.h>, because they need it for implementing getc() and putc() as
      fast macros.  */
-#if defined _IO_EOF_SEEN || defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1
-  /* GNU libc, BeOS, Haiku, Linux libc5 */
+#if (defined _IO_EOF_SEEN || defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1) && !(defined __HAIKU__ && HAVE___FLBF && HAVE___FBUFSIZE)
+  /* GNU libc, BeOS, Haiku < hrev58760, Linux libc5 */
+# if !defined __HAIKU__
+#  define fp_ fp
+# endif
 # if HAVE___FLBF                    /* glibc >= 2.2 */
   if (__flbf (fp))
     return _IOLBF;
 # else
-  if (fp->_flags & _IO_LINE_BUF)
+  if (fp_->_flags & _IO_LINE_BUF)
     return _IOLBF;
 # endif
-  if (fp->_flags & _IO_UNBUFFERED)
+  if (fp_->_flags & _IO_UNBUFFERED)
     return _IONBF;
   return _IOFBF;
-#elif defined __sferror || defined __DragonFly__ || defined __ANDROID__
+#elif defined __sferror || defined __OpenBSD__ || defined __DragonFly__ || defined __ANDROID__
   /* FreeBSD, NetBSD, OpenBSD, DragonFly, Mac OS X, Cygwin, Minix 3, Android */
   if (fp_->_flags & __SLBF)
     return _IOLBF;
@@ -56,7 +59,7 @@ fbufmode (FILE *fp)
   return fp->_flags & (_IOLBF | _IONBF | _IOFBF);
 #elif defined __minix               /* Minix */
   return fp->_flags & (_IOLBF | _IONBF | _IOFBF);
-#elif defined _IOERR                /* AIX, HP-UX, IRIX, OSF/1, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
+#elif defined _IOERR                /* AIX, HP-UX, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
 # if defined WINDOWS_OPAQUE_FILE
   if (fp_->_flag & 0x100)
     return _IOFBF; /* Impossible to distinguish _IOFBF and _IOLBF.  */
@@ -90,7 +93,7 @@ fbufmode (FILE *fp)
   if (fp->__linebuf)
     return _IOLBF;
   return (fp->__bufsize > 0 ? _IOFBF : _IONBF);
-#elif HAVE___FLBF && HAVE___FBUFSIZE /* musl libc */
+#elif HAVE___FLBF && HAVE___FBUFSIZE /* musl libc, Haiku >= hrev58760 */
   if (__flbf (fp))
     return _IOLBF;
   return (__fbufsize (fp) > 0 ? _IOFBF : _IONBF);

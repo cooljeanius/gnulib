@@ -1,5 +1,5 @@
 /* Test of posix_spawn() function with 'fchdir' action.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -150,7 +150,7 @@ test (const char *pwd_prog)
      "/".  */
   if (!is_qemu)
     {
-      if (memcmp (line, KNOWNDIR "\n", strlen (KNOWNDIR) + 1) != 0)
+      if (!memeq (line, KNOWNDIR "\n", strlen (KNOWNDIR) + 1))
         {
           fprintf (stderr, "read output is not the expected output\n");
           exit (1);

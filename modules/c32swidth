@@ -10,8 +10,8 @@ m4/locale-zh.m4
 m4/codeset.m4
 
 Depends-on:
-uchar
-wchar
+uchar-h
+wchar-h
 wcswidth
 c32width
 

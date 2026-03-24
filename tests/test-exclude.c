@@ -1,5 +1,5 @@
 /* Test suite for exclude.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
    This file is part of the GNUlib Library.
 
    This program is free software: you can redistribute it and/or modify
@@ -22,8 +22,8 @@
 #include <string.h>
 #include <fnmatch.h>
 
+#include <error.h>
 #include "exclude.h"
-#include "error.h"
 #include "argmatch.h"
 
 #ifndef FNM_CASEFOLD
@@ -90,7 +90,7 @@ main (int argc, char **argv)
               argc--;
               break;
             }
-          if (strlen (s) > 3 && memcmp (s, "no-", 3) == 0)
+          if (strlen (s) > 3 && memeq (s, "no-", 3))
             {
               neg = 1;
               s += 3;
@@ -103,11 +103,11 @@ main (int argc, char **argv)
 
           /* Skip this test if invoked with -leading-dir on a system that
              lacks support for FNM_LEADING_DIR. */
-          if (strcmp (s, "leading_dir") == 0 && FNM_LEADING_DIR == 0)
+          if (streq (s, "leading_dir") && FNM_LEADING_DIR == 0)
             exit (77);
 
           /* Likewise for -casefold and FNM_CASEFOLD.  */
-          if (strcmp (s, "casefold") == 0 && FNM_CASEFOLD == 0)
+          if (streq (s, "casefold") && FNM_CASEFOLD == 0)
             exit (77);
         }
       else if (add_exclude_file (add_exclude, exclude, opt,

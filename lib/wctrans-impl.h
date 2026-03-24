@@ -1,5 +1,5 @@
 /* Get descriptor for a wide character case conversion.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This file is free software: you can redistribute it and/or modify
@@ -23,11 +23,11 @@ wctrans (const char *name)
     switch (name[2])
       {
       case 'l':
-        if (strcmp (name + 3, "ower") == 0)
+        if (streq (name + 3, "ower"))
           return (wctrans_t) towlower;
         break;
       case 'u':
-        if (strcmp (name + 3, "pper") == 0)
+        if (streq (name + 3, "pper"))
           return (wctrans_t) towupper;
         break;
       default:

@@ -1,5 +1,5 @@
 /* rijndael-alg-fst.h --- Rijndael cipher implementation.
- * Copyright (C) 2005, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2009-2026 Free Software Foundation, Inc.
  *
  * This file is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -49,17 +49,27 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define RIJNDAEL_MAXKC (256/32)
 #define RIJNDAEL_MAXKB (256/8)
 #define RIJNDAEL_MAXNR 14
 
-int rijndaelKeySetupEnc (uint32_t rk[ /*4*(Nr + 1) */ ],
-                         const char cipherKey[], size_t keyBits);
-int rijndaelKeySetupDec (uint32_t rk[ /*4*(Nr + 1) */ ],
-                         const char cipherKey[], size_t keyBits);
-void rijndaelEncrypt (const uint32_t rk[ /*4*(Nr + 1) */ ], size_t Nr,
-                      const char pt[16], char ct[16]);
-void rijndaelDecrypt (const uint32_t rk[ /*4*(Nr + 1) */ ], size_t Nr,
-                      const char ct[16], char pt[16]);
+int rijndaelKeySetupEnc (uint32_t rk[restrict /*4*(Nr + 1) */],
+                         char const cipherKey[restrict], size_t keyBits);
+int rijndaelKeySetupDec (uint32_t rk[restrict /*4*(Nr + 1) */],
+                         char const cipherKey[restrict], size_t keyBits);
+void rijndaelEncrypt (const uint32_t rk[restrict /*4*(Nr + 1) */], size_t Nr,
+                      char const pt[restrict 16], char ct[restrict 16]);
+void rijndaelDecrypt (const uint32_t rk[restrict /*4*(Nr + 1) */], size_t Nr,
+                      char const ct[restrict 16], char pt[restrict 16]);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __RIJNDAEL_ALG_FST_H */

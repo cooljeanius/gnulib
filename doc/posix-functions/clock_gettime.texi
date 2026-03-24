@@ -1,8 +1,8 @@
 @node clock_gettime
-@section @code{clock_gettime}
+@subsection @code{clock_gettime}
 @findex clock_gettime
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/clock_gettime.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/clock_gettime.html}
 
 Gnulib module: ---
 
@@ -21,6 +21,8 @@ uninitialized on some platforms:
 mingw in 32-bit mode.
 @end itemize
 
+@mindex gettime
+@mindex timespec_get
 The Gnulib modules @code{gettime} and @code{timespec_get} are partial
 substitutes; they implement the @code{CLOCK_REALTIME} functionality of
 @code{clock_gettime}.

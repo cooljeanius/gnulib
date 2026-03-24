@@ -1,5 +1,5 @@
 /* Next grapheme cluster length test.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify it
    under the terms of the GNU Lesser General Public License as published
@@ -52,16 +52,15 @@ test_u16_grapheme_next (size_t len, ...)
   next = u16_grapheme_next (s, s + n);
   if (next != s + len)
     {
-      size_t i;
-
       if (next == NULL)
         fputs ("u16_grapheme_next returned NULL", stderr);
       else
-        fprintf (stderr, "u16_grapheme_next skipped %zu units", next - s);
+        fprintf (stderr, "u16_grapheme_next skipped %tu units", next - s);
       fprintf (stderr, ", expected %zu:\n", len);
-      for (i = 0; i < n; i++)
+      for (size_t i = 0; i < n; i++)
         fprintf (stderr, " %04x", s[i]);
       putc ('\n', stderr);
+      fflush (stderr);
       abort ();
     }
 }
@@ -94,9 +93,18 @@ main (void)
   test_u16_grapheme_next (2, 'e', ACUTE, 'x', -1);
   test_u16_grapheme_next (2, 'e', ACUTE, 'e', ACUTE, -1);
 
+  /* CR LF handling.  */
+  test_u16_grapheme_next (2, '\r', '\n', 'd', -1);
+
+  /* Emoji modifier / ZWJ sequence. */
+  test_u16_grapheme_next (5, 0x2B50, 0x0305, 0x0347, 0x200D, 0x2600, -1);
+
+  /* Regional indicators. */
+  test_u16_grapheme_next (4, 0xD83C, 0xDDE9, 0xD83C, 0xDDEA, 0xD83C, 0xDDEB, 0xD83C, 0xDDF7, -1);
+
   /* Surrogate pairs. */
   test_u16_grapheme_next (2, 0xd83d, 0xde10, -1); /* 😐: neutral face. */
   test_u16_grapheme_next (3, 0xd83d, 0xde10, GRAVE, -1);
 
-  return 0;
+  return test_exit_status;
 }

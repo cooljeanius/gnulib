@@ -1,5 +1,5 @@
 /* Test the fts function.
-   Copyright 2017-2023 Free Software Foundation, Inc.
+   Copyright 2017-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,10 +26,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "macros.h"
+
 #define BASE "t-fts.tmp"
 static char base[] = BASE; /* Not const, since argv needs non-const.  */
 static char const base_d[] = BASE "/d";
-static char *const argv[2] = { base, 0 };
+static char *const argv[2] = { base, NULL };
 
 static void
 perror_exit (char const *message, int status)
@@ -43,8 +45,8 @@ static void
 fts_dealloc (void)
 {
   static char dir[] = "./";
-  static char *const curr_dir[2] = { dir, 0 };
-  FTS *ftsp = fts_open (curr_dir, FTS_NOSTAT | FTS_PHYSICAL | FTS_CWDFD, 0);
+  static char *const curr_dir[2] = { dir, NULL };
+  FTS *ftsp = fts_open (curr_dir, FTS_NOSTAT | FTS_PHYSICAL | FTS_CWDFD, NULL);
   if (ftsp)
     {
       if (fts_close (ftsp) != 0)
@@ -59,7 +61,7 @@ static void
 remove_tree (void)
 {
   FTSENT *e;
-  FTS *ftsp = fts_open (argv, FTS_NOSTAT | FTS_PHYSICAL | FTS_CWDFD, 0);
+  FTS *ftsp = fts_open (argv, FTS_NOSTAT | FTS_PHYSICAL | FTS_CWDFD, NULL);
   if (ftsp)
     {
       while ((e = fts_read (ftsp)))
@@ -86,13 +88,45 @@ remove_tree (void)
     perror_exit (base, 3);
 }
 
+static void
+test_fts_mount (void)
+{
+  FTSENT *ent;
+  char *const root[] = { "/", NULL };
+  FTS *ftsp = fts_open (root, FTS_PHYSICAL | FTS_MOUNT | FTS_CWDFD, NULL);
+  dev_t root_dev;
+
+  ASSERT (ftsp != NULL);
+
+  /* Make sure each directory directly below the root directory has the same
+     device ID when we use FTS_MOUNT.  */
+  while ((ent = fts_read (ftsp)))
+    {
+      switch (ent->fts_info)
+        {
+        case FTS_D:
+          if (ent->fts_level == FTS_ROOTLEVEL)
+            root_dev = ent->fts_statp->st_dev;
+          else
+            {
+              ASSERT (ent->fts_statp->st_dev == root_dev);
+              ASSERT (fts_set (ftsp, ent, FTS_SKIP) == 0);
+            }
+          break;
+        default:
+          break;
+        }
+    }
+
+  ASSERT (fts_close (ftsp) == 0);
+}
+
 int
 main (void)
 {
   FTS *ftsp;
   FTSENT *e;
   char buf[sizeof BASE + 100];
-  int i;
   enum { needles = 4 };
   int needles_seen = 0;
   struct stat st;
@@ -109,7 +143,7 @@ main (void)
     perror_exit (base, 4);
   if (mkdir (base_d, 0777) != 0)
     perror_exit (base_d, 5);
-  for (i = 1; i <= 65536; i++)
+  for (int i = 1; i <= 65536; i++)
     {
       sprintf (buf, "%s/d/%i", base, i);
       if (mkdir (buf, 0777) != 0)
@@ -125,7 +159,7 @@ main (void)
     }
 
   /* Create empty files BASE/d/1/needle etc.  */
-  for (i = 1; i <= needles; i++)
+  for (int i = 1; i <= needles; i++)
     {
       int fd;
       sprintf (buf, "%s/d/%d/needle", base, i);
@@ -135,11 +169,12 @@ main (void)
     }
 
   /* Use fts to look for the needles.  */
-  ftsp = fts_open (argv, FTS_SEEDOT | FTS_NOSTAT | FTS_PHYSICAL | FTS_CWDFD, 0);
+  ftsp = fts_open (argv, FTS_SEEDOT | FTS_NOSTAT | FTS_PHYSICAL | FTS_CWDFD,
+                   NULL);
   if (!ftsp)
     perror_exit (base, 6);
   while ((e = fts_read (ftsp)))
-    needles_seen += strcmp (e->fts_name, "needle") == 0;
+    needles_seen += streq (e->fts_name, "needle");
   int fts_read_errno = errno;
   fflush (stdout);
   if (fts_read_errno)
@@ -166,6 +201,8 @@ main (void)
     }
 
   fts_dealloc ();
+
+  test_fts_mount ();
 
   return 0;
 }

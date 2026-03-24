@@ -7,7 +7,8 @@ lib/getugroups.h
 m4/getugroups.m4
 
 Depends-on:
-errno
+errno-h
+streq
 
 configure.ac:
 gl_GETUGROUPS

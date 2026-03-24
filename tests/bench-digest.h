@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2018-2026 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,18 +39,14 @@ main (int argc, char *argv[])
     }
 
   /* Fill the memory block.  */
-  {
-    size_t i;
-    for (i = 0; i < size; i++)
-      memblock[i] =
-        (unsigned char) (((i * (i-1) * (i-5)) >> 6) + (i % 499) + (i % 101));
-  }
+  for (size_t i = 0; i < size; i++)
+    memblock[i] =
+      (unsigned char) (((i * (i-1) * (i-5)) >> 6) + (i % 499) + (i % 101));
 
   struct timings_state ts;
   timing_start (&ts);
 
-  int count;
-  for (count = 0; count < repeat; count++)
+  for (int count = 0; count < repeat; count++)
     {
       char digest[64];
       FUNC (memblock, size, digest);

@@ -1,6 +1,6 @@
 /* GNU's read utmp module.
 
-   Copyright (C) 1992-2001, 2003-2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 1992-2001, 2003-2006, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <string.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -51,6 +52,12 @@
 # include <OS.h>
 #endif
 
+#if defined _WIN32 && ! defined __CYGWIN__
+# define WIN32_LEAN_AND_MEAN
+# include <windows.h>
+# include <sys/time.h>
+#endif
+
 #include "stat-time.h"
 #include "xalloc.h"
 
@@ -67,7 +74,6 @@
 #undef UT_PID
 #undef UT_TYPE_EQ
 #undef UT_TYPE_NOT_DEFINED
-#undef IS_USER_PROCESS
 #undef UT_EXIT_E_TERMINATION
 #undef UT_EXIT_E_EXIT
 
@@ -102,17 +108,9 @@
 # define UT_TYPE_NOT_DEFINED 1
 #endif
 
-/* Determines whether an entry *UT corresponds to a user process.  */
-#define IS_USER_PROCESS(UT)                                    \
-  ((UT)->ut_user[0]                                            \
-   && (UT_TYPE_USER_PROCESS (UT)                               \
-       || (UT_TYPE_NOT_DEFINED && (UT)->ut_ts.tv_sec != 0)))
-
 #if HAVE_UTMPX_H
 # if HAVE_STRUCT_UTMPX_UT_EXIT_E_TERMINATION
 #  define UT_EXIT_E_TERMINATION(UT) ((UT)->ut_exit.e_termination)
-# elif HAVE_STRUCT_UTMPX_UT_EXIT_UT_TERMINATION /* OSF/1 */
-#  define UT_EXIT_E_TERMINATION(UT) ((UT)->ut_exit.ut_termination)
 # else
 #  define UT_EXIT_E_TERMINATION(UT) 0
 # endif
@@ -127,8 +125,6 @@
 #if HAVE_UTMPX_H
 # if HAVE_STRUCT_UTMPX_UT_EXIT_E_EXIT
 #  define UT_EXIT_E_EXIT(UT) ((UT)->ut_exit.e_exit)
-# elif HAVE_STRUCT_UTMPX_UT_EXIT_UT_EXIT /* OSF/1 */
-#  define UT_EXIT_E_EXIT(UT) ((UT)->ut_exit.ut_exit)
 # else
 #  define UT_EXIT_E_EXIT(UT) 0
 # endif
@@ -149,7 +145,7 @@
 /* Size of the ut->ut_host member.  */
 #define UT_HOST_SIZE  sizeof (((struct UTMP_STRUCT_NAME *) 0)->ut_host)
 
-#if 8 <= __GNUC__
+#if _GL_GNUC_PREREQ (8, 0)
 # pragma GCC diagnostic ignored "-Wsizeof-pointer-memaccess"
 #endif
 
@@ -333,11 +329,11 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
       return 0;
     }
 
-  struct utmp_alloc a = {0};
+  struct utmp_alloc a = { NULL, 0, 0, 0 };
 
 # if READUTMP_USE_SYSTEMD || HAVE_UTMPX_H || HAVE_UTMP_H
 
-#  if defined UTMP_NAME_FUNCTION /* glibc, musl, macOS, FreeBSD, NetBSD, Minix, AIX, IRIX, Solaris, Cygwin, Android */
+#  if defined UTMP_NAME_FUNCTION /* glibc, musl, macOS, FreeBSD, NetBSD, Minix, AIX, Solaris, Cygwin, Android */
 
   /* Ignore the return value for now.
      Solaris' utmpname returns 1 upon success -- which is contrary
@@ -348,7 +344,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
   SET_UTMP_ENT ();
 
 #   if (defined __linux__ && !defined __ANDROID__) || defined __minix
-  bool file_is_utmp = (strcmp (file, UTMP_FILE) == 0);
+  bool file_is_utmp = streq (file, UTMP_FILE);
   /* Timestamp of the "runlevel" entry, if any.  */
   struct timespec runlevel_ts = {0};
 #   endif
@@ -399,14 +395,14 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
                    );
 #   if defined __linux__ && !defined __ANDROID__
       if (file_is_utmp
-          && memcmp (UT_USER (ut), "runlevel", strlen ("runlevel") + 1) == 0
-          && memcmp (ut->ut_line, "~", strlen ("~") + 1) == 0)
+          && memeq (UT_USER (ut), "runlevel", strlen ("runlevel") + 1)
+          && memeq (ut->ut_line, "~", strlen ("~") + 1))
         runlevel_ts = ts;
 #   endif
 #   if defined __minix
       if (file_is_utmp
           && UT_USER (ut)[0] == '\0'
-          && memcmp (ut->ut_line, "run-level ", strlen ("run-level ")) == 0)
+          && memeq (ut->ut_line, "run-level ", strlen ("run-level ")))
         runlevel_ts = ts;
 #   endif
     }
@@ -462,7 +458,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
      it produces wrong values after the date has been bumped in the running
      system.  */
   if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
-      && strcmp (file, UTMP_FILE) == 0
+      && streq (file, UTMP_FILE)
       && !have_boot_time (a))
     {
       struct timespec boot_time;
@@ -561,7 +557,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
     }
   else
     {
-      if (strcmp (file, UTMP_FILE) != 0)
+      if (!streq (file, UTMP_FILE))
         {
           int saved_errno = errno;
           free (a.utmp);
@@ -572,7 +568,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
 
 #   if defined __OpenBSD__
   if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
-      && strcmp (file, UTMP_FILE) == 0
+      && streq (file, UTMP_FILE)
       && !have_boot_time (a))
     {
       struct timespec boot_time;
@@ -590,7 +586,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
 
 #  if defined __linux__ && !defined __ANDROID__
   if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
-      && strcmp (file, UTMP_FILE) == 0
+      && streq (file, UTMP_FILE)
       && !have_boot_time (a))
     {
       struct timespec boot_time;
@@ -609,7 +605,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
       && defined CTL_KERN && defined KERN_BOOTTIME \
       && !defined __minix
   if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
-      && strcmp (file, UTMP_FILE) == 0
+      && streq (file, UTMP_FILE)
       && !have_boot_time (a))
     {
       struct timespec boot_time;
@@ -625,7 +621,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
 
 #  if defined __HAIKU__
   if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
-      && strcmp (file, UTMP_FILE) == 0
+      && streq (file, UTMP_FILE)
       && !have_boot_time (a))
     {
       struct timespec boot_time;
@@ -641,7 +637,7 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
 
 #  if HAVE_OS_H /* BeOS, Haiku */
   if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
-      && strcmp (file, UTMP_FILE) == 0
+      && streq (file, UTMP_FILE)
       && !have_boot_time (a))
     {
       struct timespec boot_time;
@@ -659,11 +655,27 @@ read_utmp_from_file (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
 
 # if defined __CYGWIN__ || defined _WIN32
   if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
-      && strcmp (file, UTMP_FILE) == 0
+      && streq (file, UTMP_FILE)
       && !have_boot_time (a))
     {
       struct timespec boot_time;
       if (get_windows_boot_time (&boot_time) >= 0)
+        a = add_utmp (a, options,
+                      "reboot", strlen ("reboot"),
+                      "", 0,
+                      "", 0,
+                      "", 0,
+                      0, BOOT_TIME, boot_time, 0, 0, 0);
+    }
+# endif
+
+# if defined _WIN32 && ! defined __CYGWIN__
+  if ((options & (READ_UTMP_USER_PROCESS | READ_UTMP_NO_BOOT_TIME)) == 0
+      && streq (file, UTMP_FILE)
+      && !have_boot_time (a))
+    {
+      struct timespec boot_time;
+      if (get_windows_boot_time_fallback (&boot_time) >= 0)
         a = add_utmp (a, options,
                       "reboot", strlen ("reboot"),
                       "", 0,
@@ -802,10 +814,9 @@ read_utmp_from_systemd (idx_t *n_entries, STRUCT_UTMP **utmp_buf, int options)
     {
       char **sessions;
       int num_sessions = sd_get_sessions (&sessions);
-      if (num_sessions >= 0)
+      if (num_sessions >= 0 && sessions != NULL)
         {
-          char **session_ptr;
-          for (session_ptr = sessions; *session_ptr != NULL; session_ptr++)
+          for (char **session_ptr = sessions; *session_ptr != NULL; session_ptr++)
             {
               char *session = *session_ptr;
 
@@ -830,7 +841,7 @@ read_utmp_from_systemd (idx_t *n_entries, STRUCT_UTMP **utmp_buf, int options)
                   /* Try harder to get a sensible value for the tty.  */
                   if (sd_session_get_type (session, &type) < 0)
                     type = missing;
-                  if (strcmp (type, "tty") == 0)
+                  if (streq (type, "tty"))
                     {
                       char *service;
                       if (sd_session_get_service (session, &service) < 0)
@@ -852,10 +863,18 @@ read_utmp_from_systemd (idx_t *n_entries, STRUCT_UTMP **utmp_buf, int options)
                       else if (pty != NULL)
                         tty = pty;
                     }
+                  else if (streq (type, "web"))
+                    {
+                      char *service;
+                      if (sd_session_get_service (session, &service) < 0)
+                        service = NULL;
+
+                      tty = service;
+                    }
                 }
 
-              /* Create up to two USER_PROCESS entries: one for the seat,
-                 one for the tty.  */
+              /* Create up to two USER_PROCESS or LOGIN_PROCESS entries:
+                 one for the seat, one for the tty.  */
               if (seat != NULL || tty != NULL)
                 {
                   char *user;
@@ -866,6 +885,13 @@ read_utmp_from_systemd (idx_t *n_entries, STRUCT_UTMP **utmp_buf, int options)
                   if (sd_session_get_leader (session, &leader_pid) < 0)
                     leader_pid = 0;
 
+                  char *clasz;
+                  if (sd_session_get_class (session, &clasz) < 0)
+                    clasz = missing;
+                  short ctype =
+                    (strncmp (clasz, "manager", 7) == 0 ? LOGIN_PROCESS :
+                     USER_PROCESS);
+
                   char *host;
                   char *remote_host;
                   if (sd_session_get_remote_host (session, &remote_host) < 0)
@@ -875,12 +901,15 @@ read_utmp_from_systemd (idx_t *n_entries, STRUCT_UTMP **utmp_buf, int options)
                          host field.  */
                       if (!type && sd_session_get_type (session, &type) < 0)
                         type = missing;
-                      if (strcmp (type, "x11") == 0)
+                      if (streq (type, "x11"))
                         {
                           char *display;
                           if (sd_session_get_display (session, &display) < 0)
                             display = NULL;
-                          host = display;
+                          /* Workaround: gdm "forgets" to pass the display to
+                             systemd, thus display may be NULL here.  */
+                          if (display != NULL)
+                            host = display;
                         }
                     }
                   else
@@ -906,7 +935,7 @@ read_utmp_from_systemd (idx_t *n_entries, STRUCT_UTMP **utmp_buf, int options)
                                   seat, strlen (seat),
                                   host, strlen (host),
                                   leader_pid /* the best we have */,
-                                  USER_PROCESS, start_ts, leader_pid, 0, 0);
+                                  ctype, start_ts, leader_pid, 0, 0);
                   if (tty != NULL)
                     a = add_utmp (a, options,
                                   user, strlen (user),
@@ -914,10 +943,12 @@ read_utmp_from_systemd (idx_t *n_entries, STRUCT_UTMP **utmp_buf, int options)
                                   tty, strlen (tty),
                                   host, strlen (host),
                                   leader_pid /* the best we have */,
-                                  USER_PROCESS, start_ts, leader_pid, 0, 0);
+                                  ctype, start_ts, leader_pid, 0, 0);
 
                   if (host != missing)
                     free (host);
+                  if (clasz != missing)
+                    free (clasz);
                   if (user != missing)
                     free (user);
                 }
@@ -947,7 +978,7 @@ read_utmp (char const *file, idx_t *n_entries, STRUCT_UTMP **utmp_buf,
            int options)
 {
 # if READUTMP_USE_SYSTEMD
-  if (strcmp (file, UTMP_FILE) == 0)
+  if (streq (file, UTMP_FILE))
     /* Imitate reading UTMP_FILE, using systemd and Linux APIs.  */
     return read_utmp_from_systemd (n_entries, utmp_buf, options);
 # endif

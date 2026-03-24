@@ -1,5 +1,5 @@
 /* Test of getting user name.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include <config.h>
 
+/* Specification.  */
 #include <unistd.h>
 
 #include "signature.h"
@@ -41,5 +42,14 @@ main (void)
 #endif
   test_getlogin_result (buf, err);
 
-  return 0;
+  /* Check that getlogin() does not merely return getenv ("LOGNAME").  */
+  {
+    static char set_LOGNAME[] = "LOGNAME=ygvfibmslhkmvoetbrcegzwydorcke";
+    putenv (set_LOGNAME);
+    buf = getlogin ();
+    ASSERT (!(buf != NULL
+              && streq (buf, "ygvfibmslhkmvoetbrcegzwydorcke")));
+  }
+
+  return test_exit_status;
 }

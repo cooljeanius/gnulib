@@ -1,5 +1,5 @@
 /* Ad-hoc testing program for GNU libtextstyle.
-   Copyright (C) 2018-2023 Free Software Foundation, Inc.
+   Copyright (C) 2018-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2018.
 
    This program is free software: you can redistribute it and/or modify
@@ -28,15 +28,14 @@ int
 main (int argc, char *argv[])
 {
   const char *program_name = argv[0];
-  int i;
 
   /* Parse the command-line arguments.  */
-  for (i = 1; i < argc; i++)
+  for (int i = 1; i < argc; i++)
     {
       const char *arg = argv[i];
-      if (strncmp (arg, "--color=", 8) == 0)
+      if (str_startswith (arg, "--color="))
         handle_color_option (arg + 8);
-      else if (strncmp (arg, "--style=", 8) == 0)
+      else if (str_startswith (arg, "--style="))
         handle_style_option (arg + 8);
       else if (arg[0] == '-')
         {

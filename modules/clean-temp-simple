@@ -8,17 +8,20 @@ lib/clean-temp-simple.c
 
 Depends-on:
 c99
-stdbool
+bool
 list
 asyncsafe-spin
-unistd
+unistd-h
 lock
+once
 thread-optim
 error
 fatal-signal
 rmdir
 linkedhash-list
+hashkey-string
 gettext-h
+gnulib-i18n
 
 configure.ac:
 AC_DEFINE([SIGNAL_SAFE_LIST], [1], [Define if lists must be signal-safe.])
@@ -31,6 +34,7 @@ Include:
 
 Link:
 $(LIBTHREAD)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 LGPLv2+

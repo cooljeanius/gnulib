@@ -1,5 +1,5 @@
 /* Routines for dealing with '\0' separated arg vectors.
-   Copyright (C) 1995-2000, 2004, 2007, 2009-2023 Free Software Foundation,
+   Copyright (C) 1995-2000, 2004, 2007, 2009-2026 Free Software Foundation,
    Inc.
    This file is part of the GNU C Library.
 
@@ -23,6 +23,11 @@
 #define __need_error_t
 #include <errno.h>
 #include <string.h>             /* Need size_t.  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #ifndef __error_t_defined
 typedef int error_t;
@@ -118,13 +123,16 @@ extern error_t argz_replace (char **restrict /*argz*/,
 
    or
 
-    char *entry;
-    for (entry = argz; entry; entry = argz_next (argz, argz_len, entry))
+    for (char *entry = argz; entry; entry = argz_next (argz, argz_len, entry))
       ...;
 */
 
 extern char *argz_next (const char *restrict /*argz*/, size_t /*argz_len*/,
                         const char *restrict /*entry*/);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* argz.h */

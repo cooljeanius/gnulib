@@ -1,5 +1,5 @@
 /* Test of character set conversion.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -111,7 +111,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -143,7 +143,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -175,7 +175,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -207,7 +207,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -239,7 +239,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -271,7 +271,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -303,7 +303,7 @@ main ()
                  &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + (sizeof (expected) - 1));
-    ASSERT (memcmp (buf, expected, sizeof (expected) - 1) == 0);
+    ASSERT (memeq (buf, expected, sizeof (expected) - 1));
 
     ASSERT (iconv_close (cd) == 0);
 
@@ -312,5 +312,5 @@ main ()
   }
 #endif
 
-  return 0;
+  return test_exit_status;
 }

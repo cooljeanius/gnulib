@@ -1,5 +1,5 @@
 /* Test of ilogb*() function family.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ my_ldexp (DOUBLE x, int d)
 static void
 test_function (void)
 {
-  int i;
   VOLATILE DOUBLE x;
   int y;
 
@@ -68,73 +67,76 @@ test_function (void)
   ASSERT (ILOGB (NAN) == FP_ILOGBNAN);
 
   /* From here on, this test assumes FLT_RADIX == 2.  */
+  {
+    int i;
 
-  for (i = 1, x = L_(1.0); i <= MAX_EXP; i++, x *= L_(2.0))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (i = 1, x = L_(1.0); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (; i >= MIN_EXP - 100 && x > L_(0.0); i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
+    for (i = 1, x = L_(1.0); i <= MAX_EXP; i++, x *= L_(2.0))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (i = 1, x = L_(1.0); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (; i >= MIN_EXP - 100 && x > L_(0.0); i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
 
-  for (i = 1, x = - L_(1.0); i <= MAX_EXP; i++, x *= L_(2.0))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (i = 1, x = - L_(1.0); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (; i >= MIN_EXP - 100 && x < L_(0.0); i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
+    for (i = 1, x = - L_(1.0); i <= MAX_EXP; i++, x *= L_(2.0))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (i = 1, x = - L_(1.0); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (; i >= MIN_EXP - 100 && x < L_(0.0); i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
 
-  for (i = 1, x = L_(1.01); i <= MAX_EXP; i++, x *= L_(2.0))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (i = 1, x = L_(1.01); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (; i >= MIN_EXP - 100 && x > L_(0.0); i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
+    for (i = 1, x = L_(1.01); i <= MAX_EXP; i++, x *= L_(2.0))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (i = 1, x = L_(1.01); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (; i >= MIN_EXP - 100 && x > L_(0.0); i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
 
-  for (i = 1, x = L_(1.73205); i <= MAX_EXP; i++, x *= L_(2.0))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (i = 1, x = L_(1.73205); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1);
-    }
-  for (; i >= MIN_EXP - 100 && x > L_(0.0); i--, x *= L_(0.5))
-    {
-      y = ILOGB (x);
-      ASSERT (y == i - 1 || y == i);
-    }
+    for (i = 1, x = L_(1.73205); i <= MAX_EXP; i++, x *= L_(2.0))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (i = 1, x = L_(1.73205); i >= MIN_NORMAL_EXP; i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1);
+      }
+    for (; i >= MIN_EXP - 100 && x > L_(0.0); i--, x *= L_(0.5))
+      {
+        y = ILOGB (x);
+        ASSERT (y == i - 1 || y == i);
+      }
+  }
 
   /* Randomized tests.  */
-  for (i = 0; i < SIZEOF (RANDOM); i++)
+  for (int i = 0; i < countof (RANDOM); i++)
     {
       x = L_(20.0) * RANDOM[i] - L_(10.0); /* -10.0 <= x <= 10.0 */
       if (x != L_(0.0))

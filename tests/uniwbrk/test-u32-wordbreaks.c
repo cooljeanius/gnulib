@@ -1,5 +1,5 @@
 /* Test of word breaks in UTF-32 strings.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "uniwbrk.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "macros.h"
@@ -40,12 +41,11 @@ main ()
         '-', '4', 'a', 'c', ')', ')', '/', '(', '2', 'a', ')', ' ', ' ',
         0x65E5, 0x672C, 0x8A9E, ',', 0x4E2D, 0x6587, ',', 0xD55C, 0xAE00, '\n'
       };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    u32_wordbreaks (input, SIZEOF (input), p);
+    u32_wordbreaks (input, countof (input), p);
 
-    for (i = 0; i < 61; i++)
+    for (size_t i = 0; i < 61; i++)
       {
         ASSERT (p[i] == ((i >= 4 && i <= 5)
                          || (i >= 9 && i <= 11)
@@ -72,12 +72,11 @@ main ()
         0x65E5, 0x672C, 0x8A9E, ',', 0x4E2D, 0x6587, ',',
         0x1112, 0x1161, 0x11AB, 0x1100, 0x1173, 0x11AF, '\n'
       };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    u32_wordbreaks (input, SIZEOF (input), p);
+    u32_wordbreaks (input, countof (input), p);
 
-    for (i = 0; i < 67; i++)
+    for (size_t i = 0; i < 67; i++)
       {
         ASSERT (p[i] == ((i >= 5 && i <= 6)
                          || (i >= 10 && i <= 12)
@@ -96,11 +95,10 @@ main ()
   {
     static const uint32_t input[8] =
       { 'a', '\n', 'b', '\r', 'c', '\r', '\n', 'd' };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    u32_wordbreaks (input, SIZEOF (input), p);
-    for (i = 0; i < 8; i++)
+    u32_wordbreaks (input, countof (input), p);
+    for (size_t i = 0; i < 8; i++)
       {
         ASSERT (p[i] == (i == 1 || i == 2 || i == 3 || i == 4 || i == 5
                          || i == 7 ? 1 :
@@ -113,16 +111,15 @@ main ()
   {
     static const uint32_t input[6] =
       { '.', 0x1F1E9, 0x1F1EA, 0x1F1EB, 0x1F1F7, '.' };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    u32_wordbreaks (input, SIZEOF (input), p);
-    for (i = 0; i < 6; i++)
+    u32_wordbreaks (input, countof (input), p);
+    for (size_t i = 0; i < 6; i++)
       {
         ASSERT (p[i] == (i == 1 || i == 3 || i == 5 ? 1 : 0));
       }
     free (p);
   }
 
-  return 0;
+  return test_exit_status;
 }

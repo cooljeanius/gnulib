@@ -1,5 +1,5 @@
 /* Test of conversion from UTF-8 to legacy encodings.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "uniconv.h"
 
 #include <errno.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,20 +45,17 @@ main ()
 #if HAVE_ICONV
   static enum iconv_ilseq_handler handlers[] =
     { iconveh_error, iconveh_question_mark, iconveh_escape_sequence };
-  size_t h;
-  size_t o;
-  size_t i;
 
   /* Assume that iconv() supports at least the encodings ASCII, ISO-8859-1,
      ISO-8859-2, and UTF-8.  */
 
   /* Test conversion from UTF-8 to ISO-8859-1 with no errors.  */
-  for (h = 0; h < SIZEOF (handlers); h++)
+  for (size_t h = 0; h < countof (handlers); h++)
     {
       enum iconv_ilseq_handler handler = handlers[h];
       static const uint8_t input[] = "\303\204rger mit b\303\266sen B\303\274bchen ohne Augenma\303\237";
       static const char expected[] = "\304rger mit b\366sen B\374bchen ohne Augenma\337";
-      for (o = 0; o < 2; o++)
+      for (size_t o = 0; o < 2; o++)
         {
           size_t *offsets = (o ? new_offsets (u8_strlen (input)) : NULL);
           size_t length;
@@ -67,10 +65,10 @@ main ()
                                               NULL, &length);
           ASSERT (result != NULL);
           ASSERT (length == strlen (expected));
-          ASSERT (memcmp (result, expected, length) == 0);
+          ASSERT (memeq (result, expected, length));
           if (o)
             {
-              for (i = 0; i < 41; i++)
+              for (size_t i = 0; i < 41; i++)
                 ASSERT (offsets[i] == (i < 1 ? i :
                                        i == 1 ? (size_t)(-1) :
                                        i < 13 ? i - 1 :
@@ -88,11 +86,11 @@ main ()
     }
 
   /* Test conversion from UTF-8 to ISO-8859-1 with EILSEQ.  */
-  for (h = 0; h < SIZEOF (handlers); h++)
+  for (size_t h = 0; h < countof (handlers); h++)
     {
       enum iconv_ilseq_handler handler = handlers[h];
       static const uint8_t input[] = "Rafa\305\202 Maszkowski"; /* Rafał Maszkowski */
-      for (o = 0; o < 2; o++)
+      for (size_t o = 0; o < 2; o++)
         {
           size_t *offsets = (o ? new_offsets (u8_strlen (input)) : NULL);
           size_t length = 0xdead;
@@ -115,11 +113,11 @@ main ()
                 static const char expected_translit[] = "Rafal Maszkowski";
                 ASSERT (result != NULL);
                 ASSERT (length == strlen (expected));
-                ASSERT (memcmp (result, expected, length) == 0
-                        || memcmp (result, expected_translit, length) == 0);
+                ASSERT (memeq (result, expected, length)
+                        || memeq (result, expected_translit, length));
                 if (o)
                   {
-                    for (i = 0; i < 17; i++)
+                    for (size_t i = 0; i < 17; i++)
                       ASSERT (offsets[i] == (i < 5 ? i :
                                              i == 5 ? (size_t)(-1) :
                                              i - 1));
@@ -134,10 +132,10 @@ main ()
                 static const char expected[] = "Rafa\\u0142 Maszkowski";
                 ASSERT (result != NULL);
                 ASSERT (length == strlen (expected));
-                ASSERT (memcmp (result, expected, length) == 0);
+                ASSERT (memeq (result, expected, length));
                 if (o)
                   {
-                    for (i = 0; i < 17; i++)
+                    for (size_t i = 0; i < 17; i++)
                       ASSERT (offsets[i] == (i < 5 ? i :
                                              i == 5 ? (size_t)(-1) :
                                              i + 4));
@@ -152,11 +150,11 @@ main ()
     }
 
   /* Test conversion from UTF-8 to ISO-8859-1 with EINVAL.  */
-  for (h = 0; h < SIZEOF (handlers); h++)
+  for (size_t h = 0; h < countof (handlers); h++)
     {
       enum iconv_ilseq_handler handler = handlers[h];
       static const uint8_t input[] = "\342";
-      for (o = 0; o < 2; o++)
+      for (size_t o = 0; o < 2; o++)
         {
           size_t *offsets = (o ? new_offsets (u8_strlen (input)) : NULL);
           size_t length;
@@ -178,5 +176,5 @@ main ()
 
 #endif
 
-  return 0;
+  return test_exit_status;
 }

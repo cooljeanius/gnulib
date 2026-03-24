@@ -1,5 +1,5 @@
 /* arctwo.h --- The arctwo block cipher
- * Copyright (C) 2000-2003, 2005, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2000-2003, 2005, 2009-2026 Free Software Foundation, Inc.
  *
  * This file is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -19,10 +19,15 @@
 /* Code from Libgcrypt adapted for gnulib by Simon Josefsson. */
 
 #ifndef ARCTWO_H
-# define ARCTWO_H
+#define ARCTWO_H
 
-# include <stddef.h>
-# include <stdint.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef struct
 {
@@ -36,8 +41,9 @@ typedef struct
    only be of EFFECTIVE_KEYLEN bits.  Normally, you use
    EFFECTIVE_KEYLEN of 0, but see RFC 2268 for more information. */
 void
-arctwo_setkey_ekb (arctwo_context *context,
-                   size_t keylen, const char *key, size_t effective_keylen);
+arctwo_setkey_ekb (arctwo_context *restrict context,
+                   size_t keylen, char const *restrict key,
+                   size_t effective_keylen);
 
 #define arctwo_setkey(context,keylen,key) \
   arctwo_setkey_ekb (context, keylen, key, 8 * (keylen))
@@ -47,7 +53,7 @@ arctwo_setkey_ekb (arctwo_context *context,
    and must have been initialized with arctwo_setkey or
    arctwo_setkey_ekb. */
 extern void
-arctwo_encrypt (arctwo_context *context, const char *inbuf,
+arctwo_encrypt (arctwo_context *restrict context, char const *restrict inbuf,
                 char *restrict outbuf, size_t length);
 
 /* Decrypt INBUF of size LENGTH into OUTBUF.  LENGTH must be a
@@ -55,7 +61,12 @@ arctwo_encrypt (arctwo_context *context, const char *inbuf,
    and must have been initialized with arctwo_setkey or
    arctwo_setkey_ekb. */
 extern void
-arctwo_decrypt (arctwo_context *context, const char *inbuf,
+arctwo_decrypt (arctwo_context *restrict context, char const *restrict inbuf,
                 char *restrict outbuf, size_t length);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ARCTWO_H */

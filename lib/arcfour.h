@@ -1,5 +1,5 @@
 /* arcfour.h --- The arcfour stream cipher
- * Copyright (C) 2000-2005, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2000-2005, 2009-2026 Free Software Foundation, Inc.
  *
  * This file is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -19,10 +19,15 @@
 /* Code from Libgcrypt adapted for gnulib by Simon Josefsson. */
 
 #ifndef ARCFOUR_H
-# define ARCFOUR_H
+#define ARCFOUR_H
 
-# include <stddef.h>
-# include <stdint.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define ARCFOUR_SBOX_SIZE 256
 
@@ -36,13 +41,20 @@ typedef struct
    LENGTH size.  CONTEXT must be initialized with arcfour_setkey
    before this function is called. */
 extern void
-arcfour_stream (arcfour_context * context,
-                const char *inbuf, char *restrict outbuf, size_t length);
+arcfour_stream (arcfour_context *restrict context,
+                char const *restrict inbuf, char *restrict outbuf,
+                size_t length);
 
 /* Initialize CONTEXT using encryption KEY of KEYLEN bytes.  KEY
    should be 40 bits (5 bytes) or longer.  The KEY cannot be zero
    length.  */
 extern void
-arcfour_setkey (arcfour_context * context, const char *key, size_t keylen);
+arcfour_setkey (arcfour_context *restrict context,
+                char const *restrict key, size_t keylen);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ARCFOUR_H */

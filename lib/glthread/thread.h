@@ -1,5 +1,5 @@
 /* Creating and controlling threads.
-   Copyright (C) 2005-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -132,11 +132,6 @@ extern _Noreturn void gl_thread_exit (void *return_value);
 
 /* Get intptr_t.  */
 # include <stdint.h>
-
-/* On IRIX, pthread_atfork is declared in <unistd.h>, not in <pthread.h>.  */
-# if defined __sgi
-#  include <unistd.h>
-# endif
 
 # if USE_POSIX_THREADS_WEAK
 /* Compilers other than GCC need to see the declaration of pthread_sigmask

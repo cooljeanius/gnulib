@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2017-2026 Free Software Foundation, Inc.
  * Written by Jia Zhang <qianyue.zj@alibaba-inc.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -52,14 +52,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (out, expect, 32) != 0)
+    if (!memeq (out, expect, 32))
       {
-        size_t i;
         printf ("sm3 mismatch. expected:\n");
-        for (i = 0; i < 32; i++)
+        for (size_t i = 0; i < 32; i++)
           printf ("%02x ", (unsigned int) expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 32; i++)
+        for (size_t i = 0; i < 32; i++)
           printf ("%02x ", (unsigned int) out[i] & 0xFF);
         printf ("\n");
         return 1;
@@ -72,14 +71,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (out, expect, 32) != 0)
+    if (!memeq (out, expect, 32))
       {
-        size_t i;
         printf ("sm3' mismatch. expected:\n");
-        for (i = 0; i < 32; i++)
+        for (size_t i = 0; i < 32; i++)
           printf ("%02x ", (unsigned int) expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 32; i++)
+        for (size_t i = 0; i < 32; i++)
           printf ("%02x ", (unsigned int) out[i] & 0xFF);
         printf ("\n");
         return 1;
@@ -107,14 +105,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (p, expect, 32) != 0)
+    if (!memeq (p, expect, 32))
       {
-        size_t i;
         printf ("sm3 mismatch. expected:\n");
-        for (i = 0; i < 32; i++)
+        for (size_t i = 0; i < 32; i++)
           printf ("%02x ", (unsigned int) expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 32; i++)
+        for (size_t i = 0; i < 32; i++)
           printf ("%02x ", (unsigned int) p[i] & 0xFF);
         printf ("\n");
         return 1;

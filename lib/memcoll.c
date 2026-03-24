@@ -1,6 +1,6 @@
 /* Locale-specific memory comparison.
 
-   Copyright (C) 1999, 2002-2004, 2006, 2009-2023 Free Software Foundation,
+   Copyright (C) 1999, 2002-2004, 2006, 2009-2026 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -71,7 +71,7 @@ memcoll (char *s1, size_t s1len, char *s2, size_t s2len)
      where the arguments are bytewise equal.  Otherwise, walk through
      the buffers using strcoll on each substring.  */
 
-  if (s1len == s2len && memcmp (s1, s2, s1len) == 0)
+  if (s1len == s2len && memeq (s1, s2, s1len))
     {
       errno = 0;
       diff = 0;
@@ -101,7 +101,7 @@ memcoll (char *s1, size_t s1len, char *s2, size_t s2len)
 int
 memcoll0 (char const *s1, size_t s1size, char const *s2, size_t s2size)
 {
-  if (s1size == s2size && memcmp (s1, s2, s1size) == 0)
+  if (s1size == s2size && memeq (s1, s2, s1size))
     {
       errno = 0;
       return 0;

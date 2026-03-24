@@ -13,6 +13,10 @@ Depends-on:
 argmatch
 error
 test-framework-sh
+streq
+memeq
+
+configure.ac:
 
 Makefile.am:
 TESTS += \

@@ -1,5 +1,6 @@
-# mprotect.m4 serial 2
-dnl Copyright (C) 1993-2023 Free Software Foundation, Inc.
+# mprotect.m4
+# serial 5
+dnl Copyright (C) 1993-2026 Free Software Foundation, Inc.
 dnl This file is free software, distributed under the terms of the GNU
 dnl General Public License as published by the Free Software Foundation;
 dnl either version 2 of the License, or (at your option) any later version.
@@ -24,24 +25,20 @@ AC_DEFUN([gl_FUNC_MPROTECT_WORKS],
            #include <sys/types.h>
            /* Declare malloc().  */
            #include <stdlib.h>
-           /* Declare getpagesize().  */
-           #if HAVE_UNISTD_H
-            #include <unistd.h>
-           #endif
-           #ifdef __hpux
-            extern
-            #ifdef __cplusplus
-            "C"
-            #endif
-            int getpagesize (void);
-           #endif
+           /* Declare sysconf().  */
+           #include <unistd.h>
            /* Declare mprotect().  */
            #include <sys/mman.h>
            char foo;
+           static unsigned long int pagesize;
+           static char *
+           page_align (char *address)
+           {
+             return address - ((unsigned long int) address & (pagesize - 1));
+           }
            int main ()
            {
-             unsigned long pagesize = getpagesize ();
-           #define page_align(address)  (char*)((unsigned long)(address) & -pagesize)
+             pagesize = sysconf (_SC_PAGESIZE);
          '
          no_mprotect=
          AC_RUN_IFELSE(
@@ -139,12 +136,12 @@ AC_DEFUN([gl_FUNC_MPROTECT_WORKS],
          dnl When cross-compiling, assume the known behaviour.
          case "$host_os" in
            dnl Guess yes on Linux systems, glibc systems,
-           dnl macOS, BSD systems, AIX, HP-UX, IRIX, Solaris, Cygwin.
+           dnl macOS, BSD systems, AIX, HP-UX, Solaris, Cygwin.
            linux-* | linux | *-gnu* | gnu* | \
            darwin* | freebsd* | dragonfly* | midnightbsd* | netbsd* | openbsd* | \
-           aix* | hpux* | irix* | solaris* | cygwin*)
+           aix* | hpux* | solaris* | cygwin*)
              gl_cv_func_mprotect_works="guessing yes" ;;
-           mingw*)
+           mingw* | windows*)
              gl_cv_func_mprotect_works="guessing no" ;;
            *)
              dnl If we don't know, obey --enable-cross-guesses.

@@ -1,5 +1,5 @@
 /* Test of conversion of multibyte character to 16-bit wide characters.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -67,11 +67,10 @@ main (int argc, char *argv[])
 
   /* Test single-byte input.  */
   {
-    int c;
     char buf[1];
 
     memset (&state, '\0', sizeof (mbstate_t));
-    for (c = 0; c < 0x100; c++)
+    for (int c = 0; c < 0x100; c++)
       switch (c)
         {
         case '\t': case '\v': case '\f':
@@ -131,7 +130,7 @@ main (int argc, char *argv[])
      "C" locale.  Furthermore, when you attempt to set the "C" or "POSIX"
      locale via setlocale(), what you get is a "C" locale with UTF-8 encoding,
      that is, effectively the "C.UTF-8" locale.  */
-  if (argc > 1 && strcmp (argv[1], "1") == 0 && MB_CUR_MAX > 1)
+  if (argc > 1 && streq (argv[1], "1") && MB_CUR_MAX > 1)
     argv[1] = "3";
 #endif
 
@@ -141,11 +140,10 @@ main (int argc, char *argv[])
       case '1':
         /* C or POSIX locale.  */
         {
-          int c;
           char buf[1];
 
           memset (&state, '\0', sizeof (mbstate_t));
-          for (c = 0; c < 0x100; c++)
+          for (int c = 0; c < 0x100; c++)
             if (c != 0)
               {
                 /* We are testing all nonnull bytes.  */
@@ -172,7 +170,7 @@ main (int argc, char *argv[])
                 ASSERT (mbsinit (&state));
               }
         }
-        return 0;
+        return test_exit_status;
 
       case '2':
         /* Locale encoding is ISO-8859-1 or ISO-8859-15.  */
@@ -221,7 +219,7 @@ main (int argc, char *argv[])
           ASSERT (wc == 'r');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        return test_exit_status;
 
       case '3':
         /* Locale encoding is UTF-8.  */
@@ -296,7 +294,7 @@ main (int argc, char *argv[])
           ASSERT (wc == '!');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        return test_exit_status;
 
       case '4':
         /* Locale encoding is EUC-JP.  */
@@ -357,11 +355,13 @@ main (int argc, char *argv[])
           ASSERT (wc == '>');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        return test_exit_status;
 
       case '5':
         /* Locale encoding is GB18030.  */
-        #if GL_CHAR32_T_IS_UNICODE && (defined __NetBSD__ || defined __sun)
+        #if (defined __GLIBC__ && __GLIBC__ == 2 && __GLIBC_MINOR__ >= 13 && __GLIBC_MINOR__ <= 15) || (GL_CHAR32_T_IS_UNICODE && (defined __FreeBSD__ || defined __NetBSD__ || defined __sun))
+        if (test_exit_status != EXIT_SUCCESS)
+          return test_exit_status;
         fputs ("Skipping test: The GB18030 converter in this system's iconv is broken.\n", stderr);
         return 77;
         #endif
@@ -438,7 +438,7 @@ main (int argc, char *argv[])
           ASSERT (wc == '!');
           ASSERT (mbsinit (&state));
         }
-        return 0;
+        return test_exit_status;
       }
 
   return 1;

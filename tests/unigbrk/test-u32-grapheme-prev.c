@@ -1,5 +1,5 @@
 /* Previous grapheme cluster test.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify it
    under the terms of the GNU Lesser General Public License as published
@@ -54,16 +54,15 @@ test_u32_grapheme_prev (size_t len, ...)
   prev = u32_grapheme_prev (end, s);
   if (prev != end - len)
     {
-      size_t i;
-
       if (prev == NULL)
         fputs ("u32_grapheme_prev returned NULL", stderr);
       else
-        fprintf (stderr, "u32_grapheme_prev skipped %zu units", end - prev);
+        fprintf (stderr, "u32_grapheme_prev skipped %tu units", end - prev);
       fprintf (stderr, ", expected %zu:\n", len);
-      for (i = 0; i < n; i++)
+      for (size_t i = 0; i < n; i++)
         fprintf (stderr, " %04x", s[i]);
       putc ('\n', stderr);
+      fflush (stderr);
       abort ();
     }
 }
@@ -96,10 +95,19 @@ main (void)
   test_u32_grapheme_prev (1, 'e', ACUTE, 'x', -1);
   test_u32_grapheme_prev (2, 'e', ACUTE, 'e', ACUTE, -1);
 
+  /* CR LF handling.  */
+  test_u32_grapheme_prev (2, 'c', '\r', '\n', -1);
+
+  /* Emoji modifier / ZWJ sequence. */
+  test_u32_grapheme_prev (5, 0x2B50, 0x0305, 0x0347, 0x200D, 0x2600, -1);
+
+  /* Regional indicators. */
+  test_u32_grapheme_prev (2, 0x1F1E9, 0x1F1EA, 0x1F1EB, 0x1F1F7, -1);
+
   /* Outside BMP. */
 #define NEUTRAL_FACE 0x1f610    /* 😐: neutral face. */
   test_u32_grapheme_prev (1, NEUTRAL_FACE, -1);
   test_u32_grapheme_prev (2, NEUTRAL_FACE, GRAVE, -1);
 
-  return 0;
+  return test_exit_status;
 }

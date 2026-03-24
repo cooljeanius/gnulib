@@ -1,10 +1,12 @@
-/* This function serves as replacement for a missing fchownat function,
+/* A more POSIX-compliant fchownat
+
+   This serves as replacement for a missing fchownat function,
    as well as a workaround for the fchownat bug in glibc-2.4:
     <https://lists.ubuntu.com/archives/ubuntu-users/2006-September/093218.html>
    when the buggy fchownat-with-AT_SYMLINK_NOFOLLOW operates on a symlink, it
    mistakenly affects the symlink referent, rather than the symlink itself.
 
-   Copyright (C) 2006-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,8 +31,29 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "openat.h"
+#include "stat-time.h"
+
+#ifndef CHOWN_CHANGE_TIME_BUG
+# define CHOWN_CHANGE_TIME_BUG 0
+#endif
+#ifndef CHOWN_TRAILING_SLASH_BUG
+# define CHOWN_TRAILING_SLASH_BUG 0
+#endif
+#ifndef FCHOWNAT_EMPTY_FILENAME_BUG
+# define FCHOWNAT_EMPTY_FILENAME_BUG 0
+#endif
+
+/* Gnulib target platforms lacking utimensat do not need it,
+   because in practice the bug it works around does not occur.  */
+#if !HAVE_UTIMENSAT
+# undef utimensat
+# define utimensat(fd, file, times, flag) \
+    ((void) (fd), (void) (file), (void) (times), (void) (flag), \
+     0)
+#endif
 
 #if !HAVE_FCHOWNAT
 
@@ -86,31 +109,61 @@ local_lchownat (int fd, char const *file, uid_t owner, gid_t group);
 int
 rpl_fchownat (int fd, char const *file, uid_t owner, gid_t group, int flag)
 {
-# if FCHOWNAT_NOFOLLOW_BUG
-  if (flag == AT_SYMLINK_NOFOLLOW)
-    return local_lchownat (fd, file, owner, group);
-# endif
-# if FCHOWNAT_EMPTY_FILENAME_BUG
-  if (file[0] == '\0')
+  /* No need to worry about CHOWN_FAILS_TO_HONOR_ID_OF_NEGATIVE_ONE
+     or CHOWN_MODIFIES_SYMLINK, as no known fchownat implementations
+     have these bugs.  */
+
+  if (FCHOWNAT_EMPTY_FILENAME_BUG && file[0] == '\0')
     {
       errno = ENOENT;
       return -1;
     }
+
+  bool trailing_slash_check = (CHOWN_TRAILING_SLASH_BUG
+                               && file[0] && file[strlen (file) - 1] == '/');
+  if (trailing_slash_check)
+    flag &= ~AT_SYMLINK_NOFOLLOW;
+
+# if FCHOWNAT_NOFOLLOW_BUG
+  if (flag == AT_SYMLINK_NOFOLLOW)
+    return local_lchownat (fd, file, owner, group);
 # endif
-# if CHOWN_TRAILING_SLASH_BUG
-  {
-    size_t len = strlen (file);
-    struct stat st;
-    if (len && file[len - 1] == '/')
-      {
-        if (fstatat (fd, file, &st, 0))
-          return -1;
-        if (flag == AT_SYMLINK_NOFOLLOW)
-          return fchownat (fd, file, owner, group, 0);
-      }
-  }
-# endif
-  return fchownat (fd, file, owner, group, flag);
+
+  struct stat st;
+  gid_t no_gid = -1;
+  uid_t no_uid = -1;
+  bool gid_noop = group == no_gid;
+  bool uid_noop = owner == no_uid;
+  bool change_time_check = CHOWN_CHANGE_TIME_BUG && !(gid_noop & uid_noop);
+
+  if (change_time_check | trailing_slash_check)
+    {
+      int r = fstatat (fd, file, &st, flag);
+
+      /* EOVERFLOW means the file exists, which is all that the
+         trailing slash check needs.  */
+      if (r < 0 && (change_time_check || errno != EOVERFLOW))
+        return r;
+    }
+
+  int result = fchownat (fd, file, owner, group, flag);
+
+  /* If no change in ownership, but at least one argument was not -1,
+     update ctime indirectly via a no-change update to atime and mtime.
+     Do not use UTIME_NOW or UTIME_OMIT as they might run into bugs
+     on some platforms.  Do not communicate any failure to the caller
+     as that would be worse than communicating the ownership change.  */
+  if (result == 0 && change_time_check
+      && (((owner == st.st_uid) | uid_noop)
+          & ((group == st.st_gid) | gid_noop)))
+    {
+      struct timespec times[2];
+      times[0] = get_stat_atime (&st);
+      times[1] = get_stat_mtime (&st);
+      utimensat (fd, file, times, flag);
+    }
+
+  return result;
 }
 
 #endif /* HAVE_FCHOWNAT */

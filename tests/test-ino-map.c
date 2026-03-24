@@ -1,5 +1,5 @@
 /* Test the ino-map module.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -36,15 +36,12 @@ main ()
   ASSERT (ino_map_insert (ino_map, 0) == INO_MAP_INIT + 2);
   ASSERT (ino_map_insert (ino_map, 0) == INO_MAP_INIT + 2);
 
-  {
-    int i;
-    for (i = 0; i < 100; i++)
-      {
-        ASSERT (ino_map_insert (ino_map, 10000 + i) == INO_MAP_INIT + 3 + i);
-      }
-  }
+  for (int i = 0; i < 100; i++)
+    {
+      ASSERT (ino_map_insert (ino_map, 10000 + i) == INO_MAP_INIT + 3 + i);
+    }
 
   ino_map_free (ino_map);
 
-  return 0;
+  return test_exit_status;
 }

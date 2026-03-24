@@ -4,10 +4,15 @@ like nstrftime, but output the formatted date to a FILE* stream
 Files:
 lib/fprintftime.h
 lib/fprintftime.c
+lib/strftime.c
 
 Depends-on:
-stdio
+stdio-h
+sys_types-h
 nstrftime
+stdcountof-h
+streq
+strnul
 time_rz
 
 configure.ac:
@@ -17,6 +22,8 @@ lib_SOURCES += fprintftime.c
 
 Include:
 "fprintftime.h"
+
+Link:
 
 License:
 GPL

@@ -11,7 +11,8 @@ setenv
 unsetenv
 error
 gettext-h
-stdlib
+gnulib-i18n
+stdlib-h
 
 configure.ac:
 
@@ -20,6 +21,9 @@ lib_SOURCES += xsetenv.h xsetenv.c
 
 Include:
 "xsetenv.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

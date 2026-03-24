@@ -1,5 +1,5 @@
 /* Search character in piece of UTF-16 string.
-   Copyright (C) 1999, 2002, 2006-2007, 2009-2023 Free Software Foundation,
+   Copyright (C) 1999, 2002, 2006-2007, 2009-2026 Free Software Foundation,
    Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2002.
 
@@ -24,6 +24,9 @@
    License and of the GNU General Public License along with this
    program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+/* Don't use the const-improved function macros in this compilation unit.  */
+#define _LIBUNISTRING_NO_CONST_GENERICS
+
 #include <config.h>
 
 /* Specification.  */
@@ -32,8 +35,6 @@
 uint16_t *
 u16_chr (const uint16_t *s, size_t n, ucs4_t uc)
 {
-  uint16_t c[2];
-
   if (uc < 0x10000)
     {
       uint16_t c0 = uc;
@@ -45,21 +46,25 @@ u16_chr (const uint16_t *s, size_t n, ucs4_t uc)
         }
     }
   else
-    switch (u16_uctomb_aux (c, uc, 2))
-      {
-      case 2:
-        if (n > 1)
-          {
-            uint16_t c0 = c[0];
-            uint16_t c1 = c[1];
+    {
+      uint16_t c[2];
 
-            for (n--; n > 0; s++, n--)
-              {
-                if (*s == c0 && s[1] == c1)
-                  return (uint16_t *) s;
-              }
-          }
-        break;
-      }
+      switch (u16_uctomb_aux (c, uc, 2))
+        {
+        case 2:
+          if (n > 1)
+            {
+              uint16_t c0 = c[0];
+              uint16_t c1 = c[1];
+
+              for (n--; n > 0; s++, n--)
+                {
+                  if (*s == c0 && s[1] == c1)
+                    return (uint16_t *) s;
+                }
+            }
+          break;
+        }
+    }
   return NULL;
 }

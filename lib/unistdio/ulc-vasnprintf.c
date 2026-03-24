@@ -1,5 +1,5 @@
 /* Formatted output to strings.
-   Copyright (C) 1999, 2002, 2006-2007, 2009-2023 Free Software Foundation,
+   Copyright (C) 1999, 2002, 2006-2007, 2009-2026 Free Software Foundation,
    Inc.
 
    This file is free software.
@@ -49,6 +49,7 @@
 #define DCHAR_T char
 #define DCHAR_CPY memcpy
 #define DCHAR_SET memset
+#define DCHAR_STRLEN strlen
 #define DCHAR_MBSNLEN mbsnlen
 #define TCHAR_T char
 #define DCHAR_IS_TCHAR 1

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,9 +36,9 @@ main (int argc, char *argv[])
     }
 
   {
-    char *in = "abcdefgh";
+    const char *in = "abcdefgh";
     size_t inlen = strlen (in);
-    char *expect = "\x42\x5a\xf1\x2a\x07\x43\x50\x2b"
+    const char *expect = "\x42\x5a\xf1\x2a\x07\x43\x50\x2b"
       "\x32\x2e\x93\xa0\x15\xbc\xf8\x68\xe3\x24\xd5\x6a";
     char out[20];
     const char *p;
@@ -49,14 +49,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (out, expect, 20) != 0)
+    if (!memeq (out, expect, 20))
       {
-        size_t i;
         printf ("sha1 test1 mismatch. expected:\n");
-        for (i = 0; i < 20; i++)
+        for (size_t i = 0; i < 20; i++)
           printf ("%02x ", expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 20; i++)
+        for (size_t i = 0; i < 20; i++)
           printf ("%02x ", out[i] & 0xFF);
         printf ("\n");
         return 1;
@@ -69,14 +68,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (out, expect, 20) != 0)
+    if (!memeq (out, expect, 20))
       {
-        size_t i;
         printf ("sha1 test2 mismatch. expected:\n");
-        for (i = 0; i < 20; i++)
+        for (size_t i = 0; i < 20; i++)
           printf ("%02x ", expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 20; i++)
+        for (size_t i = 0; i < 20; i++)
           printf ("%02x ", out[i] & 0xFF);
         printf ("\n");
         return 1;
@@ -104,14 +102,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (p, expect, 20) != 0)
+    if (!memeq (p, expect, 20))
       {
-        size_t i;
         printf ("sha1 test3 mismatch. expected:\n");
-        for (i = 0; i < 20; i++)
+        for (size_t i = 0; i < 20; i++)
           printf ("%02x ", expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 20; i++)
+        for (size_t i = 0; i < 20; i++)
           printf ("%02x ", p[i] & 0xFF);
         printf ("\n");
         return 1;

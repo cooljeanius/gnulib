@@ -1,5 +1,5 @@
 /* Get descriptor for a 32-bit wide character case conversion.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -39,11 +39,11 @@ c32_get_mapping (const char *name)
     switch (name[2])
       {
       case 'l':
-        if (strcmp (name + 3, "ower") == 0)
+        if (streq (name + 3, "ower"))
           return c32tolower;
         break;
       case 'u':
-        if (strcmp (name + 3, "pper") == 0)
+        if (streq (name + 3, "pper"))
           return c32toupper;
         break;
       default:

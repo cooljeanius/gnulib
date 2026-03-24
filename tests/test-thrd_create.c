@@ -1,5 +1,5 @@
 /* Test of thrd_create () macro.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,9 +51,7 @@ main ()
       /* Check that thrd_current () has the same value before than after the
          first call to thrd_create ().  */
       main_thread_after = thrd_current ();
-      ASSERT (memcmp (&main_thread_before, &main_thread_after,
-                      sizeof (thrd_t))
-              == 0);
+      ASSERT (memeq (&main_thread_before, &main_thread_after, sizeof (thrd_t)));
 
       ASSERT (thrd_join (worker_thread, &ret) == thrd_success);
 
@@ -63,7 +61,7 @@ main ()
       /* Check that worker_thread_func () has finished executing.  */
       ASSERT (work_done);
 
-      return 0;
+      return test_exit_status;
     }
   else
     {

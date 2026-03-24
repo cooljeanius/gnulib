@@ -6,13 +6,17 @@ lib/duplocale.c
 m4/duplocale.m4
 
 Depends-on:
-locale
-setlocale-null  [test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1]
+locale-h
+freelocale      [test $HAVE_LOCALE_T = 0 || { test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1; }]
+newlocale       [test $HAVE_LOCALE_T = 0 || { test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1; }]
+setlocale-null  [test $HAVE_LOCALE_T = 0 || { test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1; }]
+stdcountof-h    [test $HAVE_LOCALE_T = 0 || { test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1; }]
+streq           [test $HAVE_LOCALE_T = 0 || { test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1; }]
 
 configure.ac:
 gl_FUNC_DUPLOCALE
 gl_CONDITIONAL([GL_COND_OBJ_DUPLOCALE],
-               [test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1])
+               [test $HAVE_LOCALE_T = 0 || { test $HAVE_DUPLOCALE = 1 && test $REPLACE_DUPLOCALE = 1; }])
 AM_COND_IF([GL_COND_OBJ_DUPLOCALE], [
   gl_PREREQ_DUPLOCALE
 ])
@@ -27,10 +31,10 @@ Include:
 <locale.h>
 
 Link:
-$(DUPLOCALE_LIB)
+$(DUPLOCALE_LIB) $(GETLOCALENAME_L_LIB)
 
 License:
-LGPL
+LGPLv2+
 
 Maintainer:
 all

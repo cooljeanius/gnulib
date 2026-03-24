@@ -1,5 +1,5 @@
 /* Fork a child process attached to the slave of a pseudo-terminal.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -32,7 +32,7 @@ rpl_forkpty (int *amaster, char *name, struct termios const *termp,
                   (struct winsize *) winp);
 }
 
-#else /* AIX 5.1, HP-UX 11, IRIX 6.5, Solaris 10, mingw */
+#else /* AIX 5.1, HP-UX 11, Solaris 10.  */
 
 # include <pty.h>
 # include <unistd.h>
@@ -43,12 +43,13 @@ int
 forkpty (int *amaster, char *name,
          const struct termios *termp, const struct winsize *winp)
 {
-  int master, slave, pid;
+  int master, slave;
 
   if (openpty (&master, &slave, name, termp, winp) == -1)
     return -1;
 
-  switch (pid = fork ())
+  int pid = fork ();
+  switch (pid)
     {
     case -1:
       close (master);

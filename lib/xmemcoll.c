@@ -1,6 +1,6 @@
 /* Locale-specific memory comparison.
 
-   Copyright (C) 2002-2004, 2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2004, 2006, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,9 +23,9 @@
 #include <stdlib.h>
 
 #include "gettext.h"
-#define _(msgid) gettext (msgid)
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 
-#include "error.h"
+#include <error.h>
 #include "exitfail.h"
 #include "memcoll.h"
 #include "quotearg.h"

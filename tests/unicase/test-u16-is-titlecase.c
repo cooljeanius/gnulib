@@ -1,5 +1,5 @@
 /* Test of test whether an UTF-16 string is entirely title case.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 #include "unicase.h"
 
+#include <stdcountof.h>
+
 #include "unistr.h"
 #include "macros.h"
 
@@ -32,5 +34,5 @@ main ()
 {
   test_ascii (u16_is_titlecase);
 
-  return 0;
+  return test_exit_status;
 }

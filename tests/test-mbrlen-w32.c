@@ -1,5 +1,5 @@
 /* Test of conversion of multibyte character to wide character.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -105,11 +105,10 @@ test_one_locale (const char *name, int codepage)
 
   /* Test single-byte input.  */
   {
-    int c;
     char buf[1];
 
     memset (&state, '\0', sizeof (mbstate_t));
-    for (c = 0; c < 0x100; c++)
+    for (int c = 0; c < 0x100; c++)
       switch (c)
         {
         case '\t': case '\v': case '\f':
@@ -218,7 +217,7 @@ test_one_locale (const char *name, int codepage)
 
     case 65001:
       /* Locale encoding is CP65001 = UTF-8.  */
-      if (strcmp (locale_charset (), "UTF-8") != 0)
+      if (!streq (locale_charset (), "UTF-8"))
         return 77;
       {
         char input[] = "B\303\274\303\237er"; /* "Büßer" */
@@ -453,7 +452,7 @@ test_one_locale (const char *name, int codepage)
 
     case 54936:
       /* Locale encoding is CP54936 = GB18030.  */
-      if (strcmp (locale_charset (), "GB18030") != 0)
+      if (!streq (locale_charset (), "GB18030"))
         return 77;
       {
         char input[] = "B\250\271\201\060\211\070er"; /* "Büßer" */
@@ -534,10 +533,9 @@ main (int argc, char *argv[])
 {
   int codepage = atoi (argv[argc - 1]);
   int result;
-  int i;
 
   result = 77;
-  for (i = 1; i < argc - 1; i++)
+  for (int i = 1; i < argc - 1; i++)
     {
       int ret = test_one_locale (argv[i], codepage);
 
@@ -547,10 +545,12 @@ main (int argc, char *argv[])
 
   if (result == 77)
     {
+      if (test_exit_status != EXIT_SUCCESS)
+        return test_exit_status;
       fprintf (stderr, "Skipping test: found no locale with codepage %d\n",
                codepage);
     }
-  return result;
+  return (result ? result : test_exit_status);
 }
 
 #else

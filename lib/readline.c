@@ -1,5 +1,5 @@
 /* readline.c --- Simple implementation of readline.
-   Copyright (C) 2005-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2007, 2009-2026 Free Software Foundation, Inc.
    Written by Simon Josefsson
 
    This program is free software: you can redistribute it and/or modify
@@ -36,15 +36,14 @@
 char *
 readline (const char *prompt)
 {
-  char *out = NULL;
-  size_t size = 0;
-
   if (prompt)
     {
       fputs (prompt, stdout);
       fflush (stdout);
     }
 
+  char *out = NULL;
+  size_t size = 0;
   if (getline (&out, &size, stdin) < 0)
     {
       free (out);

@@ -6,7 +6,7 @@ lib/classpath.h
 lib/classpath.c
 
 Depends-on:
-stdbool
+bool
 xsetenv
 xalloc
 
@@ -17,6 +17,9 @@ lib_SOURCES += classpath.h classpath.c
 
 Include:
 "classpath.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

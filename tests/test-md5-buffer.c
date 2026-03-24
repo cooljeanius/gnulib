@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2009-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,27 +37,25 @@ main (void)
     "\xF9\x6B\x69\x7D\x7C\xB7\x93\x8D\x52\x5A\x2F\x31\xAA\xF1\x61\xD0";
   char buf[MD5_DIGEST_SIZE];
 
-  if (memcmp (md5_buffer (in1, strlen (in1), buf), out1, MD5_DIGEST_SIZE) != 0)
+  if (!memeq (md5_buffer (in1, strlen (in1), buf), out1, MD5_DIGEST_SIZE))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < MD5_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD5_DIGEST_SIZE; i++)
         printf ("%02x ", out1[i] & 0xFFu);
       printf ("\ncomputed:\n");
-      for (i = 0; i < MD5_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD5_DIGEST_SIZE; i++)
         printf ("%02x ", buf[i] & 0xFFu);
       printf ("\n");
       return 1;
     }
 
-  if (memcmp (md5_buffer (in2, strlen (in2), buf), out2, MD5_DIGEST_SIZE) != 0)
+  if (!memeq (md5_buffer (in2, strlen (in2), buf), out2, MD5_DIGEST_SIZE))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < MD5_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD5_DIGEST_SIZE; i++)
         printf ("%02x ", out2[i] & 0xFFu);
       printf ("\ncomputed:\n");
-      for (i = 0; i < MD5_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD5_DIGEST_SIZE; i++)
         printf ("%02x ", buf[i] & 0xFFu);
       printf ("\n");
       return 1;

@@ -1,5 +1,5 @@
 /* Test of exp2f() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 SIGNATURE_CHECK (exp2f, float, (float));
 
 #include <float.h>
+#include <stdcountof.h>
 
 #include "macros.h"
 
@@ -46,5 +47,5 @@ main ()
 
   test_function ();
 
-  return 0;
+  return test_exit_status;
 }

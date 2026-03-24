@@ -8,7 +8,7 @@ lib/gl_xlist.c
 Depends-on:
 list
 extern-inline
-stdbool
+bool
 xalloc-die
 
 configure.ac:
@@ -18,6 +18,9 @@ lib_SOURCES += gl_xlist.h gl_xlist.c
 
 Include:
 "gl_xlist.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

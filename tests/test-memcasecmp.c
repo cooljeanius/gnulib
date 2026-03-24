@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2008-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson and Bruno Haible
  *
  * This program is free software: you can redistribute it and/or modify
@@ -58,8 +58,7 @@ main (void)
   {
     char foo[21];
     char bar[21];
-    int i;
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
       {
         char *a = foo + i;
         char *b = bar + i;
@@ -69,5 +68,5 @@ main (void)
       }
   }
 
-  return 0;
+  return test_exit_status;
 }

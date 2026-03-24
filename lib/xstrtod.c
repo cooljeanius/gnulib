@@ -1,6 +1,6 @@
 /* error-checking interface to strtod-like functions
 
-   Copyright (C) 1996, 1999-2000, 2003-2006, 2009-2023 Free Software
+   Copyright (C) 1996, 1999-2000, 2003-2006, 2009-2026 Free Software
    Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -44,28 +44,36 @@ bool
 XSTRTOD (char const *str, char const **ptr, DOUBLE *result,
          DOUBLE (*convert) (char const *, char **))
 {
-  DOUBLE val;
-  char *terminator;
-  bool ok = true;
-
   errno = 0;
-  val = convert (str, &terminator);
+  char *terminator;
+  DOUBLE val = convert (str, &terminator);
 
   /* Having a non-zero terminator is an error only when PTR is NULL. */
+  bool ok = true;
   if (terminator == str || (ptr == NULL && *terminator != '\0'))
     ok = false;
   else
     {
-      /* Allow underflow (in which case CONVERT returns zero),
-         but flag overflow as an error.  The user can decide
-         to use the limits in RESULT upon ERANGE.  */
+      /* Flag overflow as an error.
+         Flag gradual underflow as no error.
+         Flag flush-to-zero underflow as no error.
+         In either case, the caller can inspect *RESULT to get more details.  */
       if (val != 0 && errno == ERANGE)
-        ok = false;
+        {
+          if (val >= 1 || val <= -1)
+            /* Overflow.  */
+            ok = false;
+          else
+            /* Gradual underflow.  */
+            errno = 0;
+        }
     }
 
   if (ptr != NULL)
     *ptr = terminator;
 
+  /* Callers rely on *RESULT even when !ok.  */
   *result = val;
+
   return ok;
 }

@@ -1,5 +1,5 @@
 /* Dropping uid/gid privileges of the current process permanently.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,10 +26,10 @@ int
 idpriv_drop (void)
 {
 #if HAVE_GETUID
-  int uid = getuid ();
+  uid_t uid = getuid ();
 #endif
 #if HAVE_GETGID
-  int gid = getgid ();
+  gid_t gid = getgid ();
 #endif
 
   /* Drop the gid privilege first, because in some cases the gid privilege
@@ -42,7 +42,7 @@ idpriv_drop (void)
      setresuid.  */
   if (setresgid (gid, gid, gid) < 0)
     return -1;
-#elif HAVE_SETREGID /* Mac OS X, NetBSD, AIX, IRIX, Solaris, OSF/1, Cygwin */
+#elif HAVE_SETREGID /* Mac OS X, NetBSD, AIX, Solaris, Cygwin */
   if (setregid (gid, gid) < 0)
     return -1;
 #elif HAVE_SETEGID /* Solaris 2.4 */
@@ -62,7 +62,7 @@ idpriv_drop (void)
      is used seems to vary a lot."  */
   if (setresuid (uid, uid, uid) < 0)
     return -1;
-#elif HAVE_SETREUID /* Mac OS X, NetBSD, AIX, IRIX, Solaris, OSF/1, Cygwin */
+#elif HAVE_SETREUID /* Mac OS X, NetBSD, AIX, Solaris, Cygwin */
   if (setreuid (uid, uid) < 0)
     return -1;
 #elif HAVE_SETEUID /* Solaris 2.4 */

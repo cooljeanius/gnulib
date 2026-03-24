@@ -3,12 +3,14 @@ longrunning-test
 
 Files:
 tests/test-fts.c
+tests/macros.h
 
 Depends-on:
 c99
-errno
+errno-h
 remove
 unlinkat
+streq
 
 configure.ac:
 

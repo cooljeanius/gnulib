@@ -1,5 +1,5 @@
 /* Sequential list data type implemented by a hash table with a binary tree.
-   Copyright (C) 2006-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -107,9 +107,10 @@ add_to_bucket (gl_list_t list, gl_list_node_t new_node)
       size_t hashcode = new_node->h.hashcode;
       const void *value = new_node->value;
       gl_listelement_equals_fn equals = list->base.equals_fn;
-      gl_hash_entry_t *entryp;
 
-      for (entryp = &list->table[bucket]; *entryp != NULL; entryp = &(*entryp)->hash_next)
+      for (gl_hash_entry_t *entryp = &list->table[bucket];
+           *entryp != NULL;
+           entryp = &(*entryp)->hash_next)
         {
           gl_hash_entry_t entry = *entryp;
 
@@ -136,10 +137,7 @@ add_to_bucket (gl_list_t list, gl_list_node_t new_node)
                     {
                       /* Found already a node with the same value.  Turn it
                          into an ordered set, and add new_node to it.  */
-                      gl_oset_t nodes;
-                      struct gl_multiple_nodes *multi_entry;
-
-                      nodes =
+                      gl_oset_t nodes =
                         gl_oset_nx_create_empty (OSET_TREE_FLAVOR,
                                                  compare_by_position, NULL);
                       if (nodes == NULL)
@@ -150,7 +148,7 @@ add_to_bucket (gl_list_t list, gl_list_node_t new_node)
                       if (gl_oset_nx_add (nodes, new_node) < 0)
                         goto fail;
 
-                      multi_entry =
+                      struct gl_multiple_nodes *multi_entry =
                        (struct gl_multiple_nodes *) malloc (sizeof (struct gl_multiple_nodes));
                       if (multi_entry == NULL)
                         goto fail;
@@ -194,9 +192,8 @@ remove_from_bucket (gl_list_t list, gl_list_node_t old_node)
       size_t hashcode = old_node->h.hashcode;
       const void *value = old_node->value;
       gl_listelement_equals_fn equals = list->base.equals_fn;
-      gl_hash_entry_t *entryp;
 
-      for (entryp = &list->table[bucket]; ; entryp = &(*entryp)->hash_next)
+      for (gl_hash_entry_t *entryp = &list->table[bucket]; ; entryp = &(*entryp)->hash_next)
         {
           gl_hash_entry_t entry = *entryp;
 
@@ -240,9 +237,7 @@ remove_from_bucket (gl_list_t list, gl_list_node_t old_node)
   else
     {
       /* If no duplicates are allowed, multiple nodes are not needed.  */
-      gl_hash_entry_t *entryp;
-
-      for (entryp = &list->table[bucket]; ; entryp = &(*entryp)->hash_next)
+      for (gl_hash_entry_t *entryp = &list->table[bucket]; ; entryp = &(*entryp)->hash_next)
         {
           if (*entryp == &old_node->h)
             {

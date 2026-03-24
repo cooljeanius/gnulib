@@ -1,5 +1,5 @@
 /* Test of creating a temporary file.
-   Copyright (C) 2022-2023 Free Software Foundation, Inc.
+   Copyright (C) 2022-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ main ()
 
     /* gen_tempname arranges (via O_EXCL) to not return the name of an existing
        file.  */
-    ASSERT (strcmp (filename1, filename2) != 0);
+    ASSERT (!streq (filename1, filename2));
 
     /* Clean up.  */
     close (fd1);
@@ -75,12 +75,12 @@ main ()
        the probability of getting the same file name twice in a row should be
        1/62^6 < 1/10^10.
        But on 64-bit native Windows, this probability is ca. 0.1% to 0.3%.  */
-    ASSERT (strcmp (filename1, filename2) != 0);
+    ASSERT (!streq (filename1, filename2));
 
     /* Clean up.  */
     close (fd2);
     unlink (filename2);
   }
 
-  return 0;
+  return test_exit_status;
 }

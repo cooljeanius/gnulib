@@ -1,5 +1,5 @@
 /* Test the Unicode character type functions.
-   Copyright (C) 2007-2009 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,18 +33,17 @@ main ()
   {
     const uc_block_t *latin_block = NULL;
     const uc_block_t *hebrew_block = NULL;
-    size_t i;
 
-    for (i = 0; i < nblocks; i++)
+    for (size_t i = 0; i < nblocks; i++)
       {
-        if (strcmp (blocks[i].name, "Latin") == 0)
+        if (streq (blocks[i].name, "Latin"))
           latin_block = &blocks[i];
-        if (strcmp (blocks[i].name, "Hebrew") == 0)
+        if (streq (blocks[i].name, "Hebrew"))
           hebrew_block = &blocks[i];
       }
     ASSERT (latin_block == NULL);
     ASSERT (hebrew_block != NULL);
   }
 
-  return 0;
+  return test_exit_status;
 }

@@ -1,5 +1,5 @@
 /* Quoting for a system command.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2012.
 
    This program is free software: you can redistribute it and/or modify
@@ -79,12 +79,8 @@ windows_createprocess_quote (char *p, const char *string)
       char c = *string;
 
       if (c == '"')
-        {
-          size_t j;
-
-          for (j = backslashes + 1; j > 0; j--)
-            STORE ('\\');
-        }
+        for (size_t j = backslashes + 1; j > 0; j--)
+          STORE ('\\');
       STORE (c);
       if (c == '\\')
         backslashes++;
@@ -93,9 +89,7 @@ windows_createprocess_quote (char *p, const char *string)
     }
   if (quote_around)
     {
-      size_t j;
-
-      for (j = backslashes; j > 0; j--)
+      for (size_t j = backslashes; j > 0; j--)
         STORE ('\\');
       STORE ('"');
     }
@@ -146,17 +140,11 @@ windows_cmd_quote (char *p, const char *string)
       char c = *string;
 
       if (c == '"')
-        {
-          size_t j;
-
-          for (j = backslashes + 1; j > 0; j--)
-            STORE ('\\');
-        }
+        for (size_t j = backslashes + 1; j > 0; j--)
+          STORE ('\\');
       if (c == '%')
         {
-          size_t j;
-
-          for (j = backslashes; j > 0; j--)
+          for (size_t j = backslashes; j > 0; j--)
             STORE ('\\');
           STORE ('"');
         }
@@ -170,9 +158,7 @@ windows_cmd_quote (char *p, const char *string)
     }
   if (quote_around)
     {
-      size_t j;
-
-      for (j = backslashes; j > 0; j--)
+      for (size_t j = backslashes; j > 0; j--)
         STORE ('\\');
       STORE ('"');
     }
@@ -276,13 +262,8 @@ system_quote_argv (enum system_command_interpreter interpreter,
 {
   if (*argv != NULL)
     {
-      char * const *argp;
-      size_t length;
-      char *command;
-      char *p;
-
-      length = 0;
-      for (argp = argv; ; )
+      size_t length = 0;
+      for (char * const *argp = argv; ; )
         {
           length += system_quote_length (interpreter, *argp) + 1;
           argp++;
@@ -290,18 +271,20 @@ system_quote_argv (enum system_command_interpreter interpreter,
             break;
         }
 
-      command = XNMALLOC (length, char);
+      char *command = XNMALLOC (length, char);
 
-      p = command;
-      for (argp = argv; ; )
-        {
-          p = system_quote_copy (p, interpreter, *argp);
-          argp++;
-          if (*argp == NULL)
-            break;
-          *p++ = ' ';
-        }
-      *p = '\0';
+      {
+        char *p = command;
+        for (char * const *argp = argv; ; )
+          {
+            p = system_quote_copy (p, interpreter, *argp);
+            argp++;
+            if (*argp == NULL)
+              break;
+            *p++ = ' ';
+          }
+        *p = '\0';
+      }
 
       return command;
     }

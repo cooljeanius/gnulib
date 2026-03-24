@@ -3,9 +3,9 @@
    SM3, published by State Encryption Management Bureau, China.
 
    SM3 cryptographic hash algorithm.
-   <http://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>
+   <https://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>
 
-   Copyright (C) 2017-2023 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -26,9 +26,6 @@
 #include <config.h>
 
 /* Specification.  */
-#if HAVE_OPENSSL_SM3
-# define GL_OPENSSL_INLINE _GL_EXTERN_INLINE
-#endif
 #include "sm3.h"
 
 #include <stdlib.h>
@@ -46,17 +43,17 @@
    resulting message digest number will be written into the 32 bytes
    beginning at RESBLOCK.  */
 int
-sm3_stream (FILE *stream, void *resblock)
+sm3_stream (FILE *restrict stream, void *restrict resblock)
 {
-  struct sm3_ctx ctx;
-  size_t sum;
-
-  char *buffer = malloc (BLOCKSIZE + 72);
+  char *buffer = malloc (BLOCKSIZE);
   if (!buffer)
     return 1;
 
   /* Initialize the computation context.  */
+  struct sm3_ctx ctx;
   sm3_init_ctx (&ctx);
+
+  size_t sum;
 
   /* Iterate over full file contents.  */
   while (1)
@@ -64,13 +61,12 @@ sm3_stream (FILE *stream, void *resblock)
       /* We read the file in blocks of BLOCKSIZE bytes.  One call of the
          computation function processes the whole buffer so that with the
          next round of the loop another block can be read.  */
-      size_t n;
       sum = 0;
 
       /* Read block.  Take care for partial reads.  */
       while (1)
         {
-          n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
+          size_t n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
 
           sum += n;
 
@@ -114,10 +110,3 @@ sm3_stream (FILE *stream, void *resblock)
   free (buffer);
   return 0;
 }
-
-/*
- * Hey Emacs!
- * Local Variables:
- * coding: utf-8
- * End:
- */

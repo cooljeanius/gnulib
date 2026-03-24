@@ -12,11 +12,15 @@ error
 exitfail
 getprogname
 gettext-h
+gnulib-i18n
 memcmp
 quote
 quotearg
-stdbool
-stdlib
+bool
+stdcountof-h
+stdlib-h
+memeq
+streq
 
 configure.ac:
 
@@ -30,6 +34,7 @@ Link:
 $(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 $(MBRTOWC_LIB)
 $(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

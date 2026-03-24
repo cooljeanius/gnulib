@@ -1,5 +1,5 @@
 /* gc-gnulib.c --- Common gnulib internal crypto interface functions
- * Copyright (C) 2002-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2002-2026 Free Software Foundation, Inc.
  *
  * This file is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -171,16 +171,14 @@ Gc_rc
 gc_cipher_open (Gc_cipher alg, Gc_cipher_mode mode,
                 gc_cipher_handle * outhandle)
 {
-  _gc_cipher_ctx *ctx;
-  Gc_rc rc = GC_OK;
-
-  ctx = calloc (sizeof (*ctx), 1);
+  _gc_cipher_ctx *ctx = calloc (1, sizeof (*ctx));
   if (!ctx)
     return GC_MALLOC_ERROR;
 
   ctx->alg = alg;
   ctx->mode = mode;
 
+  Gc_rc rc = GC_OK;
   switch (alg)
     {
 #if GNULIB_GC_ARCTWO
@@ -253,7 +251,8 @@ gc_cipher_open (Gc_cipher alg, Gc_cipher_mode mode,
 }
 
 Gc_rc
-gc_cipher_setkey (gc_cipher_handle handle, size_t keylen, const char *key)
+gc_cipher_setkey (gc_cipher_handle restrict handle, size_t keylen,
+                  char const *restrict key)
 {
   _gc_cipher_ctx *ctx = handle;
 
@@ -285,26 +284,31 @@ gc_cipher_setkey (gc_cipher_handle handle, size_t keylen, const char *key)
     case GC_AES192:
     case GC_AES256:
       {
-        rijndael_rc rc;
-        size_t i;
         char keyMaterial[RIJNDAEL_MAX_KEY_SIZE + 1];
 
-        for (i = 0; i < keylen; i++)
-          sprintf (&keyMaterial[2 * i], "%02x", key[i] & 0xFF);
+        for (size_t i = 0; i < keylen; i++)
+          sprintf (&keyMaterial[2 * i], "%02x", key[i] & 0xFFU);
 
-        rc = rijndaelMakeKey (&ctx->aesEncKey, RIJNDAEL_DIR_ENCRYPT,
-                              keylen * 8, keyMaterial);
-        if (rc < 0)
-          return GC_INVALID_CIPHER;
-
-        rc = rijndaelMakeKey (&ctx->aesDecKey, RIJNDAEL_DIR_DECRYPT,
-                              keylen * 8, keyMaterial);
-        if (rc < 0)
-          return GC_INVALID_CIPHER;
-
-        rc = rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_ECB, NULL);
-        if (rc < 0)
-          return GC_INVALID_CIPHER;
+        {
+          rijndael_rc rc =
+            rijndaelMakeKey (&ctx->aesEncKey, RIJNDAEL_DIR_ENCRYPT,
+                             keylen * 8, keyMaterial);
+          if (rc < 0)
+            return GC_INVALID_CIPHER;
+        }
+        {
+          rijndael_rc rc =
+            rijndaelMakeKey (&ctx->aesDecKey, RIJNDAEL_DIR_DECRYPT,
+                             keylen * 8, keyMaterial);
+          if (rc < 0)
+            return GC_INVALID_CIPHER;
+        }
+        {
+          rijndael_rc rc =
+            rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_ECB, NULL);
+          if (rc < 0)
+            return GC_INVALID_CIPHER;
+        }
       }
       break;
 #endif
@@ -317,7 +321,8 @@ gc_cipher_setkey (gc_cipher_handle handle, size_t keylen, const char *key)
 }
 
 Gc_rc
-gc_cipher_setiv (gc_cipher_handle handle, size_t ivlen, const char *iv)
+gc_cipher_setiv (gc_cipher_handle restrict handle, size_t ivlen,
+                 char const *restrict iv)
 {
   _gc_cipher_ctx *ctx = handle;
 
@@ -343,15 +348,13 @@ gc_cipher_setiv (gc_cipher_handle handle, size_t ivlen, const char *iv)
 
         case GC_CBC:
           {
-            rijndael_rc rc;
-            size_t i;
             char ivMaterial[2 * RIJNDAEL_MAX_IV_SIZE + 1];
+            for (size_t i = 0; i < ivlen; i++)
+              sprintf (&ivMaterial[2 * i], "%02x", iv[i] & 0xFFU);
 
-            for (i = 0; i < ivlen; i++)
-              sprintf (&ivMaterial[2 * i], "%02x", iv[i] & 0xFF);
-
-            rc = rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_CBC,
-                                     ivMaterial);
+            rijndael_rc rc =
+              rijndaelCipherInit (&ctx->aesContext, RIJNDAEL_MODE_CBC,
+                                  ivMaterial);
             if (rc < 0)
               return GC_INVALID_CIPHER;
           }
@@ -371,7 +374,8 @@ gc_cipher_setiv (gc_cipher_handle handle, size_t ivlen, const char *iv)
 }
 
 Gc_rc
-gc_cipher_encrypt_inline (gc_cipher_handle handle, size_t len, char *data)
+gc_cipher_encrypt_inline (gc_cipher_handle restrict handle,
+                          size_t len, char *restrict data)
 {
   _gc_cipher_ctx *ctx = handle;
 
@@ -389,8 +393,7 @@ gc_cipher_encrypt_inline (gc_cipher_handle handle, size_t len, char *data)
           for (; len >= ARCTWO_BLOCK_SIZE; len -= ARCTWO_BLOCK_SIZE,
                data += ARCTWO_BLOCK_SIZE)
             {
-              size_t i;
-              for (i = 0; i < ARCTWO_BLOCK_SIZE; i++)
+              for (size_t i = 0; i < ARCTWO_BLOCK_SIZE; i++)
                 data[i] ^= ctx->arctwoIV[i];
               arctwo_encrypt (&ctx->arctwoContext, data, data,
                               ARCTWO_BLOCK_SIZE);
@@ -423,10 +426,9 @@ gc_cipher_encrypt_inline (gc_cipher_handle handle, size_t len, char *data)
     case GC_AES192:
     case GC_AES256:
       {
-        int nblocks;
-
-        nblocks = rijndaelBlockEncrypt (&ctx->aesContext, &ctx->aesEncKey,
-                                        data, 8 * len, data);
+        int nblocks =
+          rijndaelBlockEncrypt (&ctx->aesContext, &ctx->aesEncKey,
+                                data, 8 * len, data);
         if (nblocks < 0)
           return GC_INVALID_CIPHER;
       }
@@ -441,7 +443,8 @@ gc_cipher_encrypt_inline (gc_cipher_handle handle, size_t len, char *data)
 }
 
 Gc_rc
-gc_cipher_decrypt_inline (gc_cipher_handle handle, size_t len, char *data)
+gc_cipher_decrypt_inline (gc_cipher_handle restrict handle, size_t len,
+                          char *restrict data)
 {
   _gc_cipher_ctx *ctx = handle;
 
@@ -460,11 +463,10 @@ gc_cipher_decrypt_inline (gc_cipher_handle handle, size_t len, char *data)
                data += ARCTWO_BLOCK_SIZE)
             {
               char tmpIV[ARCTWO_BLOCK_SIZE];
-              size_t i;
               memcpy (tmpIV, data, ARCTWO_BLOCK_SIZE);
               arctwo_decrypt (&ctx->arctwoContext, data, data,
                               ARCTWO_BLOCK_SIZE);
-              for (i = 0; i < ARCTWO_BLOCK_SIZE; i++)
+              for (size_t i = 0; i < ARCTWO_BLOCK_SIZE; i++)
                 data[i] ^= ctx->arctwoIV[i];
               memcpy (ctx->arctwoIV, tmpIV, ARCTWO_BLOCK_SIZE);
             }
@@ -495,10 +497,9 @@ gc_cipher_decrypt_inline (gc_cipher_handle handle, size_t len, char *data)
     case GC_AES192:
     case GC_AES256:
       {
-        int nblocks;
-
-        nblocks = rijndaelBlockDecrypt (&ctx->aesContext, &ctx->aesDecKey,
-                                        data, 8 * len, data);
+        int nblocks =
+          rijndaelBlockDecrypt (&ctx->aesContext, &ctx->aesDecKey,
+                                data, 8 * len, data);
         if (nblocks < 0)
           return GC_INVALID_CIPHER;
       }
@@ -557,19 +558,17 @@ typedef struct _gc_hash_ctx
 Gc_rc
 gc_hash_open (Gc_hash hash, Gc_hash_mode mode, gc_hash_handle * outhandle)
 {
-  _gc_hash_ctx *ctx;
-  Gc_rc rc = GC_OK;
-
   if (mode != 0)
     return GC_INVALID_HASH;
 
-  ctx = calloc (sizeof (*ctx), 1);
+  _gc_hash_ctx *ctx = calloc (1, sizeof (*ctx));
   if (!ctx)
     return GC_MALLOC_ERROR;
 
   ctx->alg = hash;
   ctx->mode = mode;
 
+  Gc_rc rc = GC_OK;
   switch (hash)
     {
 #if GNULIB_GC_MD2
@@ -629,17 +628,17 @@ gc_hash_open (Gc_hash hash, Gc_hash_mode mode, gc_hash_handle * outhandle)
 }
 
 Gc_rc
-gc_hash_clone (gc_hash_handle handle, gc_hash_handle * outhandle)
+gc_hash_clone (gc_hash_handle restrict handle,
+               gc_hash_handle *restrict outhandle)
 {
   _gc_hash_ctx *in = handle;
-  _gc_hash_ctx *out;
-
-  *outhandle = out = calloc (sizeof (*out), 1);
+  _gc_hash_ctx *out = calloc (1, sizeof (*out));
   if (!out)
     return GC_MALLOC_ERROR;
 
   memcpy (out, in, sizeof (*out));
 
+  *outhandle = out;
   return GC_OK;
 }
 
@@ -690,7 +689,8 @@ gc_hash_digest_length (Gc_hash hash)
 }
 
 void
-gc_hash_write (gc_hash_handle handle, size_t len, const char *data)
+gc_hash_write (gc_hash_handle restrict handle,
+               size_t len, char const *restrict data)
 {
   _gc_hash_ctx *ctx = handle;
 
@@ -816,7 +816,8 @@ gc_hash_close (gc_hash_handle handle)
 }
 
 Gc_rc
-gc_hash_buffer (Gc_hash hash, const void *in, size_t inlen, char *resbuf)
+gc_hash_buffer (Gc_hash hash, const void *restrict in, size_t inlen,
+                char *restrict resbuf)
 {
   switch (hash)
     {
@@ -871,7 +872,7 @@ gc_hash_buffer (Gc_hash hash, const void *in, size_t inlen, char *resbuf)
 
 #if GNULIB_GC_MD2
 Gc_rc
-gc_md2 (const void *in, size_t inlen, void *resbuf)
+gc_md2 (void const *restrict in, size_t inlen, void *restrict resbuf)
 {
   md2_buffer (in, inlen, resbuf);
   return GC_OK;
@@ -880,7 +881,7 @@ gc_md2 (const void *in, size_t inlen, void *resbuf)
 
 #if GNULIB_GC_MD4
 Gc_rc
-gc_md4 (const void *in, size_t inlen, void *resbuf)
+gc_md4 (void const *restrict in, size_t inlen, void *restrict resbuf)
 {
   md4_buffer (in, inlen, resbuf);
   return GC_OK;
@@ -889,7 +890,7 @@ gc_md4 (const void *in, size_t inlen, void *resbuf)
 
 #if GNULIB_GC_MD5
 Gc_rc
-gc_md5 (const void *in, size_t inlen, void *resbuf)
+gc_md5 (void const *restrict in, size_t inlen, void *restrict resbuf)
 {
   md5_buffer (in, inlen, resbuf);
   return GC_OK;
@@ -898,7 +899,7 @@ gc_md5 (const void *in, size_t inlen, void *resbuf)
 
 #if GNULIB_GC_SHA1
 Gc_rc
-gc_sha1 (const void *in, size_t inlen, void *resbuf)
+gc_sha1 (void const *restrict in, size_t inlen, void *restrict resbuf)
 {
   sha1_buffer (in, inlen, resbuf);
   return GC_OK;
@@ -907,7 +908,7 @@ gc_sha1 (const void *in, size_t inlen, void *resbuf)
 
 #if GNULIB_GC_SHA256
 Gc_rc
-gc_sha256 (const void *in, size_t inlen, void *resbuf)
+gc_sha256 (void const *restrict in, size_t inlen, void *restrict resbuf)
 {
   sha256_buffer (in, inlen, resbuf);
   return GC_OK;
@@ -916,7 +917,7 @@ gc_sha256 (const void *in, size_t inlen, void *resbuf)
 
 #if GNULIB_GC_SHA512
 Gc_rc
-gc_sha512 (const void *in, size_t inlen, void *resbuf)
+gc_sha512 (void const *restrict in, size_t inlen, void *restrict resbuf)
 {
   sha512_buffer (in, inlen, resbuf);
   return GC_OK;
@@ -925,7 +926,7 @@ gc_sha512 (const void *in, size_t inlen, void *resbuf)
 
 #if GNULIB_GC_SM3
 Gc_rc
-gc_sm3 (const void *in, size_t inlen, void *resbuf)
+gc_sm3 (void const *restrict in, size_t inlen, void *restrict resbuf)
 {
   sm3_buffer (in, inlen, resbuf);
   return GC_OK;
@@ -934,8 +935,8 @@ gc_sm3 (const void *in, size_t inlen, void *resbuf)
 
 #if GNULIB_GC_HMAC_MD5
 Gc_rc
-gc_hmac_md5 (const void *key, size_t keylen,
-             const void *in, size_t inlen, char *resbuf)
+gc_hmac_md5 (void const *restrict key, size_t keylen,
+             void const *restrict in, size_t inlen, char *restrict resbuf)
 {
   hmac_md5 (key, keylen, in, inlen, resbuf);
   return GC_OK;
@@ -944,8 +945,8 @@ gc_hmac_md5 (const void *key, size_t keylen,
 
 #if GNULIB_GC_HMAC_SHA1
 Gc_rc
-gc_hmac_sha1 (const void *key, size_t keylen,
-              const void *in, size_t inlen, char *resbuf)
+gc_hmac_sha1 (void const *restrict key, size_t keylen,
+              void const *restrict in, size_t inlen, char *restrict resbuf)
 {
   hmac_sha1 (key, keylen, in, inlen, resbuf);
   return GC_OK;
@@ -954,8 +955,8 @@ gc_hmac_sha1 (const void *key, size_t keylen,
 
 #if GNULIB_GC_HMAC_SHA256
 Gc_rc
-gc_hmac_sha256 (const void *key, size_t keylen,
-                const void *in, size_t inlen, char *resbuf)
+gc_hmac_sha256 (void const *restrict key, size_t keylen,
+                void const *restrict in, size_t inlen, char *restrict resbuf)
 {
   hmac_sha256 (key, keylen, in, inlen, resbuf);
   return GC_OK;
@@ -964,8 +965,8 @@ gc_hmac_sha256 (const void *key, size_t keylen,
 
 #if GNULIB_GC_HMAC_SHA512
 Gc_rc
-gc_hmac_sha512 (const void *key, size_t keylen,
-                const void *in, size_t inlen, char *resbuf)
+gc_hmac_sha512 (void const *restrict key, size_t keylen,
+                void const *restrict in, size_t inlen, char *restrict resbuf)
 {
   hmac_sha512 (key, keylen, in, inlen, resbuf);
   return GC_OK;

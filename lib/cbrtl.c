@@ -1,5 +1,5 @@
 /* Compute cubic root of long double value.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
    Cephes Math Library Release 2.2: January, 1991
    Copyright 1984, 1991 by Stephen L. Moshier
    Adapted for glibc October, 2001.
@@ -80,9 +80,7 @@ cbrtl (long double x)
 {
   if (isfinite (x) && x != 0.0L)
     {
-      int e, rem, sign;
-      long double z;
-
+      int sign;
       if (x > 0)
         sign = 1;
       else
@@ -91,8 +89,9 @@ cbrtl (long double x)
           x = -x;
         }
 
-      z = x;
+      long double z = x;
       /* extract power of 2, leaving mantissa between 0.5 and 1  */
+      int e;
       x = frexpl (x, &e);
 
       /* Approximate cube root of number between .5 and 1,
@@ -104,6 +103,7 @@ cbrtl (long double x)
            + 1.3304961236013647092521e0L) * x + 3.7568280825958912391243e-1L;
 
       /* exponent divided by 3 */
+      int rem;
       if (e >= 0)
         {
           rem = e;
@@ -140,13 +140,7 @@ cbrtl (long double x)
       return x;
     }
   else
-    {
-# ifdef __sgi /* so that when x == -0.0L, the result is -0.0L not +0.0L */
-      return x;
-# else
-      return x + x;
-# endif
-    }
+    return x + x;
 }
 
 #endif

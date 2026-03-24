@@ -1,5 +1,5 @@
 /* Test the gnulib dirname module.
-   Copyright (C) 2005-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2007, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -130,10 +130,9 @@ static struct test tests[] = {
 int
 main (void)
 {
-  struct test *t;
   bool ok = true;
 
-  for (t = tests; t->name; t++)
+  for (struct test *t = tests; t->name; t++)
     {
       char *dir = dir_name (t->name);
       int dirlen = dir_len (t->name);
@@ -143,7 +142,7 @@ main (void)
       char *stripped = strdup (t->name);
       bool modified = strip_trailing_slashes (stripped);
       bool absolute = IS_ABSOLUTE_FILE_NAME (t->name);
-      if (! (strcmp (dir, t->dir) == 0
+      if (! (streq (dir, t->dir)
              && (dirlen == strlen (dir)
                  || (dirlen + 1 == strlen (dir) && dir[dirlen] == '.'))))
         {
@@ -153,13 +152,13 @@ main (void)
                   t->name, dir, dirlen,
                   t->dir, (unsigned long) strlen (t->dir));
         }
-      if (strcmp (last, t->last))
+      if (!streq (last, t->last))
         {
           ok = false;
           printf ("last_component '%s': got '%s', expected '%s'\n",
                   t->name, last, t->last);
         }
-      if (! (strcmp (base, t->base) == 0
+      if (! (streq (base, t->base)
              && (baselen == strlen (base)
                  || (baselen + 1 == strlen (base)
                      && ISSLASH (base[baselen])))))
@@ -170,7 +169,7 @@ main (void)
                   t->name, base, baselen,
                   t->base, (unsigned long) strlen (t->base));
         }
-      if (strcmp (stripped, t->stripped) || modified != t->modified)
+      if (!streq (stripped, t->stripped) || modified != t->modified)
         {
           ok = false;
           printf ("strip_trailing_slashes '%s': got %s %s, expected %s %s\n",

@@ -1,5 +1,5 @@
 /* Tests of symlinkat.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ main (void)
   /* Test behaviour for invalid file descriptors.  */
   {
     errno = 0;
-    ASSERT (symlinkat ("foo", -1, "bar") == -1);
+    ASSERT (symlinkat ("foo", AT_FDCWD == -2 ? -1 : -2, "bar") == -1);
     ASSERT (errno == EBADF
             || errno == ENOSYS /* seen on mingw */
            );
@@ -84,5 +84,5 @@ main (void)
   if (result == 77)
     fputs ("skipping test: symlinks not supported on this file system\n",
            stderr);
-  return result;
+  return (result ? result : test_exit_status);
 }

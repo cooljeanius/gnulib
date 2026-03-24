@@ -1,7 +1,7 @@
 /* readlinkat wrapper to return the link name in malloc'd storage.
    Unlike xreadlinkat, only call exit on failure to change directory.
 
-   Copyright (C) 2001, 2003-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2003-2007, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,8 +70,6 @@ areadlinkat_with_size (int fd, char const *file, size_t size)
 
   while (1)
     {
-      ssize_t r;
-      size_t link_length;
       char stackbuf[stackbuf_size];
       char *buf = stackbuf;
       char *buffer = NULL;
@@ -85,15 +83,14 @@ areadlinkat_with_size (int fd, char const *file, size_t size)
             return NULL;
         }
 
-      r = readlinkat (fd, file, buf, buf_size);
-      link_length = r;
-
+      ssize_t r = readlinkat (fd, file, buf, buf_size);
       if (r < 0)
         {
           free (buffer);
           return NULL;
         }
 
+      size_t link_length = r;
       if (link_length < buf_size)
         {
           buf[link_length] = 0;

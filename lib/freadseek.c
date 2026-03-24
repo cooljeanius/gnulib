@@ -1,5 +1,5 @@
 /* Skipping input from a FILE stream.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -34,13 +34,13 @@ static void
 freadptrinc (FILE *fp, size_t increment)
 {
   /* Keep this code in sync with freadptr!  */
-#if HAVE___FREADPTRINC              /* musl libc */
+#if HAVE___FREADPTRINC              /* OpenBSD >= 7.6, musl libc, Haiku >= hrev58760 */
   __freadptrinc (fp, increment);
 #elif defined _IO_EOF_SEEN || defined _IO_ftrylockfile || __GNU_LIBRARY__ == 1
-  /* GNU libc, BeOS, Haiku, Linux libc5 */
+  /* GNU libc, BeOS, Haiku < hrev58760, Linux libc5 */
   fp->_IO_read_ptr += increment;
 #elif defined __sferror || defined __DragonFly__ || defined __ANDROID__
-  /* FreeBSD, NetBSD, OpenBSD, DragonFly, Mac OS X, Cygwin, Minix 3, Android */
+  /* FreeBSD, NetBSD, OpenBSD < 7.6, DragonFly, Mac OS X, Cygwin, Minix 3, Android */
   fp_->_p += increment;
   fp_->_r -= increment;
 #elif defined __EMX__               /* emx+gcc */
@@ -49,7 +49,7 @@ freadptrinc (FILE *fp, size_t increment)
 #elif defined __minix               /* Minix */
   fp_->_ptr += increment;
   fp_->_count -= increment;
-#elif defined _IOERR                /* AIX, HP-UX, IRIX, OSF/1, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
+#elif defined _IOERR                /* AIX, HP-UX, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
   fp_->_ptr += increment;
   fp_->_cnt -= increment;
 #elif defined __UCLIBC__            /* uClibc */
@@ -73,15 +73,12 @@ freadptrinc (FILE *fp, size_t increment)
 int
 freadseek (FILE *fp, size_t offset)
 {
-  size_t total_buffered;
-  int fd;
-
   if (offset == 0)
     return 0;
 
   /* Seek over the already read and buffered input as quickly as possible,
      without doing any system calls.  */
-  total_buffered = freadahead (fp);
+  size_t total_buffered = freadahead (fp);
   /* This loop is usually executed at most twice: once for ungetc buffer (if
      present) and once for the main buffer.  */
   while (total_buffered > 0)
@@ -111,7 +108,7 @@ freadseek (FILE *fp, size_t offset)
     }
 
   /* Test whether the stream is seekable or not.  */
-  fd = fileno (fp);
+  int fd = fileno (fp);
   if (fd >= 0 && lseek (fd, 0, SEEK_CUR) >= 0)
     {
       /* FP refers to a regular file.  fseek is most efficient in this case.  */
@@ -121,10 +118,9 @@ freadseek (FILE *fp, size_t offset)
     {
       /* FP is a non-seekable stream, possibly not even referring to a file
          descriptor.  Read OFFSET bytes explicitly and discard them.  */
-      char buf[4096];
-
       do
         {
+          char buf[4096];
           size_t count = (sizeof (buf) < offset ? sizeof (buf) : offset);
           if (fread (buf, 1, count, fp) < count)
             goto eof;

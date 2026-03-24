@@ -9,9 +9,10 @@ Depends-on:
 posix_spawn_file_actions_init
 posix_spawn_file_actions_destroy
 posix_spawnp-tests
-stdbool
+bool
 findprog
 xvasprintf
+memeq
 
 configure.ac:
 AC_EGREP_CPP([notposix], [[

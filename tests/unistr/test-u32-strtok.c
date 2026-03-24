@@ -1,5 +1,5 @@
 /* Test of u32_strtok() function.
-   Copyright (C) 2015-2023 Free Software Foundation, Inc.
+   Copyright (C) 2015-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include "unistr.h"
 
+#include <stdcountof.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -33,5 +34,5 @@ main (void)
 {
   test_u_strtok ();
 
-  return 0;
+  return test_exit_status;
 }

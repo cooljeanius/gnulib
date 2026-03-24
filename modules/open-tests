@@ -5,11 +5,13 @@ tests/signature.h
 tests/macros.h
 
 Depends-on:
-stdbool
+bool
 fcntl
+mkfifo
 symlink
 
 configure.ac:
+AC_CHECK_DECLS_ONCE([alarm])
 
 Makefile.am:
 TESTS += test-open

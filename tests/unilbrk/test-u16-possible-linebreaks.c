@@ -1,5 +1,5 @@
 /* Test of line breaking of UTF-16 strings.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "unilbrk.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "macros.h"
@@ -43,11 +44,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
       };
 
     {
-      char *p = (char *) malloc (SIZEOF (input));
-      size_t i;
+      char *p = (char *) malloc (countof (input));
 
-      my_u16_possible_linebreaks (input, SIZEOF (input), "GB18030", p);
-      for (i = 0; i < 61; i++)
+      my_u16_possible_linebreaks (input, countof (input), "GB18030", p);
+      for (size_t i = 0; i < 61; i++)
         {
           ASSERT (p[i] == (i == 60 ? UC_BREAK_MANDATORY :
                            i == 5
@@ -62,11 +62,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
     }
 
     {
-      char *p = (char *) malloc (SIZEOF (input));
-      size_t i;
+      char *p = (char *) malloc (countof (input));
 
-      my_u16_possible_linebreaks (input, SIZEOF (input), "GB2312", p);
-      for (i = 0; i < 61; i++)
+      my_u16_possible_linebreaks (input, countof (input), "GB2312", p);
+      for (size_t i = 0; i < 61; i++)
         {
           ASSERT (p[i] == (i == 60 ? UC_BREAK_MANDATORY :
                            i == 5
@@ -85,11 +84,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
   {
     static const uint16_t input[8] =
       { 'a', '\n', 'b', '\r', 'c', '\r', '\n', 'd' };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 8; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 8; i++)
       {
         ASSERT (p[i] == (i == 1 || i == 3 || i == 6 ? UC_BREAK_MANDATORY :
                          i == 5 ? (version < 2 ? UC_BREAK_MANDATORY : UC_BREAK_CR_BEFORE_LF) :
@@ -102,11 +100,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
      regular spaces (rule LB8 in Unicode TR#14 revision 26).  */
   {
     static const uint16_t input[4] = { 'x', 0x200B, ' ', 'y' };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 4; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 4; i++)
       {
         ASSERT (p[i] == (i == 3 ? UC_BREAK_POSSIBLE : UC_BREAK_PROHIBITED));
       }
@@ -120,11 +117,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
         '<', 'P', '>', 'S', 'o', 'm', 'e', ' ', 's', 'e', 'n', 't',
         'e', 'n', 'c', 'e', '.', '<', '/', 'P', '>'
       };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 21; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 21; i++)
       {
         ASSERT (p[i] == (i == 8 || i == 17 || i == 19 ? UC_BREAK_POSSIBLE :
                          UC_BREAK_PROHIBITED));
@@ -140,11 +136,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
         'o', 0x0A00, 0x0300, '\n',
         0x0300
       };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 16; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 16; i++)
       {
         ASSERT (p[i] == (i == 14 ? UC_BREAK_MANDATORY :
                          i == 6 || i == 9 || i == 11 ? UC_BREAK_POSSIBLE :
@@ -164,11 +159,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
         0x261D, 0xD83C, 0xDFFF, '\n',
         0x261D, 0x200D, 0xD83C, 0xDFFF, '\n',
       };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 39; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 39; i++)
       {
         ASSERT (p[i] == (i == 8 || i == 20
                          || i == 24 || i == 29
@@ -186,11 +180,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
   {
     static const uint16_t input[8] =
       { 0xD83C, 0xDDE9, 0xD83C, 0xDDEA, 0xD83C, 0xDDEB, 0xD83C, 0xDDF7 };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 8; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 8; i++)
       {
         ASSERT (p[i] == (i == 4 ? UC_BREAK_POSSIBLE : UC_BREAK_PROHIBITED));
       }
@@ -202,11 +195,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
   {
     static const uint16_t input[10] = /* "ab-אב-αβ-ω" */
       { 'a', 'b', '-', 0x05D0, 0x05D1, '-', 0x03B1, 0x03B2, '-', 0x03C9 };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 10; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 10; i++)
       {
         ASSERT (p[i] == (i == 3 || i == 9 ? UC_BREAK_POSSIBLE :
                          UC_BREAK_PROHIBITED));
@@ -221,11 +213,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
         0x65E5, 0x4E2D, 0x97D3, 0x7D71, 0x5408, 0x6F22, 0x5B57, 0x62E1, 0x5F35,
         'G', 0x300C, 0x30E6, 0x30CB, 0x30B3, 0x30FC, 0x30C9, 0x300D
       };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 17; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 17; i++)
       {
         ASSERT (p[i] == (i == 1 || i == 2 || i == 3 || i == 4 || i == 5
                          || i == 6 || i == 7 || i == 8 || i == 9
@@ -239,11 +230,10 @@ test_function (void (*my_u16_possible_linebreaks) (const uint16_t *, size_t, con
   /* Test special behaviour of potential future emoji (LB30b).  */
   {
     static const uint16_t input[4] = { 0xD83F, 0xDFFC, 0xD83C, 0xDFFF };
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_u16_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 4; i++)
+    my_u16_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 4; i++)
       {
         ASSERT (p[i] == UC_BREAK_PROHIBITED);
       }
@@ -260,5 +250,5 @@ main ()
   test_function (u16_possible_linebreaks, 1);
 #endif
 
-  return 0;
+  return test_exit_status;
 }

@@ -1,5 +1,5 @@
 /* Test duplicating file descriptors.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -78,13 +78,12 @@ is_cloexec (int fd)
 int
 main ()
 {
-  int use_cloexec;
   int bad_fd = getdtablesize ();
 
 #if O_CLOEXEC
-  for (use_cloexec = 0; use_cloexec <= 1; use_cloexec++)
+  for (int use_cloexec = 0; use_cloexec <= 1; use_cloexec++)
 #else
-  use_cloexec = 0;
+  int use_cloexec = 0;
 #endif
     {
       const char *file = "test-dup3.tmp";
@@ -168,5 +167,5 @@ main ()
       ASSERT (unlink (file) == 0);
     }
 
-  return 0;
+  return test_exit_status;
 }

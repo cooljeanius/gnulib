@@ -13,8 +13,8 @@ mbchar
 mbrtowc
 mbsinit
 mbszero
-wchar
-stdbool
+wchar-h
+bool
 
 configure.ac:
 gl_MBFILE

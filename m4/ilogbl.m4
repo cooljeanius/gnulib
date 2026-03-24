@@ -1,8 +1,10 @@
-# ilogbl.m4 serial 6
-dnl Copyright (C) 2010-2023 Free Software Foundation, Inc.
+# ilogbl.m4
+# serial 9
+dnl Copyright (C) 2010-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_ILOGBL],
 [
@@ -15,7 +17,7 @@ AC_DEFUN([gl_FUNC_ILOGBL],
 
   dnl Test whether ilogbl() exists. Assume that ilogbl(), if it exists, is
   dnl defined in the same library as ilogb().
-  save_LIBS="$LIBS"
+  saved_LIBS="$LIBS"
   LIBS="$LIBS $ILOGB_LIBM"
   AC_CACHE_CHECK([for ilogbl],
     [gl_cv_func_ilogbl],
@@ -33,13 +35,13 @@ AC_DEFUN([gl_FUNC_ILOGBL],
         [gl_cv_func_ilogbl=yes],
         [gl_cv_func_ilogbl=no])
     ])
-  LIBS="$save_LIBS"
+  LIBS="$saved_LIBS"
   if test $gl_cv_func_ilogbl = yes; then
     ILOGBL_LIBM="$ILOGB_LIBM"
-    save_LIBS="$LIBS"
+    saved_LIBS="$LIBS"
     LIBS="$LIBS $ILOGBL_LIBM"
     gl_FUNC_ILOGBL_WORKS
-    LIBS="$save_LIBS"
+    LIBS="$saved_LIBS"
     case "$gl_cv_func_ilogbl_works" in
       *yes) ;;
       *) REPLACE_ILOGBL=1 ;;
@@ -99,23 +101,6 @@ AC_DEFUN([gl_FUNC_ILOGBL_WORKS],
 # undef LDBL_MIN_EXP
 # define LDBL_MIN_EXP DBL_MIN_EXP
 #endif
-#if defined __sgi && (LDBL_MANT_DIG >= 106)
-# if defined __GNUC__
-#  undef LDBL_MIN_EXP
-#  define LDBL_MIN_EXP DBL_MIN_EXP
-# endif
-#endif
-/* On Irix 6.5, gcc 3.4.3 can't compute compile-time NaN, and needs the
-   runtime type conversion.  */
-#ifdef __sgi
-static long double NaNl ()
-{
-  double zero = 0.0;
-  return zero / zero;
-}
-#else
-# define NaNl() (0.0L / 0.0L)
-#endif
 volatile long double x;
 static int dummy (long double x) { return 0; }
 int main (int argc, char *argv[])
@@ -130,7 +115,7 @@ int main (int argc, char *argv[])
   }
   /* This test fails on Cygwin 3.4.6.  */
   {
-    x = NaNl ();
+    x = 0.0L / 0.0L;
     if (my_ilogbl (x) != FP_ILOGBNAN)
       result |= 2;
   }
@@ -159,11 +144,10 @@ int main (int argc, char *argv[])
         [gl_cv_func_ilogbl_works=yes],
         [gl_cv_func_ilogbl_works=no],
         [case "$host_os" in
-           aix* | haiku*)
-                   gl_cv_func_ilogbl_works="guessing no" ;;
-                   # Guess yes on native Windows.
-           mingw*) gl_cv_func_ilogbl_works="guessing yes" ;;
-           *)      gl_cv_func_ilogbl_works="guessing yes" ;;
+           aix* | haiku*)     gl_cv_func_ilogbl_works="guessing no" ;;
+                              # Guess yes on native Windows.
+           mingw* | windows*) gl_cv_func_ilogbl_works="guessing yes" ;;
+           *)                 gl_cv_func_ilogbl_works="guessing yes" ;;
          esac
         ])
     ])

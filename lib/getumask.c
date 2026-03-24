@@ -1,5 +1,5 @@
 /* Retrieve the umask of the process (multithread-safe).
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -67,10 +67,10 @@ getumask (void)
   {
     /* In Linux >= 4.7, the umask can be retrieved from an "Umask:" line in the
        /proc/self/status file.  */
-    char buf[4096];
     int fd = open ("/proc/self/status", O_RDONLY);
     if (fd >= 0)
       {
+        char buf[4096];
         ssize_t n = read (fd, buf, sizeof (buf));
         if (n > 0)
           {
@@ -80,7 +80,7 @@ getumask (void)
             for (;;)
               {
                 /* Here we're at the beginning of a line.  */
-                if (p_end - p > 8 && memcmp (p, "Umask:\t0", 8) == 0)
+                if (p_end - p > 8 && memeq (p, "Umask:\t0", 8))
                   {
                     unsigned int value = 0;
                     p += 8;

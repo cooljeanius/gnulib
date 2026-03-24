@@ -1,5 +1,5 @@
 /* Test of uN_chr() functions.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ int
 main (void)
 {
   size_t size = 0x100000;
-  size_t i;
   size_t length;
   UNIT *input;
   uint32_t *input32 = (uint32_t *) malloc (size * sizeof (uint32_t));
@@ -29,7 +28,7 @@ main (void)
   input32[0] = 'a';
   input32[1] = 'b';
   u32_set (input32 + 2, 'c', 1024);
-  for (i = 1026; i < size - 2; i += 63)
+  for (size_t i = 1026; i < size - 2; i += 63)
     {
       size_t last = i + 63 < size - 2 ? i + 63 : size - 2;
       ucs4_t uc = 'd' | (i - 1026);
@@ -48,9 +47,11 @@ main (void)
   ASSERT (U_CHR (input, length, 'a') == input);
 
   ASSERT (U_CHR (input, 0, 'a') == NULL);
-  void *page_boundary = zerosize_ptr ();
-  if (page_boundary)
-    ASSERT (U_CHR (page_boundary, 0, 'a') == NULL);
+  {
+    void *page_boundary = zerosize_ptr ();
+    if (page_boundary != NULL)
+      ASSERT (U_CHR (page_boundary, 0, 'a') == NULL);
+  }
 
   ASSERT (U_CHR (input, length, 'b') == input + 1);
   ASSERT (U_CHR (input, length, 'c') == input + 2);
@@ -59,7 +60,7 @@ main (void)
   {
     UNIT *exp = input + 1026;
     UNIT *prev = input + 1;
-    for (i = 1026; i < size - 2; i += 63)
+    for (size_t i = 1026; i < size - 2; i += 63)
       {
         UNIT c[6];
         size_t n;
@@ -69,7 +70,7 @@ main (void)
         n = U_UCTOMB (c, uc, 6);
         ASSERT (exp < input + length - 1);
         ASSERT (U_CHR (prev, (length - 1) - (prev - input), uc) == exp);
-        ASSERT (memcmp (exp, c, n * sizeof (UNIT)) == 0);
+        ASSERT (memeq (exp, c, n * sizeof (UNIT)));
         prev = exp;
         exp += n * 63;
       }
@@ -92,43 +93,35 @@ main (void)
   }
 
   /* Alignment tests.  */
-  {
-    int i, j;
-    for (i = 0; i < 32; i++)
-      {
-        for (j = 0; j < 128; j++)
-          input[i + j] = j;
-        for (j = 0; j < 128; j++)
-          {
-            ASSERT (U_CHR (input + i, 128, j) == input + i + j);
-          }
-      }
-  }
+  for (int i = 0; i < 32; i++)
+    {
+      for (int j = 0; j < 128; j++)
+        input[i + j] = j;
+      for (int j = 0; j < 128; j++)
+        {
+          ASSERT (U_CHR (input + i, 128, j) == input + i + j);
+        }
+    }
 
   /* Check that uN_chr() does not read past the first occurrence of the
      byte being searched.  */
   {
-    char *page_boundary = (char *) zerosize_ptr ();
-    size_t n;
+    UNIT *page_boundary = zerosize_ptr ();
 
     if (page_boundary != NULL)
       {
-        for (n = 1; n <= 500 / sizeof (UNIT); n++)
+        for (size_t n = 1; n <= 500 / sizeof (UNIT); n++)
           {
-            UNIT *mem = (UNIT *) (page_boundary - n * sizeof (UNIT));
+            UNIT *mem = page_boundary - n;
             U_SET (mem, 'X', n);
             ASSERT (U_CHR (mem, n, 'U') == NULL);
 
-            {
-              size_t i;
-
-              for (i = 0; i < n; i++)
-                {
-                  mem[i] = 'U';
-                  ASSERT (U_CHR (mem, 4000, 'U') == mem + i);
-                  mem[i] = 'X';
-                }
-            }
+            for (size_t i = 0; i < n; i++)
+              {
+                mem[i] = 'U';
+                ASSERT (U_CHR (mem, 4000, 'U') == mem + i);
+                mem[i] = 'X';
+              }
           }
       }
   }
@@ -137,5 +130,5 @@ main (void)
   if (sizeof (UNIT) != sizeof (uint32_t))
     free (input32);
 
-  return 0;
+  return test_exit_status;
 }

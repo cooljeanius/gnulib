@@ -1,11 +1,14 @@
 Files:
 tests/test-cnd.c
+tests/virtualbox.h
 tests/macros.h
 
 Depends-on:
 mtx
 thrd
 gettimeofday
+streq
+memeq
 
 configure.ac:
 AC_CHECK_DECLS_ONCE([alarm])

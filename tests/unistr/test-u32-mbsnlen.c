@@ -1,5 +1,5 @@
 /* Test of u32_mbsnlen() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 
 #include "unistr.h"
 
+#include <stdcountof.h>
+
 #include "macros.h"
 
 int
 main ()
 {
-
   /* Simple string.  */
   { /* "Grüß Gott. Здравствуйте! x=(-b±sqrt(b²-4ac))/(2a)  日本語,中文,한글" */
     static const uint32_t input[] =
@@ -36,9 +37,8 @@ main ()
         '-', '4', 'a', 'c', ')', ')', '/', '(', '2', 'a', ')', ' ', ' ',
         0x65E5, 0x672C, 0x8A9E, ',', 0x4E2D, 0x6587, ',', 0xD55C, 0xAE00, '\n'
       };
-    size_t n;
 
-    for (n = 0; n <= SIZEOF (input); n++)
+    for (size_t n = 0; n <= countof (input); n++)
       {
         size_t len = u32_mbsnlen (input, n);
         ASSERT (len == n);
@@ -51,13 +51,13 @@ main ()
       { '-', '(', 0x1D51E, 0x00D7, 0x1D51F, ')', '=',
         0x1D51F, 0x00D7, 0x1D51E
       };
-    size_t n;
 
-    for (n = 0; n <= SIZEOF (input); n++)
+    for (size_t n = 0; n <= countof (input); n++)
       {
         size_t len = u32_mbsnlen (input, n);
         ASSERT (len == n);
       }
   }
-  return 0;
+
+  return test_exit_status;
 }

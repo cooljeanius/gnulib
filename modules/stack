@@ -6,8 +6,8 @@ lib/stack.h
 
 Depends-on:
 assure
-stdbool
-stdlib
+bool
+stdlib-h
 xalloc
 
 configure.ac:
@@ -17,6 +17,9 @@ lib_SOURCES += stack.h
 
 Include:
 "stack.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

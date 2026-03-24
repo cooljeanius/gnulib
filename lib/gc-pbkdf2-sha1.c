@@ -1,5 +1,5 @@
 /* gc-pbkdf2-sha1.c --- Password-Based Key Derivation Function a'la PKCS#5
-   Copyright (C) 2002-2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2006, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -24,10 +24,10 @@
 #include <string.h>
 
 Gc_rc
-gc_pbkdf2_sha1 (const char *P, size_t Plen,
-                const char *S, size_t Slen,
+gc_pbkdf2_sha1 (char const *restrict P, size_t Plen,
+                char const *restrict S, size_t Slen,
                 unsigned int c,
-                char *DK, size_t dkLen)
+                char *restrict DK, size_t dkLen)
 {
   return gc_pbkdf2_hmac (GC_SHA1, P, Plen, S, Slen, c, DK, dkLen);
 }

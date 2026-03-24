@@ -6,15 +6,16 @@ lib/lchmod.c
 m4/lchmod.m4
 
 Depends-on:
-c99           [test $HAVE_LCHMOD = 0]
-errno         [test $HAVE_LCHMOD = 0]
+sys_stat-h
 extensions
+c99           [test $HAVE_LCHMOD = 0]
+errno-h       [test $HAVE_LCHMOD = 0]
 fcntl-h       [test $HAVE_LCHMOD = 0]
 intprops      [test $HAVE_LCHMOD = 0]
+issymlink     [test $HAVE_LCHMOD = 0]
+issymlinkat   [test $HAVE_LCHMOD = 0]
 lstat         [test $HAVE_LCHMOD = 0]
-readlink      [test $HAVE_LCHMOD = 0]
-sys_stat
-unistd        [test $HAVE_LCHMOD = 0]
+unistd-h      [test $HAVE_LCHMOD = 0]
 
 configure.ac:
 gl_FUNC_LCHMOD
@@ -31,6 +32,9 @@ endif
 
 Include:
 <sys/stat.h>
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

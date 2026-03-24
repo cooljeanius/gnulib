@@ -8,6 +8,7 @@ lib/sigpipe-die.c
 Depends-on:
 error
 gettext-h
+gnulib-i18n
 exitfail
 sigpipe
 sigprocmask
@@ -20,6 +21,9 @@ lib_SOURCES += sigpipe-die.h sigpipe-die.c
 
 Include:
 "sigpipe-die.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

@@ -1,5 +1,5 @@
 /* Getter for RLIMIT_AS.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify
@@ -94,17 +94,6 @@
      is slightly larger higher than get_rusage_as_via_setrlimit(), by 4 KB in
      32-bit mode and by 40 KB in 64-bit mode.
 
-   IRIX:
-     a) setrlimit with RLIMIT_AS works.
-     b) The /proc/$pid file supports ioctls PIOCNMAP and PIOCMAP.
-     Both methods agree,
-
-   OSF/1:
-     a) setrlimit with RLIMIT_AS works.
-     b) The /proc/$pid file supports ioctls PIOCNMAP and PIOCMAP.
-     The value returned by get_rusage_as_via_setrlimit() is 64 KB higher than
-     get_rusage_as_via_iterator().  It's not clear why.
-
    Solaris:
      a) setrlimit with RLIMIT_AS works.
      b) The /proc/$pid file supports ioctls PIOCNMAP and PIOCMAP, and the
@@ -150,10 +139,6 @@
 # include <fcntl.h>
 # include <sys/types.h>
 # include <sys/mman.h> /* mmap, munmap */
-/* Define MAP_FILE when it isn't otherwise.  */
-# ifndef MAP_FILE
-#  define MAP_FILE 0
-# endif
 #endif
 
 
@@ -170,16 +155,6 @@ get_rusage_as_via_setrlimit (void)
   uintptr_t result;
 
   struct rlimit orig_limit;
-
-# if HAVE_MAP_ANONYMOUS
-  const int flags = MAP_ANONYMOUS | MAP_PRIVATE;
-  const int fd = -1;
-# else /* !HAVE_MAP_ANONYMOUS */
-  const int flags = MAP_FILE | MAP_PRIVATE;
-  int fd = open ("/dev/zero", O_RDONLY | O_CLOEXEC, 0666);
-  if (fd < 0)
-    return 0;
-# endif
 
   /* Record the original limit.  */
   if (getrlimit (RLIMIT_AS, &orig_limit) < 0)
@@ -208,7 +183,6 @@ get_rusage_as_via_setrlimit (void)
     for (;;)
       {
         /* Here we know that the address space size is >= low_bound.  */
-        struct rlimit try_limit;
         uintptr_t try_next = 2 * low_bound + pagesize;
 
         if (try_next < low_bound)
@@ -229,6 +203,7 @@ get_rusage_as_via_setrlimit (void)
             goto done1;
           }
 
+        struct rlimit try_limit;
         try_limit.rlim_max = orig_limit.rlim_max;
         try_limit.rlim_cur = try_next;
         if (setrlimit (RLIMIT_AS, &try_limit) == 0)
@@ -236,7 +211,8 @@ get_rusage_as_via_setrlimit (void)
             /* Allocate a page of memory, to compare the current address space
                size with try_limit.rlim_cur.  */
             void *new_page =
-              mmap (NULL, pagesize, PROT_READ | PROT_WRITE, flags, fd, 0);
+              mmap (NULL, pagesize, PROT_READ | PROT_WRITE,
+                    MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
             if (new_page != (void *)(-1))
               {
@@ -270,11 +246,11 @@ get_rusage_as_via_setrlimit (void)
        >= low_bound and < high_bound.  */
     while (high_bound - low_bound > pagesize)
       {
-        struct rlimit try_limit;
         uintptr_t try_next =
           low_bound + (((high_bound - low_bound) / 2) / pagesize) * pagesize;
 
         /* Here low_bound <= try_next < high_bound.  */
+        struct rlimit try_limit;
         try_limit.rlim_max = orig_limit.rlim_max;
         try_limit.rlim_cur = try_next;
         if (setrlimit (RLIMIT_AS, &try_limit) == 0)
@@ -282,7 +258,8 @@ get_rusage_as_via_setrlimit (void)
             /* Allocate a page of memory, to compare the current address space
                size with try_limit.rlim_cur.  */
             void *new_page =
-              mmap (NULL, pagesize, PROT_READ | PROT_WRITE, flags, fd, 0);
+              mmap (NULL, pagesize, PROT_READ | PROT_WRITE,
+                    MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
             if (new_page != (void *)(-1))
               {
@@ -320,9 +297,6 @@ get_rusage_as_via_setrlimit (void)
     abort ();
 
  done2:
-# if !HAVE_MAP_ANONYMOUS
-  close (fd);
-# endif
   return result;
 }
 
@@ -380,9 +354,7 @@ get_rusage_as (void)
 #elif HAVE_SETRLIMIT && defined RLIMIT_AS && HAVE_SYS_MMAN_H && HAVE_MPROTECT && !defined __HAIKU__
   /* Prefer get_rusage_as_via_setrlimit() if it succeeds,
      because the caller may want to use the result with setrlimit().  */
-  uintptr_t result;
-
-  result = get_rusage_as_via_setrlimit ();
+  uintptr_t result = get_rusage_as_via_setrlimit ();
   if (result == 0)
     result = get_rusage_as_via_iterator ();
   return result;

@@ -1,5 +1,5 @@
 /* Filtering of data through a subprocess.
-   Copyright (C) 2001-2003, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2008-2026 Free Software Foundation, Inc.
    Written by Paolo Bonzini <bonzini@gnu.org>, 2009,
    and Bruno Haible <bruno@clisp.org>, 2009.
 
@@ -33,13 +33,13 @@
 # include <sys/select.h>
 #endif
 
-#include "error.h"
+#include <error.h>
 #include "spawn-pipe.h"
 #include "wait-process.h"
 #include "xalloc.h"
 #include "gettext.h"
 
-#define _(str) gettext (str)
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 
 #include "pipe-filter-aux.h"
 
@@ -163,12 +163,10 @@ filter_loop (struct pipe_filter_gi *filter, const char *wbuf, size_t count)
     {
       for (;;)
         {
-          ssize_t nwritten;
-
           /* Allow the reader thread to continue.  */
           LeaveCriticalSection (&filter->lock);
 
-          nwritten =
+          ssize_t nwritten =
             write (filter->fd[1], wbuf, count > SSIZE_MAX ? SSIZE_MAX : count);
 
           /* Get the lock back from the reader thread.  */
@@ -302,10 +300,8 @@ filter_loop (struct pipe_filter_gi *filter, const char *wbuf, size_t count)
       /* Here, if done_writing, filter->reader_terminated is false.  When
          filter->reader_terminated becomes true, this loop is terminated.  */
 # if HAVE_SELECT
-      int n, retval;
-
       /* See whether reading or writing is possible.  */
-      n = 1;
+      int n = 1;
       if (!filter->reader_terminated)
         {
           FD_SET (filter->fd[0], &filter->readfds);
@@ -320,13 +316,16 @@ filter_loop (struct pipe_filter_gi *filter, const char *wbuf, size_t count)
       /* Do EINTR handling here instead of in pipe-filter-aux.h,
          because select() cannot be referred to from an inline
          function on AIX 7.1.  */
-      do
-        retval = select (n,
-                         (!filter->reader_terminated ? &filter->readfds : NULL),
-                         (!done_writing ? &filter->writefds : NULL),
-                         NULL, NULL);
-      while (retval < 0 && errno == EINTR);
-      n = retval;
+      {
+        int retval;
+        do
+          retval = select (n,
+                           (!filter->reader_terminated ? &filter->readfds : NULL),
+                           (!done_writing ? &filter->writefds : NULL),
+                           NULL, NULL);
+        while (retval < 0 && errno == EINTR);
+        n = retval;
+      }
 
       if (n < 0)
         {
@@ -490,13 +489,11 @@ pipe_filter_gi_create (const char *progname,
                        done_read_fn done_read,
                        void *private_data)
 {
-  struct pipe_filter_gi *filter;
-
-  filter =
+  struct pipe_filter_gi *filter =
     (struct pipe_filter_gi *) xmalloc (sizeof (struct pipe_filter_gi));
 
   /* Open a bidirectional pipe to a subprocess.  */
-  filter->child = create_pipe_bidi (progname, prog_path, prog_argv,
+  filter->child = create_pipe_bidi (progname, prog_path, prog_argv, NULL,
                                     NULL, null_stderr, true, exit_on_error,
                                     filter->fd);
   filter->progname = progname;
@@ -552,10 +549,8 @@ pipe_filter_gi_write (struct pipe_filter_gi *filter,
 int
 pipe_filter_gi_close (struct pipe_filter_gi *filter)
 {
-  int ret;
-
   filter_terminate (filter);
-  ret = filter_retcode (filter);
+  int ret = filter_retcode (filter);
   free (filter);
   return ret;
 }

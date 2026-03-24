@@ -1,5 +1,5 @@
 /* Formatted output to UTF-8 strings.
-   Copyright (C) 1999, 2002, 2006-2007, 2009-2023 Free Software Foundation,
+   Copyright (C) 1999, 2002, 2006-2007, 2009-2026 Free Software Foundation,
    Inc.
 
    This file is free software.
@@ -49,6 +49,7 @@
 #define DCHAR_T uint8_t
 #define DCHAR_CPY u8_cpy
 #define DCHAR_SET u8_set
+#define DCHAR_STRLEN u8_strlen
 #define DCHAR_MBSNLEN u8_mbsnlen
 #define DCHAR_IS_UINT8_T 1
 #define U16_TO_DCHAR u16_to_u8

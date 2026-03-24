@@ -1,5 +1,5 @@
 /* Test of u16_prev() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 #include "unistr.h"
 
+#include <stdcountof.h>
+
 #include "macros.h"
 
 static int
@@ -35,12 +37,11 @@ check (const uint16_t *input, size_t input_length, ucs4_t *puc)
   {
     uint16_t buf[100];
     uint16_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 0x2102;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u16_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -53,13 +54,12 @@ check (const uint16_t *input, size_t input_length, ucs4_t *puc)
   {
     uint16_t buf[100];
     uint16_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 0xD835;
     *ptr++ = 0xDD1E;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u16_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -88,11 +88,10 @@ check_invalid (const uint16_t *input, size_t input_length)
   {
     uint16_t buf[100];
     uint16_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0x2102;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -106,12 +105,11 @@ check_invalid (const uint16_t *input, size_t input_length)
   {
     uint16_t buf[100];
     uint16_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0xD835;
     *ptr++ = 0xDD1E;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -131,10 +129,9 @@ main ()
 
   /* Test ISO 646 unit input.  */
   {
-    ucs4_t c;
     uint16_t buf[1];
 
-    for (c = 0; c < 0x80; c++)
+    for (ucs4_t c = 0; c < 0x80; c++)
       {
         buf[0] = c;
         uc = 0xBADFACE;
@@ -147,7 +144,7 @@ main ()
   {
     static const uint16_t input[] = { 0x20AC };
     uc = 0xBADFACE;
-    ASSERT (check (input, SIZEOF (input), &uc) == 0);
+    ASSERT (check (input, countof (input), &uc) == 0);
     ASSERT (uc == 0x20AC);
   }
 
@@ -155,19 +152,19 @@ main ()
   {
     static const uint16_t input[] = { 0xD835, 0xDD1F };
     uc = 0xBADFACE;
-    ASSERT (check (input, SIZEOF (input), &uc) == 0);
+    ASSERT (check (input, countof (input), &uc) == 0);
     ASSERT (uc == 0x1D51F);
   }
 
   /* Test incomplete/invalid 1-unit input.  */
   {
     static const uint16_t input[] = { 0xD835 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint16_t input[] = { 0xDD1F };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
 
-  return 0;
+  return test_exit_status;
 }

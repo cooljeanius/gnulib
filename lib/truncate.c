@@ -1,5 +1,5 @@
 /* truncate emulations for native Windows.
-   Copyright (C) 2017-2023 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 #define _GL_INCLUDING_UNISTD_H
 #include <config.h>
 
-/* Specification.  */
+/* Get the original definition of truncate.  */
 #include <unistd.h>
 
 #include <errno.h>
@@ -37,10 +37,8 @@ orig_truncate (const char *filename, off_t length)
 }
 #endif
 
-/* Write "unistd.h" here, not <unistd.h>, otherwise OSF/1 5.1 DTK cc
-   eliminates this include because of the preliminary #include <unistd.h>
-   above.  */
-#include "unistd.h"
+/* Specification.  */
+#include <unistd.h>
 
 int
 truncate (const char *filename, off_t length)

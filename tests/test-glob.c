@@ -1,5 +1,5 @@
 /* Test of glob/globfree functions.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ main ()
 
   res = glob (GL_NO_SUCH_FILE, GLOB_NOCHECK, NULL, &g);
   ASSERT (res == 0 && g.gl_pathc == 1);
-  ASSERT (strcmp (g.gl_pathv[0], GL_NO_SUCH_FILE) == 0);
+  ASSERT (streq (g.gl_pathv[0], GL_NO_SUCH_FILE));
   globfree (&g);
 
   if ((symlink (GL_NO_SUCH_FILE, BASE "globlink1") == 0 || errno == EEXIST)
@@ -79,21 +79,51 @@ main ()
     {
       res = glob (BASE "globlink[12]", 0, NULL, &g);
       ASSERT (res == 0 && g.gl_pathc == 2);
-      ASSERT (strcmp (g.gl_pathv[0], BASE "globlink1") == 0);
-      ASSERT (strcmp (g.gl_pathv[1], BASE "globlink2") == 0);
+      ASSERT (streq (g.gl_pathv[0], BASE "globlink1"));
+      ASSERT (streq (g.gl_pathv[1], BASE "globlink2"));
       globfree (&g);
 
       res = glob (BASE "globlink[123]/", 0, NULL, &g);
       ASSERT (res == 0 && g.gl_pathc == 1);
-      ASSERT (strcmp (g.gl_pathv[0], BASE "globlink2/") == 0);
+      ASSERT (streq (g.gl_pathv[0], BASE "globlink2/"));
       globfree (&g);
 
       res = glob (BASE "globlink[12]", GLOB_MARK, NULL, &g);
       ASSERT (res == 0 && g.gl_pathc == 2);
-      ASSERT (strcmp (g.gl_pathv[0], BASE "globlink1") == 0);
-      ASSERT (strcmp (g.gl_pathv[1], BASE "globlink2/") == 0);
+      ASSERT (streq (g.gl_pathv[0], BASE "globlink1"));
+      ASSERT (streq (g.gl_pathv[1], BASE "globlink2/"));
       globfree (&g);
     }
 
-  return 0;
+#if !(defined _WIN32 && !defined __CYGWIN__)
+  /* Check for a glibc 2.42 bug where recursive calls cause the stack to
+     overflow.  Test cases based on the following:
+     <https://sourceware.org/PR30635>.
+     <https://sourceware.org/PR33537>.  */
+  char *pattern = malloc (10000);
+  if (pattern != NULL)
+    {
+      /* "/////////".  */
+      memset (pattern, '/', 9999);
+      pattern[9999] = '\0';
+      res = glob (pattern, 0, NULL, &g);
+      ASSERT (res == 0);
+      globfree (&g);
+
+      /* On Android, /bin/sh does not exist.  It's /system/bin/sh instead.  */
+# if !defined __ANDROID__
+      /* "/*/////sh".  */
+      memset (pattern, '/', 9997);
+      pattern[1] = '*';
+      strcpy (pattern + 9997, "sh");
+      res = glob (pattern, 0, NULL, &g);
+      ASSERT (res == 0);
+      globfree (&g);
+# endif
+
+      free (pattern);
+    }
+#endif
+
+  return test_exit_status;
 }

@@ -1,5 +1,5 @@
 /* Test of scratch_buffer functions.
-   Copyright (C) 2018-2023 Free Software Foundation, Inc.
+   Copyright (C) 2018-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include <scratch_buffer.h>
 
+#include <stdcountof.h>
 #include <string.h>
 #include "macros.h"
 
@@ -35,20 +36,18 @@ main ()
   /* Check scratch_buffer_set_array_size.  */
   {
     size_t sizes[] = { 100, 1000, 10000, 100000 };
-    size_t s;
-    for (s = 0; s < SIZEOF (sizes); s++)
+    for (size_t s = 0; s < countof (sizes); s++)
       {
         size_t size = sizes[s];
         struct scratch_buffer buf;
         bool ok;
-        size_t i;
 
         scratch_buffer_init (&buf);
 
         ok = scratch_buffer_set_array_size (&buf, size, 1);
         ASSERT (ok);
 
-        for (i = 0; i < size; i++)
+        for (size_t i = 0; i < size; i++)
           ((unsigned char *) buf.data)[i] = byte_at (i);
 
         memset (buf.data, 'x', buf.length);
@@ -61,13 +60,11 @@ main ()
   /* Check scratch_buffer_grow.  */
   {
     size_t sizes[] = { 100, 1000, 10000, 100000 };
-    size_t s;
-    for (s = 0; s < SIZEOF (sizes); s++)
+    for (size_t s = 0; s < countof (sizes); s++)
       {
         size_t size = sizes[s];
         struct scratch_buffer buf;
         bool ok;
-        size_t i;
 
         scratch_buffer_init (&buf);
 
@@ -77,7 +74,7 @@ main ()
             ASSERT (ok);
           }
 
-        for (i = 0; i < size; i++)
+        for (size_t i = 0; i < size; i++)
           ((unsigned char *) buf.data)[i] = byte_at (i);
 
         memset (buf.data, 'x', buf.length);
@@ -94,7 +91,6 @@ main ()
     size_t s;
     size_t size;
     bool ok;
-    size_t i;
 
     scratch_buffer_init (&buf);
 
@@ -103,10 +99,10 @@ main ()
     ok = scratch_buffer_set_array_size (&buf, size, 1);
     ASSERT (ok);
 
-    for (i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
       ((unsigned char *) buf.data)[i] = byte_at (i);
 
-    for (; s < SIZEOF (sizes); s++)
+    for (; s < countof (sizes); s++)
       {
         size_t oldsize = size;
         size = sizes[s];
@@ -117,14 +113,14 @@ main ()
             ASSERT (ok);
           }
 
-        for (i = 0; i < oldsize; i++)
+        for (size_t i = 0; i < oldsize; i++)
           ASSERT(((unsigned char *) buf.data)[i] == byte_at (i));
-        for (i = oldsize; i < size; i++)
+        for (size_t i = oldsize; i < size; i++)
           ((unsigned char *) buf.data)[i] = byte_at (i);
       }
 
     scratch_buffer_free (&buf);
   }
 
-  return 0;
+  return test_exit_status;
 }

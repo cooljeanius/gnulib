@@ -1,5 +1,5 @@
 /* Multithread-safety test for nl_langinfo().
-   Copyright (C) 2019-2023 Free Software Foundation, Inc.
+   Copyright (C) 2019-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #include <config.h>
 
 /* Work around GCC bug 44511.  */
-#if 4 < __GNUC__ + (3 <= __GNUC_MINOR__)
+#if _GL_GNUC_PREREQ (4, 3)
 # pragma GCC diagnostic ignored "-Wreturn-type"
 #endif
 
@@ -48,9 +48,7 @@
 # define ENGLISH "en_US"
 # define FRENCH  "fr_FR"
 # define GERMAN  "de_DE"
-# if defined __sgi
-#  define ENCODING ".ISO8859-15"
-# elif defined __hpux
+# if defined __hpux
 #  define ENCODING ".utf8"
 # else
 #  define ENCODING ".UTF-8"
@@ -69,7 +67,7 @@ thread1_func (void *arg)
   for (;;)
     {
       const char *value = nl_langinfo (CODESET);
-      if (strcmp (expected1, value) != 0)
+      if (!streq (expected1, value))
         {
           fprintf (stderr, "thread1 disturbed by threadN!\n"); fflush (stderr);
           abort ();
@@ -87,7 +85,7 @@ thread2_func (void *arg)
   for (;;)
     {
       const char *value = nl_langinfo (PM_STR);
-      if (strcmp (expected2, value) != 0)
+      if (!streq (expected2, value))
         {
           fprintf (stderr, "thread2 disturbed by threadN!\n"); fflush (stderr);
           abort ();
@@ -105,7 +103,7 @@ thread3_func (void *arg)
   for (;;)
     {
       const char *value = nl_langinfo (DAY_2);
-      if (strcmp (expected3, value) != 0)
+      if (!streq (expected3, value))
         {
           fprintf (stderr, "thread3 disturbed by threadN!\n"); fflush (stderr);
           abort ();
@@ -123,7 +121,7 @@ thread4_func (void *arg)
   for (;;)
     {
       const char *value = nl_langinfo (ALTMON_2);
-      if (strcmp (expected4, value) != 0)
+      if (!streq (expected4, value))
         {
           fprintf (stderr, "thread4 disturbed by threadN!\n"); fflush (stderr);
           abort ();
@@ -141,7 +139,7 @@ thread5_func (void *arg)
   for (;;)
     {
       const char *value = nl_langinfo (CRNCYSTR);
-      if (strcmp (expected5, value) != 0)
+      if (!streq (expected5, value))
         {
           fprintf (stderr, "thread5 disturbed by threadN!\n"); fflush (stderr);
           abort ();
@@ -159,7 +157,7 @@ thread6_func (void *arg)
   for (;;)
     {
       const char *value = nl_langinfo (RADIXCHAR);
-      if (strcmp (expected6, value) != 0)
+      if (!streq (expected6, value))
         {
           fprintf (stderr, "thread6 disturbed by threadN!\n"); fflush (stderr);
           abort ();

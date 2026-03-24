@@ -1,5 +1,5 @@
 /* Creating and controlling threads.
-   Copyright (C) 2005-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -23,7 +23,6 @@
 #include "glthread/thread.h"
 
 #include <stdlib.h>
-#include "glthread/lock.h"
 
 /* ========================================================================= */
 
@@ -35,7 +34,7 @@ struct thrd_with_exitvalue
   void * volatile exitvalue;
 };
 
-/* The Thread-Specific Storage (TSS) key that allows to access each thread's
+/* The Thread-Specific Storage (TSS) key that allows accessing each thread's
    'struct thrd_with_exitvalue *' pointer.  */
 static tss_t thrd_with_exitvalue_key;
 
@@ -209,9 +208,7 @@ gl_thread_t
 gl_thread_create (void *(*func) (void *arg), void *arg)
 {
   gl_thread_t thread;
-  int ret;
-
-  ret = glthread_create (&thread, func, arg);
+  int ret = glthread_create (&thread, func, arg);
   if (ret != 0)
     abort ();
   return thread;

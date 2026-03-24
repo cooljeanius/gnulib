@@ -1,5 +1,5 @@
 /* Test of read-write locks in multithreaded situations.
-   Copyright (C) 2005, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,6 +15,15 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2005.  */
+
+/* This test fails when writer starvation occurs
+   <https://en.wikipedia.org/wiki/Readers%E2%80%93writers_problem>.
+   It depends on the implementation of pthread rwlocks, cf.
+   <https://gitweb.git.savannah.gnu.org/gitweb/?p=gnulib/maint-tools.git;a=tree;f=test-programs/pthread-rwlock>,
+   as well as on the number of CPUs (because when there are >= 2*THREAD_COUNT
+   CPUs, the checker threads are more "efficient" at not giving away the
+   reader lock).
+   A failure was seen with musl libc/riscv64 on a machine with 64 CPUs.  */
 
 #include <config.h>
 
@@ -87,16 +96,16 @@ static int account[ACCOUNT_COUNT];
 static int
 random_account (void)
 {
-  return ((unsigned int) rand () >> 3) % ACCOUNT_COUNT;
+  return ((unsigned long) random () >> 3) % ACCOUNT_COUNT;
 }
 
 static void
 check_accounts (void)
 {
-  int i, sum;
+  int sum;
 
   sum = 0;
-  for (i = 0; i < ACCOUNT_COUNT; i++)
+  for (int i = 0; i < ACCOUNT_COUNT; i++)
     sum += account[i];
   if (sum != ACCOUNT_COUNT * 1000)
     abort ();
@@ -114,9 +123,7 @@ static pthread_rwlock_t my_rwlock = PTHREAD_RWLOCK_INITIALIZER;
 static void *
 rwlock_mutator_thread (void *arg)
 {
-  int repeat;
-
-  for (repeat = REPEAT_COUNT; repeat > 0; repeat--)
+  for (int repeat = REPEAT_COUNT; repeat > 0; repeat--)
     {
       int i1, i2, value;
 
@@ -126,7 +133,7 @@ rwlock_mutator_thread (void *arg)
 
       i1 = random_account ();
       i2 = random_account ();
-      value = ((unsigned int) rand () >> 3) % 10;
+      value = ((unsigned long) random () >> 3) % 10;
       account[i1] += value;
       account[i2] -= value;
 
@@ -164,30 +171,29 @@ rwlock_checker_thread (void *arg)
 static void
 test_rwlock (void)
 {
-  int i;
   pthread_t checkerthreads[THREAD_COUNT];
   pthread_t threads[THREAD_COUNT];
 
   /* Initialization.  */
-  for (i = 0; i < ACCOUNT_COUNT; i++)
+  for (int i = 0; i < ACCOUNT_COUNT; i++)
     account[i] = 1000;
   init_atomic_int (&rwlock_checker_done);
   set_atomic_int_value (&rwlock_checker_done, 0);
 
   /* Spawn the threads.  */
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (pthread_create (&checkerthreads[i], NULL,
                             rwlock_checker_thread, NULL)
             == 0);
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (pthread_create (&threads[i], NULL, rwlock_mutator_thread, NULL)
             == 0);
 
   /* Wait for the threads to terminate.  */
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (pthread_join (threads[i], NULL) == 0);
   set_atomic_int_value (&rwlock_checker_done, 1);
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (pthread_join (checkerthreads[i], NULL) == 0);
   check_accounts ();
 }
@@ -210,7 +216,7 @@ main ()
   test_rwlock ();
   printf (" OK\n"); fflush (stdout);
 
-  return 0;
+  return test_exit_status;
 }
 
 #else

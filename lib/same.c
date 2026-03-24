@@ -1,6 +1,6 @@
 /* Determine whether two file names refer to the same file.
 
-   Copyright (C) 1997-2000, 2002-2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 1997-2000, 2002-2006, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 
 #include "same.h"
 #include "dirname.h"
-#include "error.h"
+#include <error.h>
 #include "same-inode.h"
 
 #ifndef MIN
@@ -76,7 +76,7 @@ same_nameat (int source_dfd, char const *source,
   size_t dest_baselen = base_len (dest_basename);
   bool identical_basenames =
     (source_baselen == dest_baselen
-     && memcmp (source_basename, dest_basename, dest_baselen) == 0);
+     && memeq (source_basename, dest_basename, dest_baselen));
   bool compare_dirs = identical_basenames;
   bool same = false;
 
@@ -84,19 +84,18 @@ same_nameat (int source_dfd, char const *source,
   size_t slen_max = HAVE_LONG_FILE_NAMES ? 255 : _POSIX_NAME_MAX;
   size_t min_baselen = MIN (source_baselen, dest_baselen);
   if (slen_max <= min_baselen
-      && memcmp (source_basename, dest_basename, slen_max) == 0)
+      && memeq (source_basename, dest_basename, slen_max))
     compare_dirs = true;
 #endif
 
   if (compare_dirs)
     {
-      struct stat source_dir_stats;
-      struct stat dest_dir_stats;
 
       /* Compare the parent directories (via the device and inode numbers).  */
       char *source_dirname = dir_name (source);
-      int flags = AT_SYMLINK_NOFOLLOW;
-      if (fstatat (source_dfd, source_dirname, &source_dir_stats, flags) != 0)
+      struct stat source_dir_stats;
+      if (fstatat (source_dfd, source_dirname, &source_dir_stats,
+                   AT_SYMLINK_NOFOLLOW) != 0)
         {
           /* Shouldn't happen.  */
           error (1, errno, "%s", source_dirname);
@@ -104,6 +103,7 @@ same_nameat (int source_dfd, char const *source,
       free (source_dirname);
 
       char *dest_dirname = dir_name (dest);
+      struct stat dest_dir_stats;
 
 #if CHECK_TRUNCATION
       int destdir_errno = 0;
@@ -111,7 +111,7 @@ same_nameat (int source_dfd, char const *source,
       int destdir_fd = openat (dest_dfd, dest_dirname, open_flags);
       if (destdir_fd < 0 || fstat (destdir_fd, &dest_dir_stats) != 0)
         destdir_errno = errno;
-      else if (SAME_INODE (source_dir_stats, dest_dir_stats))
+      else if (psame_inode (&source_dir_stats, &dest_dir_stats))
         {
           same = identical_basenames;
           if (! same)
@@ -122,8 +122,7 @@ same_nameat (int source_dfd, char const *source,
                 destdir_errno = errno;
               else
                 same = (name_max <= min_baselen
-                        && (memcmp (source_basename, dest_basename, name_max)
-                            == 0));
+                        && memeq (source_basename, dest_basename, name_max));
             }
         }
       close (destdir_fd);
@@ -133,12 +132,13 @@ same_nameat (int source_dfd, char const *source,
           error (1, destdir_errno, "%s", dest_dirname);
         }
 #else
-      if (fstatat (dest_dfd, dest_dirname, &dest_dir_stats, flags) != 0)
+      if (fstatat (dest_dfd, dest_dirname, &dest_dir_stats,
+                   AT_SYMLINK_NOFOLLOW) != 0)
         {
           /* Shouldn't happen.  */
           error (1, errno, "%s", dest_dirname);
         }
-      same = SAME_INODE (source_dir_stats, dest_dir_stats);
+      same = psame_inode (&source_dir_stats, &dest_dir_stats);
 #endif
 
       free (dest_dirname);

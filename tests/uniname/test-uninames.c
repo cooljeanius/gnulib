@@ -1,5 +1,5 @@
 /* Test the Unicode character name functions.
-   Copyright (C) 2000-2003, 2005, 2007, 2009-2023 Free Software Foundation,
+   Copyright (C) 2000-2003, 2005, 2007, 2009-2026 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -187,8 +187,7 @@ fill_aliases (const char *namealiases_filename)
 static int
 name_has_alias (unsigned int uc)
 {
-  int i;
-  for (i = 0; i < ALIASLEN; i++)
+  for (int i = 0; i < ALIASLEN; i++)
     if (unicode_aliases[i].uc == uc)
       return 1;
   return 0;
@@ -199,10 +198,9 @@ static int
 test_name_lookup ()
 {
   int error = 0;
-  unsigned int i;
   char buf[UNINAME_MAX];
 
-  for (i = 0; i < 0x11000; i++)
+  for (unsigned int i = 0; i < 0x11000; i++)
     {
       char *result = unicode_character_name (i, buf);
 
@@ -213,7 +211,7 @@ test_name_lookup ()
               fprintf (stderr, "\\u%04X name lookup failed!\n", i);
               error = 1;
             }
-          else if (strcmp (result, unicode_names[i]) != 0)
+          else if (!streq (result, unicode_names[i]))
             {
               fprintf (stderr, "\\u%04X name lookup returned wrong name: %s\n",
                                i, result);
@@ -231,7 +229,7 @@ test_name_lookup ()
         }
     }
 
-  for (i = 0x110000; i < 0x1000000; i++)
+  for (unsigned int i = 0x110000; i < 0x1000000; i++)
     {
       char *result = unicode_character_name (i, buf);
 
@@ -251,10 +249,9 @@ static int
 test_inverse_lookup ()
 {
   int error = 0;
-  unsigned int i;
 
   /* First, verify all valid character names are recognized.  */
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     if (unicode_names[i] != NULL)
       {
         unsigned int result = unicode_name_character (unicode_names[i]);
@@ -273,12 +270,12 @@ test_inverse_lookup ()
 
   /* Second, generate random but likely names and verify they are not
      recognized unless really valid.  */
-  for (i = 0; i < 10000; i++)
+  for (unsigned int i = 0; i < 10000; i++)
     {
       unsigned int i1, i2;
       const char *s1;
       const char *s2;
-      unsigned int l1, l2, j1, j2;
+      unsigned int l1, l2;
       char buf[2*UNINAME_MAX];
       unsigned int result;
 
@@ -298,9 +295,9 @@ test_inverse_lookup ()
       l2 = strlen (s2);
 
       /* Concatenate a starting piece of s1 with an ending piece of s2.  */
-      for (j1 = 1; j1 <= l1; j1++)
+      for (unsigned int j1 = 1; j1 <= l1; j1++)
         if (j1 == l1 || s1[j1] == ' ')
-          for (j2 = 0; j2 < l2; j2++)
+          for (unsigned int j2 = 0; j2 < l2; j2++)
             if (j2 == 0 || s2[j2-1] == ' ')
               {
                 memcpy (buf, s1, j1);
@@ -311,7 +308,7 @@ test_inverse_lookup ()
                 if (result != UNINAME_INVALID
                     && !name_has_alias (result)
                     && !(unicode_names[result] != NULL
-                         && strcmp (unicode_names[result], buf) == 0))
+                         && streq (unicode_names[result], buf)))
                   {
                     fprintf (stderr,
                              "inverse name lookup of \"%s\" returned 0x%04X\n",
@@ -333,11 +330,10 @@ static int
 test_alias_lookup ()
 {
   int error = 0;
-  unsigned int i;
   char buf[UNINAME_MAX];
 
   /* Verify all valid character names are recognized.  */
-  for (i = 0; i < ALIASLEN; i++)
+  for (unsigned int i = 0; i < ALIASLEN; i++)
     if (unicode_aliases[i].uc != UNINAME_INVALID
         /* Skip if the character has no canonical name (e.g. control
            characters).  */
@@ -366,13 +362,12 @@ main (int argc, char *argv[])
   int error = 0;
   int i;
 
-  for (i = 1; i < argc && strcmp (argv[i], "--") != 0; i++)
+  for (i = 1; i < argc && !streq (argv[i], "--"); i++)
     fill_names (argv[i]);
 
   if (i < argc)
     {
-      int j;
-      for (j = 0; j < ALIASLEN; j++)
+      for (int j = 0; j < ALIASLEN; j++)
         unicode_aliases[j].uc = UNINAME_INVALID;
 
       i++;

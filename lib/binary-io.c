@@ -1,5 +1,5 @@
 /* Binary mode I/O.
-   Copyright 2017-2023 Free Software Foundation, Inc.
+   Copyright 2017-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -14,9 +14,8 @@
    You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#include <config.h>
-
 #define BINARY_IO_INLINE _GL_EXTERN_INLINE
+#include <config.h>
 #include "binary-io.h"
 
 #if defined __DJGPP__ || defined __EMX__
@@ -33,7 +32,7 @@ set_binary_mode (int fd, int mode)
        with console input or console output.  */
     return O_TEXT;
   else
-    return __gl_setmode (fd, mode);
+    return _gl_set_fd_mode (fd, mode);
 }
 
 #endif

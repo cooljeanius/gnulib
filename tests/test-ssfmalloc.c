@@ -1,5 +1,5 @@
 /* Test of simple and straight-forward malloc implementation.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include <config.h>
 
+#include <stdcountof.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -30,17 +31,8 @@
 
 #else
 
-/* Declare getpagesize(). */
+/* Declare sysconf().  */
 # include <unistd.h>
-/* On HP-UX, getpagesize exists, but it is not declared in <unistd.h> even if
-   the compiler options -D_HPUX_SOURCE -D_XOPEN_SOURCE=600 are used.  */
-# ifdef __hpux
-extern
-#  ifdef __cplusplus
-       "C"
-#  endif
-       int getpagesize (void);
-# endif
 
 /* Declare mmap().  */
 # include <sys/types.h>
@@ -72,7 +64,7 @@ init_pagesize (void)
   GetSystemInfo (&info);
   pagesize = info.dwPageSize;
 #else
-  pagesize = getpagesize ();
+  pagesize = sysconf (_SC_PAGESIZE);
 #endif
 }
 
@@ -126,7 +118,7 @@ free_pages (uintptr_t pages, size_t size)
 #define PAGESIZE pagesize
 /* On Cygwin and Linux/PowerPC, PAGESIZE is 65536.  On macOS 11, it is 16384.
    On all other platforms, it is either 4096 or 8192.  */
-#if defined __CYGWIN__ || (defined __linux__ && defined __powerpc__)
+#if defined __CYGWIN__ || (defined __linux__ && defined _ARCH_PPC)
 # define PAGESIZE_MAX 65536
 #else
 # define PAGESIZE_MAX 16384
@@ -278,7 +270,7 @@ static size_t block_sizes[] =
   };
 
 #define RANDOM(n) (rand () % (n))
-#define RANDOM_BLOCK_SIZE() block_sizes[RANDOM (SIZEOF (block_sizes))]
+#define RANDOM_BLOCK_SIZE() block_sizes[RANDOM (countof (block_sizes))]
 
 int
 main (int argc, char *argv[])
@@ -293,17 +285,12 @@ main (int argc, char *argv[])
      Also verify that there are no unexpected modifications to the contents of
      these blocks.  */
   {
-    unsigned int repeat;
-    char *blocks[SIZEOF (block_sizes)];
+    char *blocks[countof (block_sizes)];
 
-    {
-      size_t i;
+    for (size_t i = 0; i < countof (block_sizes); i++)
+      blocks[i] = NULL;
 
-      for (i = 0; i < SIZEOF (block_sizes); i++)
-        blocks[i] = NULL;
-    }
-
-    for (repeat = 0; repeat < 100000; repeat++)
+    for (unsigned int repeat = 0; repeat < 100000; repeat++)
       {
         unsigned int operation = RANDOM (2);
 
@@ -311,7 +298,7 @@ main (int argc, char *argv[])
           {
           case 0:
             { /* Allocate a block.  */
-              size_t i = RANDOM (SIZEOF (block_sizes));
+              size_t i = RANDOM (countof (block_sizes));
               size_t size = block_sizes[i];
               if (blocks[i] == NULL)
                 {
@@ -325,7 +312,7 @@ main (int argc, char *argv[])
             break;
           case 1:
             { /* Free a block.  */
-              size_t i = RANDOM (SIZEOF (block_sizes));
+              size_t i = RANDOM (countof (block_sizes));
               size_t size = block_sizes[i];
               if (blocks[i] != NULL)
                 {
@@ -340,19 +327,15 @@ main (int argc, char *argv[])
       }
 
     /* Free the remaining blocks.  */
-    {
-      size_t i;
-
-      for (i = 0; i < SIZEOF (block_sizes); i++)
-        if (blocks[i] != NULL)
-          {
-            uintptr_t block = (uintptr_t) blocks[i];
-            size_t size = block_sizes[i];
-            verify_block (block, size);
-            free_block (block);
-          }
-    }
+    for (size_t i = 0; i < countof (block_sizes); i++)
+      if (blocks[i] != NULL)
+        {
+          uintptr_t block = (uintptr_t) blocks[i];
+          size_t size = block_sizes[i];
+          verify_block (block, size);
+          free_block (block);
+        }
   }
 
-  return 0;
+  return test_exit_status;
 }

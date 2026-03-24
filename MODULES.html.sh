@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2002-2023 Free Software Foundation, Inc.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 # Extend the PATH so that gnulib-tool is found.
 PATH=`dirname "$0"`:$PATH; export PATH
 
-POSIX2001_URL='https://pubs.opengroup.org/onlinepubs/009695399'
-POSIX2008_URL='https://pubs.opengroup.org/onlinepubs/9699919799'
+POSIX2004_URL='https://pubs.opengroup.org/onlinepubs/009695399'
+POSIX2017_URL='https://pubs.opengroup.org/onlinepubs/9699919799'
 
 # repo_url_prefix and repo_url_suffix are chosen such that
 #   <A HREF="${repo_url_prefix}FILENAME${repo_url_suffix}">...</A>
@@ -165,7 +165,7 @@ wchar
 wctype
 wordexp
 ' | sed -e "$sed_alt1" | tr -d "$trnl" | sed -e "$sed_alt2" -e "$sed_alt3"`
-posix2001_headers=`echo '
+posix2004_headers=`echo '
 sys/timeb
 ucontext
 ' | sed -e "$sed_alt1" | tr -d "$trnl" | sed -e "$sed_alt2" -e "$sed_alt3"`
@@ -1363,7 +1363,7 @@ y0
 y1
 yn
 ' | sed -e "$sed_alt1" | tr -d "$trnl" | sed -e "$sed_alt2" -e "$sed_alt3"`
-posix2001_functions=`echo '
+posix2004_functions=`echo '
 bcmp
 bcopy
 bsd_signal
@@ -1553,12 +1553,12 @@ func_module ()
       '$sed_remove_trailing_empty_line'
       s,^, ,
       s,$, ,
-      s,\([^a-zA-Z_]\)'$posix_functions'() \(function\|macro\),\1<A HREF="'$POSIX2008_URL'/functions/\2.html">\2</A> \3,g
-      s,\([^a-zA-Z_]\)'$posix_functions' \(function\|macro\),\1<A HREF="'$POSIX2008_URL'/functions/\2.html">\2</A> \3,g
-      s,\([^a-zA-Z_]\)'$posix_functions'(),\1<A HREF="'$POSIX2008_URL'/functions/\2.html">\2</A> <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
-      s,\([^a-zA-Z_]\)'$posix2001_functions'() \(function\|macro\),\1<A HREF="'$POSIX2001_URL'/functions/\2.html">\2</A> \3,g
-      s,\([^a-zA-Z_]\)'$posix2001_functions' \(function\|macro\),\1<A HREF="'$POSIX2001_URL'/functions/\2.html">\2</A> \3,g
-      s,\([^a-zA-Z_]\)'$posix2001_functions'(),\1<A HREF="'$POSIX2001_URL'/functions/\2.html">\2</A> <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
+      s,\([^a-zA-Z_]\)'$posix_functions'() \(function\|macro\),\1<A HREF="'$POSIX2017_URL'/functions/\2.html">\2</A> \3,g
+      s,\([^a-zA-Z_]\)'$posix_functions' \(function\|macro\),\1<A HREF="'$POSIX2017_URL'/functions/\2.html">\2</A> \3,g
+      s,\([^a-zA-Z_]\)'$posix_functions'(),\1<A HREF="'$POSIX2017_URL'/functions/\2.html">\2</A> <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
+      s,\([^a-zA-Z_]\)'$posix2004_functions'() \(function\|macro\),\1<A HREF="'$POSIX2004_URL'/functions/\2.html">\2</A> \3,g
+      s,\([^a-zA-Z_]\)'$posix2004_functions' \(function\|macro\),\1<A HREF="'$POSIX2004_URL'/functions/\2.html">\2</A> \3,g
+      s,\([^a-zA-Z_]\)'$posix2004_functions'(),\1<A HREF="'$POSIX2004_URL'/functions/\2.html">\2</A> <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
       s,\([^a-zA-Z_]\)\([a-zA-Z_][a-zA-Z0-9_]*\)() \(function\|macro\),\1\2 \3,g
       s,\([^a-zA-Z_]\)\([a-zA-Z_][a-zA-Z0-9_]*\)(),\1\2 <SPAN STYLE="color:#FF0000;">what?? If you mean a function\, please say so.</SPAN>,g
       s, '"'"'\([a-zA-Z0-9_ -]*\)'"'"'\([^a-zA-Z0-9_]\), <CODE>\1</CODE>\2,g
@@ -1586,9 +1586,9 @@ func_module ()
       '$sed_gt'
       '$sed_remove_trailing_empty_line'
       s,^#include "\(.*\)"$,#include "<A HREF="'$repo_url_prefix'lib/\1'$repo_url_suffix_repl'">\1</A>",
-      s,^#include &lt;'$posix_headers'\.h&gt;$,#include \&lt;<A HREF="'$POSIX2008_URL'/basedefs/\1.h.html">\1.h</A>\&gt;,
-      s,<A HREF="'$POSIX2008_URL'/basedefs/\([a-zA-Z0-9_]*\)/\([a-zA-Z0-9_]*\)\.h\.html">,<A HREF="'$POSIX2008_URL'/basedefs/\1_\2.h.html">,
-      s,^#include &lt;'$posix2001_headers'\.h&gt;$,#include \&lt;<A HREF="'$POSIX2001_URL'/basedefs/\1.h.html">\1.h</A>\&gt;,
+      s,^#include &lt;'$posix_headers'\.h&gt;$,#include \&lt;<A HREF="'$POSIX2017_URL'/basedefs/\1.h.html">\1.h</A>\&gt;,
+      s,<A HREF="'$POSIX2017_URL'/basedefs/\([a-zA-Z0-9_]*\)/\([a-zA-Z0-9_]*\)\.h\.html">,<A HREF="'$POSIX2017_URL'/basedefs/\1_\2.h.html">,
+      s,^#include &lt;'$posix2004_headers'\.h&gt;$,#include \&lt;<A HREF="'$POSIX2004_URL'/basedefs/\1.h.html">\1.h</A>\&gt;,
       s/$/<BR>/
     '
     element=`echo "$includes" \
@@ -1658,7 +1658,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module stdlib
+  func_module stdlib-h
   func_module strtol
   func_module strtoul
   func_module memcmp
@@ -1734,11 +1734,10 @@ func_all_modules ()
 
   func_begin_table
   func_module calloc-gnu
-  func_module eealloc
   func_module free-posix
   func_module malloc-gnu
   func_module memalign
-  func_module realloc-gnu
+  func_module realloc-posix
   func_module reallocarray
   func_module pagealign_alloc
   func_end_table
@@ -1827,7 +1826,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module putenv
+  func_module putenv-gnu
   func_module secure_getenv
   func_module setenv
   func_module unsetenv
@@ -1856,6 +1855,7 @@ func_all_modules ()
   func_module memchr
   func_module memchr2
   func_module memcmp2
+  func_module memeq
   func_module memmem
   func_module memmem-simple
   func_module mempcpy
@@ -1872,9 +1872,11 @@ func_all_modules ()
   func_module strcasestr-simple
   func_module strchrnul
   func_module streq
+  func_module streq-opt
   func_module strerrorname_np
   func_module strerror_r-posix
   func_module string-buffer
+  func_module stringeq
   func_module strnlen
   func_module strnlen1
   func_module strndup
@@ -2056,7 +2058,6 @@ func_all_modules ()
   func_module crypto/gc-md4
   func_module crypto/gc-md5
   func_module crypto/gc-pbkdf2
-  func_module crypto/gc-pbkdf2-sha1
   func_module crypto/gc-random
   func_module crypto/gc-rijndael
   func_module crypto/gc-sha1
@@ -2083,6 +2084,7 @@ func_all_modules ()
   func_module base32
   func_module base64
   func_module check-version
+  func_module cpu-supports
   func_module crc
   func_module diffseq
   func_module execinfo
@@ -2095,8 +2097,8 @@ func_all_modules ()
   func_module obstack
   func_module obstack-printf
   func_module obstack-printf-posix
-  func_module hash-pjw
-  func_module hash-pjw-bare
+  func_module hashcode-string2
+  func_module hashcode-mem
   func_module hash
   func_module hamt
   func_module readline
@@ -2139,17 +2141,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module stdarg
-  func_end_table
-
-  element="Boolean type and values <stdbool.h>"
-  element=`printf "%s" "$element" | sed -e "$sed_lt" -e "$sed_gt"`
-  func_section_wrap isoc_sup_stdbool
-  func_wrap H3
-  func_echo "$element"
-
-  func_begin_table
-  func_module stdbool
+  func_module stdarg-h
   func_end_table
 
   element="Basic types <stddef.h>"
@@ -2159,7 +2151,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module stddef
+  func_module stddef-h
   func_end_table
 
   element="Integer types and values <stdint.h>"
@@ -2170,7 +2162,7 @@ func_all_modules ()
 
   func_begin_table
   func_module size_max
-  func_module stdint
+  func_module stdint-h
   func_end_table
 
   element="Input/output <stdio.h>"
@@ -2180,7 +2172,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module stdio
+  func_module stdio-h
   func_module snprintf
   func_module vsnprintf
   func_end_table
@@ -2205,7 +2197,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module ctype
+  func_module ctype-h
   func_end_table
 
   element="Functions for greatest-width integer types <inttypes.h>"
@@ -2217,7 +2209,8 @@ func_all_modules ()
   func_begin_table
   func_module imaxabs
   func_module imaxdiv
-  func_module inttypes
+  func_module inttypes-h
+  func_module inttypes-h-incomplete
   func_module strtoimax
   func_module strtoumax
   func_end_table
@@ -2239,7 +2232,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module wchar
+  func_module wchar-h
   func_module btowc
   func_module wctob
   func_module mbsinit
@@ -2267,7 +2260,7 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module float
+  func_module float-h
   func_end_table
 
   element="Mathematics <math.h>"
@@ -2326,7 +2319,7 @@ func_all_modules ()
   func_module log1p
   func_module logb
   func_module logl
-  func_module math
+  func_module math-h
   func_module mathl
   func_module modf
   func_module nextafter
@@ -2428,7 +2421,6 @@ func_all_modules ()
   func_begin_table
   func_module noreturn
   func_module std-gnu11
-  func_module stdalign
   func_end_table
 
   element="Support for standard extensions to ISO C 11"
@@ -2439,11 +2431,12 @@ func_all_modules ()
   func_begin_table
   func_module attribute
   func_module builtin-expect
+  func_module fenv-h
   func_module ieee754-h
   func_module limits-h
   func_end_table
 
-  element="Support for systems lacking draft ISO C 23"
+  element="Support for systems lacking ISO C 23"
   func_section_wrap c23_ext
   func_wrap H2
   func_echo "$element"
@@ -2457,7 +2450,8 @@ func_all_modules ()
   func_begin_table
   func_module alignasof
   func_module nullptr
-  func_module stdckdint
+  func_module std-gnu23
+  func_module stdckdint-h
   func_end_table
 
   element="Memory management functions <stdlib.h>"
@@ -2498,6 +2492,8 @@ func_all_modules ()
 
   func_begin_table
   func_module libgmp
+  func_module libgmp-mpz
+  func_module libgmp-mpq
   func_end_table
 
   element="Support for sharing code with the GNU C Library"
@@ -2509,7 +2505,7 @@ func_all_modules ()
   func_module libc-config
   func_end_table
 
-  element="Support for obsolete systems lacking POSIX:2008"
+  element="Support for obsolete systems lacking POSIX"
   func_section_wrap posix_sup_obsolete
   func_wrap H2
   func_echo "$element"
@@ -2521,7 +2517,7 @@ func_all_modules ()
   func_echo 'These modules are not listed among dependencies below, for simplicity.'
   func_echo 'If your package requires portability to old, obsolete systems, you need to list these modules explicitly among the modules to import through gnulib-tool.'
 
-  element="Support for systems lacking POSIX:2008"
+  element="Support for systems lacking POSIX"
   func_section_wrap posix_sup
   func_wrap H2
   func_echo "$element"
@@ -2529,7 +2525,7 @@ func_all_modules ()
   func_begin_table
   func_module accept
   func_module alphasort
-  func_module arpa_inet
+  func_module arpa_inet-h
   func_module bind
   func_module calloc-posix
   func_module chmod
@@ -2538,13 +2534,13 @@ func_all_modules ()
   func_module chownat
   func_module close
   func_module connect
-  func_module dirent
+  func_module dirent-h
   func_module dprintf
   func_module dprintf-posix
   func_module dup2
   func_module duplocale
   func_module environ
-  func_module errno
+  func_module errno-h
   func_module execl
   func_module execle
   func_module execlp
@@ -2589,11 +2585,11 @@ func_all_modules ()
   func_module inet_pton
   func_module ioctl
   func_module isblank
-  func_module langinfo
+  func_module langinfo-h
   func_module link
   func_module linkat
   func_module listen
-  func_module locale
+  func_module locale-h
   func_module lseek
   func_module lstat
   func_module malloc-posix
@@ -2603,9 +2599,9 @@ func_all_modules ()
   func_module mkfifo
   func_module mknod
   func_module mkstemp
-  func_module net_if
-  func_module netdb
-  func_module netinet_in
+  func_module net_if-h
+  func_module netdb-h
+  func_module netinet_in-h
   func_module nl_langinfo
   func_module open
   func_module perror
@@ -2642,12 +2638,11 @@ func_all_modules ()
   func_module ptsname
   func_module pwrite
   func_module readlink
-  func_module realloc-posix
   func_module recv
   func_module recvfrom
   func_module remove
   func_module scandir
-  func_module sched
+  func_module sched-h
   func_module select
   func_module send
   func_module sendto
@@ -2658,12 +2653,12 @@ func_all_modules ()
   func_module sleep
   func_module snprintf-posix
   func_module socket
-  func_module spawn
+  func_module spawn-h
   func_module sprintf-posix
   func_module stat
   func_module strdup-posix
-  func_module string
-  func_module strings
+  func_module string-h
+  func_module strings-h
   func_module tempname
   func_module time
   func_module time_r
@@ -2675,26 +2670,26 @@ func_all_modules ()
   func_module rename
   func_module renameat
   func_module rmdir
-  func_module search
+  func_module search-h
   func_module sigaction
   func_module sigprocmask
   func_module socklen
   func_module ssize_t
   func_module strptime
   func_module strtok_r
-  func_module sys_select
-  func_module sys_socket
-  func_module sys_stat
-  func_module sys_time
-  func_module sys_times
-  func_module sys_uio
-  func_module sys_utsname
-  func_module sys_wait
+  func_module sys_select-h
+  func_module sys_socket-h
+  func_module sys_stat-h
+  func_module sys_time-h
+  func_module sys_times-h
+  func_module sys_uio-h
+  func_module sys_utsname-h
+  func_module sys_wait-h
   func_module truncate
   func_module tsearch
   func_module ttyname_r
   func_module uname
-  func_module unistd
+  func_module unistd-h
   func_module unlink
   func_module unlockpt
   func_module utime
@@ -2717,7 +2712,7 @@ func_all_modules ()
   func_module write
   func_end_table
 
-  element="Compatibility checks for POSIX:2008 functions"
+  element="Compatibility checks for POSIX functions"
   func_section_wrap posix_compat
   func_wrap H2
   func_echo "$element"
@@ -2735,7 +2730,7 @@ func_all_modules ()
   func_module winsz-termios
   func_end_table
 
-  element="Enhancements for POSIX:2008 functions"
+  element="Enhancements for POSIX functions"
   func_section_wrap posix_enh
   func_wrap H2
   func_echo "$element"
@@ -2755,7 +2750,7 @@ func_all_modules ()
   func_module exclude
   func_end_table
 
-  element="Extra functions based on POSIX:2008"
+  element="Extra functions based on POSIX"
   func_section_wrap posix_ext
   func_wrap H2
   func_echo "$element"
@@ -2845,8 +2840,8 @@ func_all_modules ()
   func_module stat-time
   func_module symlink
   func_module symlinkat
-  func_module sys_file
-  func_module sys_ioctl
+  func_module sys_file-h
+  func_module sys_ioctl-h
   func_module tmpdir
   func_module unlinkdir
   func_module utimecmp
@@ -2868,7 +2863,7 @@ func_all_modules ()
   func_module cycle-check
   func_module dev-ino
   func_module file-set
-  func_module hash-triple
+  func_module hashcode-file-inode
   func_module i-ring
   func_module same-inode
   func_end_table
@@ -2890,6 +2885,7 @@ func_all_modules ()
   func_module getdtablesize
   func_module isapipe
   func_module openat-safer
+  func_module openat2
   func_module pipe-posix
   func_module pipe2
   func_module pipe2-safer
@@ -3025,8 +3021,6 @@ func_all_modules ()
   func_echo "$element"
 
   func_begin_table
-  func_module termcap
-  func_module termcap-h
   func_module terminfo
   func_module terminfo-h
   func_end_table
@@ -3086,7 +3080,7 @@ func_all_modules ()
   func_begin_table
   func_module libunistring
   func_module libunistring-optional
-  func_module unitypes
+  func_module unitypes-h
   func_module ucs4-utf8
   func_module ucs4-utf16
   func_module utf8-ucs4-unsafe
@@ -3419,11 +3413,14 @@ func_all_modules ()
   func_module unictype/property-grapheme-link
   func_module unictype/property-hex-digit
   func_module unictype/property-hyphen
+  func_module unictype/property-id-compat-math-continue
+  func_module unictype/property-id-compat-math-start
   func_module unictype/property-id-continue
   func_module unictype/property-id-start
   func_module unictype/property-ideographic
   func_module unictype/property-ids-binary-operator
   func_module unictype/property-ids-trinary-operator
+  func_module unictype/property-ids-unary-operator
   func_module unictype/property-ignorable-control
   func_module unictype/property-iso-control
   func_module unictype/property-join-control
@@ -3432,6 +3429,7 @@ func_all_modules ()
   func_module unictype/property-logical-order-exception
   func_module unictype/property-lowercase
   func_module unictype/property-math
+  func_module unictype/property-modifier-combining-mark
   func_module unictype/property-non-break
   func_module unictype/property-not-a-character
   func_module unictype/property-numeric
@@ -3447,6 +3445,7 @@ func_all_modules ()
   func_module unictype/property-paragraph-separator
   func_module unictype/property-pattern-syntax
   func_module unictype/property-pattern-white-space
+  func_module unictype/property-prepended-concatenation-mark
   func_module unictype/property-private-use
   func_module unictype/property-punctuation
   func_module unictype/property-quotation-mark
@@ -3666,15 +3665,15 @@ func_all_modules ()
   func_module posixver
   func_module progname
   func_module ptsname_r
-  func_module pty
+  func_module pty-h
   func_module quotearg
   func_module quote
   func_module readutmp
   func_module random_r
   func_module selinux-h
   func_module selinux-at
-  func_module sysexits
-  func_module sys_random
+  func_module sysexits-h
+  func_module sys_random-h
   func_module u64
   func_module verror
   func_end_table
@@ -3744,7 +3743,6 @@ func_all_modules ()
   func_module gnupload
   func_module maintainer-makefile
   func_module mktempd
-  func_module non-recursive-gnulib-prefix-hack
   func_module readme-release
   func_module test-framework-sh
   func_module update-copyright
@@ -3764,7 +3762,6 @@ func_all_modules ()
   func_module nocrash
   func_module perl
   func_module posix-shell
-  func_module uptime
   func_end_table
 }
 

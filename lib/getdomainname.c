@@ -1,6 +1,6 @@
 /* getdomainname emulation for systems that doesn't have it.
 
-   Copyright (C) 2003, 2006, 2008, 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2006, 2008, 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include <string.h>
 #include <errno.h>
 
-#if HAVE_SYSINFO && HAVE_SYS_SYSTEMINFO_H /* IRIX, OSF/1, Solaris */
+#if HAVE_SYSINFO && HAVE_SYS_SYSTEMINFO_H /* Solaris */
 # include <sys/systeminfo.h>
 #endif
 
@@ -44,7 +44,7 @@ int
 getdomainname (char *name, size_t len)
 #undef getdomainname
 {
-#if HAVE_GETDOMAINNAME                 /* Mac OS X, FreeBSD, AIX, IRIX, OSF/1 */
+#if HAVE_GETDOMAINNAME                 /* Mac OS X, FreeBSD, AIX */
   extern int getdomainname (char *, int);
 
   if (len > INT_MAX)
@@ -52,11 +52,9 @@ getdomainname (char *name, size_t len)
   return getdomainname (name, (int) len);
 #elif HAVE_SYSINFO && HAVE_SYS_SYSTEMINFO_H && defined SI_SRPC_DOMAIN
                                        /* Solaris */
-  int ret;
-
   /* The third argument is a 'long', but the return value must fit in an
      'int', therefore it's better to avoid arguments > INT_MAX.  */
-  ret = sysinfo (SI_SRPC_DOMAIN, name, len > INT_MAX ? INT_MAX : len);
+  int ret = sysinfo (SI_SRPC_DOMAIN, name, len > INT_MAX ? INT_MAX : len);
   if (ret < 0)
     /* errno is set here.  */
     return -1;

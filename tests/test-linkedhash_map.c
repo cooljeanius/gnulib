@@ -1,5 +1,5 @@
 /* Test of map data type implementation.
-   Copyright (C) 2006-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2018.
 
    This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 #include "gl_linkedhash_map.h"
 
 #include <limits.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -40,7 +41,7 @@ string_equals (const void *x1, const void *x2)
 {
   const char *s1 = x1;
   const char *s2 = x2;
-  return strcmp (s1, s2) == 0;
+  return streq (s1, s2);
 }
 
 /* A hash function for NUL-terminated char* strings using
@@ -59,7 +60,7 @@ string_hash (const void *x)
 }
 
 #define RANDOM(n) (rand () % (n))
-#define RANDOM_OBJECT() objects[RANDOM (SIZEOF (objects))]
+#define RANDOM_OBJECT() objects[RANDOM (countof (objects))]
 
 struct pair
 {
@@ -87,11 +88,10 @@ check_equals (gl_map_t map1, gl_map_t map2)
   const void *value1;
   const void *key2;
   const void *value2;
-  size_t i;
 
   iter1 = gl_map_iterator (map1);
   iter2 = gl_map_iterator (map2);
-  for (i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     {
       ASSERT (gl_map_iterator_next (&iter1, &key1, &value1));
       ASSERT (gl_map_iterator_next (&iter2, &key2, &value2));
@@ -110,7 +110,7 @@ check_equals (gl_map_t map1, gl_map_t map2)
       qsort (pairs_of_map1, n, sizeof (struct pair), cmp_pairs_in_array);
       qsort (pairs_of_map2, n, sizeof (struct pair), cmp_pairs_in_array);
     }
-  for (i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     {
       ASSERT (pairs_of_map1[i].key == pairs_of_map2[i].key);
       ASSERT (pairs_of_map1[i].value == pairs_of_map2[i].value);
@@ -136,8 +136,6 @@ main (int argc, char *argv[])
 
   {
     size_t initial_size = RANDOM (20);
-    size_t i;
-    unsigned int repeat;
 
     /* Create map1.  */
     map1 = gl_map_nx_create_empty (GL_ARRAY_MAP,
@@ -152,7 +150,7 @@ main (int argc, char *argv[])
     check_all (map1, map2);
 
     /* Initialize them.  */
-    for (i = 0; i < initial_size; i++)
+    for (size_t i = 0; i < initial_size; i++)
       {
         const char *key = RANDOM_OBJECT ();
         const char *value = RANDOM_OBJECT ();
@@ -160,7 +158,7 @@ main (int argc, char *argv[])
         check_all (map1, map2);
       }
 
-    for (repeat = 0; repeat < 100000; repeat++)
+    for (unsigned int repeat = 0; repeat < 100000; repeat++)
       {
         unsigned int operation = RANDOM (3);
         switch (operation)
@@ -192,5 +190,5 @@ main (int argc, char *argv[])
     gl_map_free (map2);
   }
 
-  return 0;
+  return test_exit_status;
 }

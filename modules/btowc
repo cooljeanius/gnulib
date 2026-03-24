@@ -5,11 +5,12 @@ Files:
 lib/btowc.c
 m4/btowc.m4
 m4/mbrtowc.m4
+m4/locale-en.m4
 m4/locale-fr.m4
 m4/codeset.m4
 
 Depends-on:
-wchar
+wchar-h
 mbszero         [test $HAVE_BTOWC = 0 || test $REPLACE_BTOWC = 1]
 mbrtowc         [test $HAVE_BTOWC = 0 || test $REPLACE_BTOWC = 1]
 mbtowc          [test $HAVE_BTOWC = 0 || test $REPLACE_BTOWC = 1]

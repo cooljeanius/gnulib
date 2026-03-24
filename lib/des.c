@@ -1,5 +1,5 @@
 /* des.c --- DES and Triple-DES encryption/decryption Algorithm
- * Copyright (C) 1998-1999, 2001-2007, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 1998-1999, 2001-2007, 2009-2026 Free Software Foundation, Inc.
  *
  * This file is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -320,20 +320,20 @@ bool
 gl_des_is_weak_key (const char * key)
 {
   char work[8];
-  int i, left, right, middle, cmp_result;
 
   /* clear parity bits */
-  for (i = 0; i < 8; ++i)
+  for (int i = 0; i < 8; ++i)
     work[i] = ((unsigned char)key[i]) & 0xfe;
 
   /* binary search in the weak key table */
-  left = 0;
-  right = 63;
+  int left = 0;
+  int right = 63;
   while (left <= right)
     {
-      middle = (left + right) / 2;
+      int middle = (left + right) / 2;
 
-      if (!(cmp_result = memcmp (work, weak_keys[middle], 8)))
+      int cmp_result = memcmp (work, weak_keys[middle], 8);
+      if (!cmp_result)
         return -1;
 
       if (cmp_result > 0)
@@ -438,7 +438,6 @@ des_key_schedule (const char * _rawkey, uint32_t * subkey)
 {
   const unsigned char *rawkey = (const unsigned char *) _rawkey;
   uint32_t left, right, work;
-  int round;
 
   READ_64BIT_DATA (rawkey, left, right)
     DO_PERMUTATION (right, work, left, 4, 0x0f0f0f0f)
@@ -465,7 +464,7 @@ des_key_schedule (const char * _rawkey, uint32_t * subkey)
 
   right &= 0x0fffffff;
 
-  for (round = 0; round < 16; ++round)
+  for (int round = 0; round < 16; ++round)
     {
       left = ((left << encrypt_rotate_tab[round])
               | (left >> (28 - encrypt_rotate_tab[round]))) & 0x0fffffff;
@@ -521,13 +520,11 @@ des_key_schedule (const char * _rawkey, uint32_t * subkey)
 }
 
 void
-gl_des_setkey (gl_des_ctx *ctx, const char * key)
+gl_des_setkey (gl_des_ctx *restrict ctx, char const *restrict key)
 {
-  int i;
-
   des_key_schedule (key, ctx->encrypt_subkeys);
 
-  for (i = 0; i < 32; i += 2)
+  for (int i = 0; i < 32; i += 2)
     {
       ctx->decrypt_subkeys[i] = ctx->encrypt_subkeys[30 - i];
       ctx->decrypt_subkeys[i + 1] = ctx->encrypt_subkeys[31 - i];
@@ -535,7 +532,7 @@ gl_des_setkey (gl_des_ctx *ctx, const char * key)
 }
 
 bool
-gl_des_makekey (gl_des_ctx *ctx, const char * key, size_t keylen)
+gl_des_makekey (gl_des_ctx *ctx, char const *restrict key, size_t keylen)
 {
   if (keylen != 8)
     return false;
@@ -546,7 +543,8 @@ gl_des_makekey (gl_des_ctx *ctx, const char * key, size_t keylen)
 }
 
 void
-gl_des_ecb_crypt (gl_des_ctx *ctx, const char * _from, char * _to, int mode)
+gl_des_ecb_crypt (gl_des_ctx *ctx, char const *restrict _from,
+                  char *restrict _to, int mode)
 {
   const unsigned char *from = (const unsigned char *) _from;
   unsigned char *to = (unsigned char *) _to;
@@ -570,14 +568,14 @@ gl_des_ecb_crypt (gl_des_ctx *ctx, const char * _from, char * _to, int mode)
 }
 
 void
-gl_3des_set2keys (gl_3des_ctx *ctx, const char * key1, const char * key2)
+gl_3des_set2keys (gl_3des_ctx *restrict ctx,
+                  char const *restrict key1,
+                  char const *restrict key2)
 {
-  int i;
-
   des_key_schedule (key1, ctx->encrypt_subkeys);
   des_key_schedule (key2, &(ctx->decrypt_subkeys[32]));
 
-  for (i = 0; i < 32; i += 2)
+  for (int i = 0; i < 32; i += 2)
     {
       ctx->decrypt_subkeys[i] = ctx->encrypt_subkeys[30 - i];
       ctx->decrypt_subkeys[i + 1] = ctx->encrypt_subkeys[31 - i];
@@ -594,16 +592,16 @@ gl_3des_set2keys (gl_3des_ctx *ctx, const char * key1, const char * key2)
 }
 
 void
-gl_3des_set3keys (gl_3des_ctx *ctx, const char * key1,
-                    const char * key2, const char * key3)
+gl_3des_set3keys (gl_3des_ctx *restrict ctx,
+                  char const *restrict key1,
+                  char const *restrict key2,
+                  char const *restrict key3)
 {
-  int i;
-
   des_key_schedule (key1, ctx->encrypt_subkeys);
   des_key_schedule (key2, &(ctx->decrypt_subkeys[32]));
   des_key_schedule (key3, &(ctx->encrypt_subkeys[64]));
 
-  for (i = 0; i < 32; i += 2)
+  for (int i = 0; i < 32; i += 2)
     {
       ctx->decrypt_subkeys[i] = ctx->encrypt_subkeys[94 - i];
       ctx->decrypt_subkeys[i + 1] = ctx->encrypt_subkeys[95 - i];
@@ -617,16 +615,14 @@ gl_3des_set3keys (gl_3des_ctx *ctx, const char * key1,
 }
 
 void
-gl_3des_ecb_crypt (gl_3des_ctx *ctx,
-                   const char * _from,
-                   char * _to, int mode)
+gl_3des_ecb_crypt (gl_3des_ctx *restrict ctx,
+                   char const *restrict _from,
+                   char *restrict _to, int mode)
 {
   const unsigned char *from = (const unsigned char *) _from;
   unsigned char *to = (unsigned char *) _to;
+  uint32_t *keys = mode ? ctx->decrypt_subkeys : ctx->encrypt_subkeys;
   uint32_t left, right, work;
-  uint32_t *keys;
-
-  keys = mode ? ctx->decrypt_subkeys : ctx->encrypt_subkeys;
 
   READ_64BIT_DATA (from, left, right)
     INITIAL_PERMUTATION (left, work, right)
@@ -659,7 +655,8 @@ gl_3des_ecb_crypt (gl_3des_ctx *ctx,
 }
 
 bool
-gl_3des_makekey (gl_3des_ctx *ctx, const char * key, size_t keylen)
+gl_3des_makekey (gl_3des_ctx *restrict ctx,
+                 char const *restrict  key, size_t keylen)
 {
   if (keylen != 24)
     return false;

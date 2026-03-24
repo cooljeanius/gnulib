@@ -22,9 +22,10 @@ c99
 ffsl
 fopen-gnu
 gettext-h
+gnulib-i18n
 integer_length_l
 obstack
-stdbool
+bool
 xalloc
 
 configure.ac:
@@ -36,6 +37,9 @@ lib_SOURCES += bitset.c bitset/array.c bitset/stats.c \
 
 Include:
 "bitset.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPLv3+

@@ -1,5 +1,5 @@
 /* Base 2 logarithm.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -42,7 +42,7 @@ log2 (double x)
       else
         {
           /* Return NaN.  */
-#if defined _MSC_VER || (defined __sgi && !defined __GNUC__)
+#if defined _MSC_VER
           static double zero;
           return zero / zero;
 #else
@@ -59,9 +59,7 @@ log2 (double x)
      Then log2(x) = e + log2(y) = e + log(y)/log(2).  */
   {
     int e;
-    double y;
-
-    y = frexp (x, &e);
+    double y = frexp (x, &e);
     if (y < SQRT_HALF)
       {
         y = 2.0 * y;

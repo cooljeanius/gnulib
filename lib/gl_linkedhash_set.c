@@ -1,5 +1,5 @@
 /* Set data type implemented by a hash table with a linked list.
-   Copyright (C) 2006, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2008-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2018.
 
    This program is free software: you can redistribute it and/or modify
@@ -127,9 +127,7 @@ gl_linkedhash_search (gl_set_t set, const void *elt)
   gl_setelement_equals_fn equals = set->base.equals_fn;
 
   /* Look for a match in the hash bucket.  */
-  gl_list_node_t node;
-
-  for (node = (gl_list_node_t) set->table[bucket];
+  for (gl_list_node_t node = (gl_list_node_t) set->table[bucket];
        node != NULL;
        node = (gl_list_node_t) node->h.hash_next)
     if (node->h.hashcode == hashcode
@@ -151,18 +149,14 @@ gl_linkedhash_nx_add (gl_set_t set, const void *elt)
   gl_setelement_equals_fn equals = set->base.equals_fn;
 
   /* Look for a match in the hash bucket.  */
-  {
-    gl_list_node_t node;
-
-    for (node = (gl_list_node_t) set->table[bucket];
-         node != NULL;
-         node = (gl_list_node_t) node->h.hash_next)
-      if (node->h.hashcode == hashcode
-          && (equals != NULL
-              ? equals (elt, node->value)
-              : elt == node->value))
-        return 0;
-  }
+  for (gl_list_node_t node = (gl_list_node_t) set->table[bucket];
+       node != NULL;
+       node = (gl_list_node_t) node->h.hash_next)
+    if (node->h.hashcode == hashcode
+        && (equals != NULL
+            ? equals (elt, node->value)
+            : elt == node->value))
+      return 0;
 
   /* Allocate a new node.  */
   gl_list_node_t node =
@@ -201,9 +195,7 @@ gl_linkedhash_remove (gl_set_t set, const void *elt)
   gl_setelement_equals_fn equals = set->base.equals_fn;
 
   /* Look for the first match in the hash bucket.  */
-  gl_list_node_t *nodep;
-
-  for (nodep = (gl_list_node_t *) &set->table[bucket];
+  for (gl_list_node_t *nodep = (gl_list_node_t *) &set->table[bucket];
        *nodep != NULL;
        nodep = (gl_list_node_t *) &(*nodep)->h.hash_next)
     {
@@ -240,9 +232,8 @@ static void
 gl_linkedhash_free (gl_set_t set)
 {
   gl_setelement_dispose_fn dispose = set->base.dispose_fn;
-  gl_list_node_t node;
 
-  for (node = set->root.next; node != &set->root; )
+  for (gl_list_node_t node = set->root.next; node != &set->root; )
     {
       gl_list_node_t next = node->next;
       if (dispose != NULL)

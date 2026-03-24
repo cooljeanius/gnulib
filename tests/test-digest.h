@@ -1,5 +1,5 @@
 /* Test of message digests.
-   Copyright (C) 2018-2023 Free Software Foundation, Inc.
+   Copyright (C) 2018-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,10 +22,9 @@ test_digest_on_files (int (*streamfunc) (FILE *, void *),
                       const void *expected_for_small_file,
                       const void *expected_for_large_file)
 {
-  int pass;
   unlink (TESTFILE);
 
-  for (pass = 0; pass < 5; pass++)
+  for (int pass = 0; pass < 5; pass++)
     {
       {
         FILE *fp = fopen (TESTFILE, "wb");
@@ -53,17 +52,14 @@ test_digest_on_files (int (*streamfunc) (FILE *, void *),
             FALLTHROUGH;
           case 3:
             /* Fill the large file (8 MiB).  */
-            {
-              unsigned int i;
-              for (i = 0; i < 0x400000; i++)
-                {
-                  unsigned char c[2];
-                  unsigned int j = i * (i-1) * (i-5);
-                  c[0] = (unsigned char)(j >> 6);
-                  c[1] = (i % 499) + (i % 101);
-                  fwrite (c, 1, 2, fp);
-                }
-            }
+            for (unsigned int i = 0; i < 0x400000; i++)
+              {
+                unsigned char c[2];
+                unsigned int j = i * (i-1) * (i-5);
+                c[0] = (unsigned char)(j >> 6);
+                c[1] = (i % 499) + (i % 101);
+                fwrite (c, 1, 2, fp);
+              }
             break;
           }
         if (ferror (fp))
@@ -115,16 +111,15 @@ test_digest_on_files (int (*streamfunc) (FILE *, void *),
             fprintf (stderr, "%s failed with error %d\n", streamfunc_name, -ret);
             exit (1);
           }
-        if (memcmp (digest, expected, digest_size) != 0)
+        if (!memeq (digest, expected, digest_size))
           {
-            size_t i;
             fprintf (stderr, "%s produced wrong result.\n", streamfunc_name);
             fprintf (stderr, "Expected: ");
-            for (i = 0; i < digest_size; i++)
+            for (size_t i = 0; i < digest_size; i++)
               fprintf (stderr, "\\x%02x", ((const unsigned char *) expected)[i]);
             fprintf (stderr, "\n");
             fprintf (stderr, "Got:      ");
-            for (i = 0; i < digest_size; i++)
+            for (size_t i = 0; i < digest_size; i++)
               fprintf (stderr, "\\x%02x", ((const unsigned char *) digest)[i]);
             fprintf (stderr, "\n");
             exit (1);

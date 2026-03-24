@@ -1,5 +1,5 @@
 /* Binary mode I/O.
-   Copyright (C) 2001, 2003, 2005, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2003, 2005, 2008-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -38,9 +38,9 @@ _GL_INLINE_HEADER_BEGIN
 #if O_BINARY
 # if defined __EMX__ || defined __DJGPP__ || defined __CYGWIN__
 #  include <io.h> /* declares setmode() */
-#  define __gl_setmode setmode
+#  define _gl_set_fd_mode setmode
 # else
-#  define __gl_setmode _setmode
+#  define _gl_set_fd_mode _setmode
 #  undef fileno
 #  define fileno _fileno
 # endif
@@ -49,11 +49,16 @@ _GL_INLINE_HEADER_BEGIN
   /* Use a function rather than a macro, to avoid gcc warnings
      "warning: statement with no effect".  */
 BINARY_IO_INLINE int
-__gl_setmode (_GL_UNUSED int fd, _GL_UNUSED int mode)
+_gl_set_fd_mode (_GL_UNUSED int fd, _GL_UNUSED int mode)
 {
   return O_BINARY;
 }
 #endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Set FD's mode to MODE, which should be either O_TEXT or O_BINARY.
    Return the old mode if successful, -1 (setting errno) on failure.
@@ -67,12 +72,17 @@ extern int set_binary_mode (int fd, int mode);
 BINARY_IO_INLINE int
 set_binary_mode (int fd, int mode)
 {
-  return __gl_setmode (fd, mode);
+  return _gl_set_fd_mode (fd, mode);
 }
 #endif
 
 /* This macro is obsolescent.  */
 #define SET_BINARY(fd) ((void) set_binary_mode (fd, O_BINARY))
+
+
+#ifdef __cplusplus
+}
+#endif
 
 _GL_INLINE_HEADER_END
 

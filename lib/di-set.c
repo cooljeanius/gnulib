@@ -1,6 +1,6 @@
 /* Set operations for device-inode pairs stored in a space-efficient manner.
 
-   Copyright 2009-2023 Free Software Foundation, Inc.
+   Copyright 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,13 +24,14 @@
 #include "ino-map.h"
 
 #include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 /* The hash package hashes "void *", but this package wants to hash
    integers.  Use integers that are as large as possible, but no
    larger than void *, so that they can be cast to void * and back
    without losing information.  */
-typedef size_t hashint;
+typedef uintptr_t hashint;
 #define HASHINT_MAX ((hashint) -1)
 
 /* Integers represent inode numbers.  Integers in the range
@@ -82,9 +83,8 @@ di_ent_hash (void const *x, size_t table_size)
      This avoids loss of info, without applying % to the wider type,
      which could be quite slow on some systems.  */
   size_t h = dev;
-  unsigned int i;
   unsigned int n_words = sizeof dev / sizeof h + (sizeof dev % sizeof h != 0);
-  for (i = 1; i < n_words; i++)
+  for (unsigned int i = 1; i < n_words; i++)
     h ^= dev >> CHAR_BIT * sizeof h * i;
 
   return h % table_size;
@@ -155,7 +155,6 @@ static struct hash_table *
 map_device (struct di_set *dis, dev_t dev)
 {
   /* Find space for the probe, reusing the cache if available.  */
-  struct di_ent *ent;
   struct di_ent *probe = dis->probe;
   if (probe)
     {
@@ -172,7 +171,7 @@ map_device (struct di_set *dis, dev_t dev)
 
   /* Probe for the device.  */
   probe->dev = dev;
-  ent = hash_insert (dis->dev_map, probe);
+  struct di_ent *ent = hash_insert (dis->dev_map, probe);
   if (! ent)
     return NULL;
 
@@ -221,15 +220,13 @@ map_inode_number (struct di_set *dis, ino_t ino)
 int
 di_set_insert (struct di_set *dis, dev_t dev, ino_t ino)
 {
-  hashint i;
-
   /* Map the device number to a set of inodes.  */
   struct hash_table *ino_set = map_device (dis, dev);
   if (! ino_set)
     return -1;
 
   /* Map the inode number to a small representative I.  */
-  i = map_inode_number (dis, ino);
+  hashint i = map_inode_number (dis, ino);
   if (i == INO_MAP_INSERT_FAILURE)
     return -1;
 
@@ -243,15 +240,13 @@ di_set_insert (struct di_set *dis, dev_t dev, ino_t ino)
 int
 di_set_lookup (struct di_set *dis, dev_t dev, ino_t ino)
 {
-  hashint i;
-
   /* Map the device number to a set of inodes.  */
   struct hash_table *ino_set = map_device (dis, dev);
   if (! ino_set)
     return -1;
 
   /* Map the inode number to a small representative I.  */
-  i = map_inode_number (dis, ino);
+  hashint i = map_inode_number (dis, ino);
   if (i == INO_MAP_INSERT_FAILURE)
     return -1;
 

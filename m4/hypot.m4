@@ -1,8 +1,10 @@
-# hypot.m4 serial 10
-dnl Copyright (C) 2012-2023 Free Software Foundation, Inc.
+# hypot.m4
+# serial 14
+dnl Copyright (C) 2012-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_HYPOT],
 [
@@ -21,7 +23,7 @@ AC_DEFUN([gl_FUNC_HYPOT],
       AC_CACHE_CHECK([whether hypot works according to ISO C 99 with IEC 60559],
         [gl_cv_func_hypot_ieee],
         [
-          save_LIBS="$LIBS"
+          saved_LIBS="$LIBS"
           LIBS="$LIBS $HYPOT_LIBM"
           AC_RUN_IFELSE(
             [AC_LANG_SOURCE([[
@@ -30,8 +32,7 @@ AC_DEFUN([gl_FUNC_HYPOT],
 #endif
 #include <math.h>
 /* Compare two numbers with ==.
-   This is a separate function because IRIX 6.5 "cc -O" miscompiles an
-   'x == x' test.  */
+   This is a separate function in order to disable compiler optimizations.  */
 static int
 numeric_equal (double x, double y)
 {
@@ -45,7 +46,7 @@ int main (int argc, char *argv[])
   double (* volatile my_hypot) (double, double) = argc ? hypot : dummy;
   double f;
   /* Test hypot(NaN,Infinity).
-     This test fails on OSF/1 5.1 and native Windows.  */
+     This test fails on native Windows.  */
   f = my_hypot (zero / zero, one / zero);
   if (!numeric_equal (f, f))
     return 1;
@@ -60,12 +61,12 @@ int main (int argc, char *argv[])
                                    # Guess yes on musl systems.
                *-musl* | midipix*) gl_cv_func_hypot_ieee="guessing yes" ;;
                                    # Guess yes on native Windows.
-               mingw*)             gl_cv_func_hypot_ieee="guessing yes" ;;
+               mingw* | windows*)  gl_cv_func_hypot_ieee="guessing yes" ;;
                                    # If we don't know, obey --enable-cross-guesses.
                *)                  gl_cv_func_hypot_ieee="$gl_cross_guess_normal" ;;
              esac
             ])
-          LIBS="$save_LIBS"
+          LIBS="$saved_LIBS"
         ])
       case "$gl_cv_func_hypot_ieee" in
         *yes) ;;

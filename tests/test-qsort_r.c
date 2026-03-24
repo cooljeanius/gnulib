@@ -1,6 +1,6 @@
 /* Test qsort_r.
 
-   Copyright 2014-2023 Free Software Foundation, Inc.
+   Copyright 2014-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int
+static int
 cmp (void const *va, void const *vb, void *varg)
 {
   char const *a = va;
@@ -38,10 +38,10 @@ main (void)
   int forward = 1;
   int reverse = -1;
   qsort_r (buf, sizeof buf - 1, 1, cmp, &forward);
-  if (strcmp (buf, "abcddeeeefghhijklmnoooopqrrsttuuvwxyz") != 0)
+  if (!streq (buf, "abcddeeeefghhijklmnoooopqrrsttuuvwxyz"))
     return 1;
   qsort_r (buf, sizeof buf - 1, 1, cmp, &reverse);
-  if (strcmp (buf, "zyxwvuuttsrrqpoooonmlkjihhgfeeeeddcba") != 0)
+  if (!streq (buf, "zyxwvuuttsrrqpoooonmlkjihhgfeeeeddcba"))
     return 1;
   return 0;
 }

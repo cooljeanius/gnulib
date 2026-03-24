@@ -1,5 +1,5 @@
 /* Timed mutexes (native Windows implementation).
-   Copyright (C) 2005-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -40,6 +40,7 @@ glwthread_timedmutex_init (glwthread_timedmutex_t *mutex)
   if (event == INVALID_HANDLE_VALUE)
     return EAGAIN;
   mutex->event = event;
+  mutex->owner = 0;
   InitializeCriticalSection (&mutex->lock);
   mutex->guard.done = 1;
   return 0;
@@ -72,7 +73,13 @@ glwthread_timedmutex_lock (glwthread_timedmutex_t *mutex)
             Sleep (0);
         }
     }
+  /* If this thread already owns the mutex, POSIX pthread_mutex_lock() is
+     required to deadlock here.  But let's not do that on purpose.  */
   EnterCriticalSection (&mutex->lock);
+  {
+    DWORD self = GetCurrentThreadId ();
+    mutex->owner = self;
+  }
   return 0;
 }
 
@@ -104,6 +111,21 @@ glwthread_timedmutex_trylock (glwthread_timedmutex_t *mutex)
     }
   if (!TryEnterCriticalSection (&mutex->lock))
     return EBUSY;
+  {
+    DWORD self = GetCurrentThreadId ();
+    /* TryEnterCriticalSection succeeded.  This means that the mutex was either
+       previously unlocked (and thus mutex->owner == 0) or previously locked by
+       this thread (and thus mutex->owner == self).  Since the mutex is meant to
+       be plain, we need to fail in the latter case.  */
+    if (mutex->owner == self)
+      {
+        LeaveCriticalSection (&mutex->lock);
+        return EBUSY;
+      }
+    if (mutex->owner != 0)
+      abort ();
+    mutex->owner = self;
+  }
   return 0;
 }
 
@@ -149,13 +171,11 @@ glwthread_timedmutex_timedlock (glwthread_timedmutex_t *mutex,
 
       {
         struct timeval currtime;
-        DWORD timeout;
-        DWORD result;
-
         gettimeofday (&currtime, NULL);
 
         /* Wait until another thread signals the event or until the
            abstime passes.  */
+        DWORD timeout;
         if (currtime.tv_sec > abstime->tv_sec)
           timeout = 0;
         else
@@ -188,7 +208,7 @@ glwthread_timedmutex_timedlock (glwthread_timedmutex_t *mutex,
 
         /* WaitForSingleObject
            <https://docs.microsoft.com/en-us/windows/desktop/api/synchapi/nf-synchapi-waitforsingleobject> */
-        result = WaitForSingleObject (mutex->event, timeout);
+        DWORD result = WaitForSingleObject (mutex->event, timeout);
         if (result == WAIT_FAILED)
           abort ();
         if (result == WAIT_TIMEOUT)
@@ -197,6 +217,21 @@ glwthread_timedmutex_timedlock (glwthread_timedmutex_t *mutex,
            locking it now.  */
       }
     }
+  {
+    DWORD self = GetCurrentThreadId ();
+    /* TryEnterCriticalSection succeeded.  This means that the mutex was either
+       previously unlocked (and thus mutex->owner == 0) or previously locked by
+       this thread (and thus mutex->owner == self).  Since the mutex is meant to
+       be plain, it is useful to fail in the latter case.  */
+    if (mutex->owner == self)
+      {
+        LeaveCriticalSection (&mutex->lock);
+        return EDEADLK;
+      }
+    if (mutex->owner != 0)
+      abort ();
+    mutex->owner = self;
+  }
   return 0;
 }
 
@@ -205,6 +240,7 @@ glwthread_timedmutex_unlock (glwthread_timedmutex_t *mutex)
 {
   if (!mutex->guard.done)
     return EINVAL;
+  mutex->owner = 0;
   LeaveCriticalSection (&mutex->lock);
   /* Notify one of the threads that were waiting with a timeout.  */
   /* SetEvent

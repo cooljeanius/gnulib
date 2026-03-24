@@ -1,5 +1,5 @@
 /* Test of sequential list data type implementation.
-   Copyright (C) 2006-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -20,6 +20,7 @@
 #include "gl_rbtreehash_list.h"
 
 #include <limits.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -40,7 +41,7 @@ string_equals (const void *x1, const void *x2)
 {
   const char *s1 = x1;
   const char *s2 = x2;
-  return strcmp (s1, s2) == 0;
+  return streq (s1, s2);
 }
 
 /* A hash function for NUL-terminated char* strings using
@@ -59,16 +60,16 @@ string_hash (const void *x)
 }
 
 #define RANDOM(n) (rand () % (n))
-#define RANDOM_OBJECT() objects[RANDOM (SIZEOF (objects))]
+#define RANDOM_OBJECT() objects[RANDOM (countof (objects))]
 
 static void
 check_equals (gl_list_t list1, gl_list_t list2)
 {
-  size_t n, i;
+  size_t n;
 
   n = gl_list_size (list1);
   ASSERT (n == gl_list_size (list2));
-  for (i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     {
       ASSERT (gl_list_get_at (list1, i) == gl_list_get_at (list2, i));
     }
@@ -126,10 +127,8 @@ main (int argc, char *argv[])
     size_t initial_size = RANDOM (50);
     const void **contents =
       (const void **) malloc (initial_size * sizeof (const void *));
-    size_t i;
-    unsigned int repeat;
 
-    for (i = 0; i < initial_size; i++)
+    for (size_t i = 0; i < initial_size; i++)
       contents[i] = RANDOM_OBJECT ();
 
     /* Create list1.  */
@@ -141,7 +140,7 @@ main (int argc, char *argv[])
     list2 = gl_list_nx_create_empty (GL_RBTREEHASH_LIST,
                                      string_equals, string_hash, NULL, true);
     ASSERT (list2 != NULL);
-    for (i = 0; i < initial_size; i++)
+    for (size_t i = 0; i < initial_size; i++)
       ASSERT (gl_list_nx_add_last (list2, contents[i]) != NULL);
 
     /* Create list3.  */
@@ -155,7 +154,7 @@ main (int argc, char *argv[])
     check_equals_by_forward_iteration (list1, list2);
     check_equals_by_backward_iteration (list1, list2);
 
-    for (repeat = 0; repeat < 10000; repeat++)
+    for (unsigned int repeat = 0; repeat < 10000; repeat++)
       {
         unsigned int operation = RANDOM (18);
         switch (operation)
@@ -436,7 +435,7 @@ main (int argc, char *argv[])
               iter1 = gl_list_iterator (list1);
               iter2 = gl_list_iterator (list2);
               iter3 = gl_list_iterator (list3);
-              for (i = 0; i < n; i++)
+              for (size_t i = 0; i < n; i++)
                 {
                   ASSERT (gl_list_iterator_next (&iter1, &elt, NULL));
                   ASSERT (gl_list_get_at (list1, i) == elt);
@@ -462,7 +461,7 @@ main (int argc, char *argv[])
               iter1 = gl_list_iterator_from_to (list1, start, end);
               iter2 = gl_list_iterator_from_to (list2, start, end);
               iter3 = gl_list_iterator_from_to (list3, start, end);
-              for (i = start; i < end; i++)
+              for (size_t i = start; i < end; i++)
                 {
                   ASSERT (gl_list_iterator_next (&iter1, &elt, NULL));
                   ASSERT (gl_list_get_at (list1, i) == elt);
@@ -489,5 +488,5 @@ main (int argc, char *argv[])
     free (contents);
   }
 
-  return 0;
+  return test_exit_status;
 }

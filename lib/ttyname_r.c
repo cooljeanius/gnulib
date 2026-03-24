@@ -1,6 +1,6 @@
 /* Determine name of a terminal.
 
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -43,11 +43,11 @@ ttyname_r (int fd, char *buf, size_t buflen)
     {
       char procfile[14+11+1];
       char largerbuf[512];
-      ssize_t ret;
       sprintf (procfile, "/proc/self/fd/%d", fd);
-      ret = (buflen < sizeof (largerbuf)
-             ? readlink (procfile, largerbuf, sizeof (largerbuf))
-             : readlink (procfile, buf, buflen <= INT_MAX ? buflen : INT_MAX));
+      ssize_t ret =
+        (buflen < sizeof (largerbuf)
+         ? readlink (procfile, largerbuf, sizeof (largerbuf))
+         : readlink (procfile, buf, buflen <= INT_MAX ? buflen : INT_MAX));
       if (ret < 0)
         return errno;
       if ((size_t) ret >= buflen)
@@ -60,8 +60,7 @@ ttyname_r (int fd, char *buf, size_t buflen)
 #elif HAVE_TTYNAME_R
   /* When ttyname_r exists, use it.  */
   /* This code is multithread-safe.  */
-  /* On Solaris, ttyname_r always fails if buflen < 128.  On OSF/1 5.1,
-     ttyname_r ignores the buffer size and assumes the buffer is large enough.
+  /* On Solaris, ttyname_r always fails if buflen < 128.
      So provide a buffer that is large enough.  */
   char largerbuf[512];
 # if HAVE_POSIXDECL_TTYNAME_R
@@ -96,13 +95,10 @@ ttyname_r (int fd, char *buf, size_t buflen)
   return 0;
 #elif HAVE_TTYNAME
   /* Note: This is not multithread-safe.  */
-  char *name;
-  size_t namelen;
-
-  name = ttyname (fd);
+  char *name = ttyname (fd);
   if (name == NULL)
     return errno;
-  namelen = strlen (name) + 1;
+  size_t namelen = strlen (name) + 1;
   if (namelen > buflen)
     return ERANGE;
   memcpy (buf, name, namelen);

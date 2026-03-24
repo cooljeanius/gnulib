@@ -1,8 +1,10 @@
-# getdomainname.m4 serial 13
-dnl Copyright (C) 2002-2003, 2008-2023 Free Software Foundation, Inc.
+# getdomainname.m4
+# serial 16
+dnl Copyright (C) 2002-2003, 2008-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_GETDOMAINNAME],
 [
@@ -24,7 +26,7 @@ AC_DEFUN([gl_FUNC_GETDOMAINNAME],
     AC_CACHE_CHECK([for getdomainname in -lnsl],
       [gl_cv_func_getdomainname_in_libnsl],
       [gl_cv_func_getdomainname_in_libnsl=no
-       gl_save_LIBS="$LIBS"
+       gl_saved_LIBS="$LIBS"
        LIBS="$LIBS -lnsl"
        AC_LINK_IFELSE(
          [AC_LANG_PROGRAM(
@@ -37,14 +39,13 @@ AC_DEFUN([gl_FUNC_GETDOMAINNAME],
             ]],
             [[getdomainname(NULL, 0);]])],
          [gl_cv_func_getdomainname_in_libnsl=yes])
-       LIBS="$gl_save_LIBS"
+       LIBS="$gl_saved_LIBS"
       ])
   fi
 
   dnl What about the declaration?
   dnl - It's  int getdomainname(char *, size_t)  on glibc, NetBSD, OpenBSD.
-  dnl - It's  int getdomainname(char *, int)  on Mac OS X, FreeBSD, AIX, IRIX,
-  dnl   OSF/1.
+  dnl - It's  int getdomainname(char *, int)  on Mac OS X, FreeBSD, AIX.
   AC_CHECK_DECLS([getdomainname], , ,
     [[#include <sys/types.h>
       #ifdef HAVE_SYS_SOCKET_H

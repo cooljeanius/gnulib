@@ -12,8 +12,12 @@ Depends-on:
 extensions
 idx
 stat-time
-stdbool
-stdint
+gettimeofday
+bool
+stdcountof-h
+stdint-h
+memeq
+streq
 strnlen
 time-h
 unlocked-io-internal
@@ -30,6 +34,7 @@ Include:
 
 Link:
 $(READUTMP_LIB)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

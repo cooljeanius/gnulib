@@ -1,9 +1,12 @@
-dnl Reentrant sort function.
-
-dnl Copyright 2014-2023 Free Software Foundation, Inc.
+# qsort_r.m4
+# serial 2
+dnl Copyright 2014-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
+
+dnl Reentrant sort function.
 
 dnl Written by Paul Eggert.
 
@@ -14,7 +17,7 @@ AC_DEFUN([gl_FUNC_QSORT_R],
 
   AC_REQUIRE([gl_STDLIB_H_DEFAULTS])
 
-  AC_CHECK_FUNCS_ONCE([qsort_r])
+  gl_CHECK_FUNCS_ANDROID([qsort_r], [[#include <stdlib.h>]])
   if test $ac_cv_func_qsort_r = yes; then
     AC_CACHE_CHECK([for qsort_r signature], [gl_cv_qsort_r_signature],
       [AC_LINK_IFELSE(

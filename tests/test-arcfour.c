@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,14 +35,13 @@ main (int argc, char *argv[])
 
   arcfour_setkey (&ctx, key_1, sizeof (key_1));
   arcfour_stream (&ctx, plaintext_1, scratch, sizeof (plaintext_1));
-  if (memcmp (scratch, ciphertext_1, sizeof (ciphertext_1)))
+  if (!memeq (scratch, ciphertext_1, sizeof (ciphertext_1)))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", scratch[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", ciphertext_1[i] & 0xFF);
       printf ("\n");
       return 1;
@@ -52,14 +51,13 @@ main (int argc, char *argv[])
 
   arcfour_setkey (&ctx, key_1, sizeof (key_1));
   arcfour_stream (&ctx, scratch, scratch, sizeof (plaintext_1));
-  if (memcmp (scratch, plaintext_1, sizeof (plaintext_1)))
+  if (!memeq (scratch, plaintext_1, sizeof (plaintext_1)))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", plaintext_1[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", scratch[i] & 0xFF);
       printf ("\n");
       return 1;

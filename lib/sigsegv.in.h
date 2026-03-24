@@ -1,5 +1,5 @@
 /* Page fault handling library.
-   Copyright (C) 1998-2023 Free Software Foundation, Inc.
+   Copyright (C) 1998-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -64,27 +64,27 @@
 
 /* HAVE_SIGSEGV_RECOVERY
    is defined if the system supports catching SIGSEGV.  */
-#if defined __linux__ || defined __ANDROID__ || defined __GNU__ \
+#if defined __linux__ || defined __ANDROID__ || defined __gnu_hurd__ \
     || defined __FreeBSD_kernel__ || (defined __FreeBSD__ && !(defined __sparc__ || defined __sparc64__)) || defined __DragonFly__ \
     || defined __NetBSD__ \
     || defined __OpenBSD__ \
     || (defined __APPLE__ && defined __MACH__) \
-    || defined _AIX || defined __sgi || defined __sun \
+    || defined _AIX || defined __sun \
     || defined __CYGWIN__ || defined __HAIKU__
-/* Linux, Hurd, GNU/kFreeBSD, FreeBSD, NetBSD, OpenBSD, macOS, AIX, IRIX, Solaris, Cygwin, Haiku */
+/* Linux, Hurd, GNU/kFreeBSD, FreeBSD, NetBSD, OpenBSD, macOS, AIX, Solaris, Cygwin, Haiku */
 # define HAVE_SIGSEGV_RECOVERY 1
 #endif
 
 /* HAVE_STACK_OVERFLOW_RECOVERY
    is defined if stack overflow can be caught.  */
-#if defined __linux__ || defined __ANDROID__ || defined __GNU__ \
+#if defined __linux__ || defined __ANDROID__ || defined __gnu_hurd__ \
     || defined __FreeBSD_kernel__ || (defined __FreeBSD__ && !(defined __sparc__ || defined __sparc64__)) || defined __DragonFly__ \
     || (defined __NetBSD__ && !(defined __sparc__ || defined __sparc64__)) \
     || defined __OpenBSD__ \
     || (defined __APPLE__ && defined __MACH__) \
-    || defined _AIX || defined __sgi || defined __sun \
+    || defined _AIX || defined __sun \
     || defined __CYGWIN__ || defined __HAIKU__
-/* Linux, Hurd, GNU/kFreeBSD, FreeBSD, NetBSD, OpenBSD, macOS, AIX, IRIX, Solaris, Cygwin, Haiku */
+/* Linux, Hurd, GNU/kFreeBSD, FreeBSD, NetBSD, OpenBSD, macOS, AIX, Solaris, Cygwin, Haiku */
 # define HAVE_STACK_OVERFLOW_RECOVERY 1
 #endif
 
@@ -105,7 +105,7 @@ extern int libsigsegv_version;       /* Likewise */
  * to a global SIGSEGV handler.
  * On some platforms, the precise fault address is not known, only the memory
  * page into which the fault address falls. This is apparently allowed by POSIX:
- * <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html>
+ * <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html>
  * says: "For some implementations, the value of si_addr may be inaccurate."
  * In this case, the returned fault address is rounded down to a multiple of
  * getpagesize() = sysconf(_SC_PAGESIZE).
@@ -187,9 +187,9 @@ extern int sigsegv_leave_handler (void (*continuation) (void*, void*, void*), vo
      || defined _AIX || defined __sun \
      || defined __CYGWIN__ || defined __HAIKU__
 typedef ucontext_t *stackoverflow_context_t;
-# elif defined __GNU__ \
+# elif defined __gnu_hurd__ \
        || defined __FreeBSD_kernel__ || (defined __FreeBSD__ && !(defined __sparc__ || defined __sparc64__)) || defined __DragonFly__ \
-       || defined __OpenBSD__ || defined __sgi
+       || defined __OpenBSD__
 typedef struct sigcontext *stackoverflow_context_t;
 # else
 typedef void *stackoverflow_context_t;

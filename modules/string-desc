@@ -7,14 +7,16 @@ lib/string-desc.c
 lib/string-desc-contains.c
 
 Depends-on:
-stdbool
+bool
 idx
+c-ctype
 ialloc
 extern-inline
 memchr
 memrchr
 memmem
 full-write
+memeq
 
 configure.ac:
 

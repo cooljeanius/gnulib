@@ -8,14 +8,28 @@ lib/classpath.h
 lib/classpath.c
 
 Depends-on:
-stdbool
+bool
+stat
+error
+dirname
+xconcat-filename
+canonicalize
+cygpath
 execute
+spawn-pipe
+wait-process
 xsetenv
+scandir
+alphasort
 sh-quote
+memeq
 xalloc
 xmalloca
-error
+copy-file
+clean-temp-simple
+clean-temp
 gettext-h
+gnulib-i18n
 csharpexec-script
 
 configure.ac:
@@ -32,6 +46,7 @@ $(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 $(MBRTOWC_LIB)
 $(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 $(LIBTHREAD)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

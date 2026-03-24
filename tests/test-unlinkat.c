@@ -1,5 +1,5 @@
 /* Tests of unlinkat.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ unlinker (char const *name)
 }
 
 int
-main (_GL_UNUSED int argc, char *argv[])
+main ()
 {
   /* FIXME: Add tests of fd other than ".".  */
   int result1;
@@ -67,7 +67,7 @@ main (_GL_UNUSED int argc, char *argv[])
   /* Test behaviour for invalid file descriptors.  */
   {
     errno = 0;
-    ASSERT (unlinkat (-1, "foo", 0) == -1);
+    ASSERT (unlinkat (AT_FDCWD == -2 ? -1 : -2, "foo", 0) == -1);
     ASSERT (errno == EBADF);
   }
   {
@@ -90,5 +90,5 @@ main (_GL_UNUSED int argc, char *argv[])
   if (result1 == 77)
     fputs ("skipping test: symlinks not supported on this file system\n",
            stderr);
-  return result1;
+  return (result1 ? result1 : test_exit_status);
 }

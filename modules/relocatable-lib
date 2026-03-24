@@ -8,6 +8,8 @@ lib/relocatable.h
 lib/relocatable.c
 lib/relocatable.valgrind
 m4/relocatable-lib.m4
+m4/libdl.m4
+m4/build-to-host.m4
 
 Depends-on:
 xalloc
@@ -23,6 +25,9 @@ Makefile.am:
 
 Include:
 "relocatable.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

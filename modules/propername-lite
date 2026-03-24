@@ -6,9 +6,8 @@ lib/propername-lite.c
 lib/propername.h
 
 Depends-on:
-localcharset
-c-strcase
 gettext-h
+uchar-h
 
 configure.ac:
 m4_ifdef([AM_XGETTEXT_OPTION],
@@ -19,6 +18,9 @@ lib_SOURCES += propername-lite.c propername.h
 
 Include:
 "propername.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 LGPL

@@ -11,6 +11,7 @@ error
 exitfail
 getopt-gnu
 gettext-h
+gnulib-i18n
 
 configure.ac:
 
@@ -19,6 +20,9 @@ lib_SOURCES += xstrtol-error.c
 
 Include:
 "xstrtol-error.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

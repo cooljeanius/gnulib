@@ -1,5 +1,5 @@
 /* Test of sh-quote module.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,10 +44,10 @@ check_one (const char *input, const char *expected)
   buf[output_len + 1] = '%';
   bufend = shell_quote_copy (buf, input);
   ASSERT (bufend == buf + output_len);
-  ASSERT (memcmp (buf, output, output_len + 1) == 0);
+  ASSERT (memeq (buf, output, output_len + 1));
   ASSERT (buf[output_len + 1] == '%');
 
-  ASSERT (strcmp (output, expected) == 0);
+  ASSERT (streq (output, expected));
 
   free (output);
 }
@@ -57,8 +57,6 @@ main (void)
 {
   /* Check the shell_quote_length, shell_quote_copy, shell_quote functions.  */
   {
-    int c;
-
     /* Empty argument.  */
     check_one ("", "''");
 
@@ -156,7 +154,7 @@ main (void)
     check_one ("foo'bar\"baz", "'foo'\\''bar\"baz'"); /* or "\"foo'bar\\\"baz\"" */
 
     /* All other characters don't need quoting.  */
-    for (c = 1; c <= UCHAR_MAX; c++)
+    for (int c = 1; c <= UCHAR_MAX; c++)
       if (strchr ("\t\n\r !\"#$&'()*;<=>?^[\\]`{|}~", c) == NULL)
         {
           char s[5];
@@ -176,7 +174,7 @@ main (void)
     char *result;
     argv[0] = NULL;
     result = shell_quote_argv (argv);
-    ASSERT (strcmp (result, "") == 0);
+    ASSERT (streq (result, ""));
     free (result);
   }
   {
@@ -185,7 +183,7 @@ main (void)
     argv[0] = "foo bar/baz";
     argv[1] = NULL;
     result = shell_quote_argv (argv);
-    ASSERT (strcmp (result, "'foo bar/baz'") == 0); /* or "\"foo bar/baz\"" */
+    ASSERT (streq (result, "'foo bar/baz'")); /* or "\"foo bar/baz\"" */
     free (result);
   }
   {
@@ -195,9 +193,9 @@ main (void)
     argv[1] = "$";
     argv[2] = NULL;
     result = shell_quote_argv (argv);
-    ASSERT (strcmp (result, "'foo bar/baz' '$'") == 0); /* or "\"foo bar/baz\" \"\\$\"" */
+    ASSERT (streq (result, "'foo bar/baz' '$'")); /* or "\"foo bar/baz\" \"\\$\"" */
     free (result);
   }
 
-  return 0;
+  return test_exit_status;
 }

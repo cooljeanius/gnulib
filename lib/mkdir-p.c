@@ -1,6 +1,6 @@
 /* mkdir-p.c -- Ensure that a directory and its parents exist.
 
-   Copyright (C) 1990, 1997-2000, 2002-2007, 2009-2023 Free Software
+   Copyright (C) 1990, 1997-2000, 2002-2007, 2009-2026 Free Software
    Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -27,11 +27,11 @@
 #include <unistd.h>
 
 #include "gettext.h"
-#define _(msgid) gettext (msgid)
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 
 #include "dirchownmod.h"
 #include "dirname.h"
-#include "error.h"
+#include <error.h>
 #include "quote.h"
 #include "mkancesdirs.h"
 #include "savewd.h"
@@ -97,9 +97,9 @@ make_dir_parents (char *dir,
 
   if (mkdir_errno == 0)
     {
-      ptrdiff_t prefix_len = 0;
       int savewd_chdir_options = (HAVE_FCHMOD ? SAVEWD_CHDIR_SKIP_READABLE : 0);
 
+      ptrdiff_t prefix_len = 0;
       if (make_ancestor)
         {
           prefix_len = mkancesdirs (dir, wd, make_ancestor, options);
@@ -144,11 +144,13 @@ make_dir_parents (char *dir,
               mkdir_mode = -1;
             }
 
-          if (preserve_existing)
+          if (mkdir_errno == ENOENT || mkdir_errno == ENOTDIR)
+            ;
+          else if (preserve_existing)
             {
               if (mkdir_errno == 0)
                 return true;
-              if (mkdir_errno != ENOENT && make_ancestor)
+              if (make_ancestor)
                 {
                   struct stat st;
                   if (stat (dir + prefix_len, &st) == 0)
@@ -172,7 +174,7 @@ make_dir_parents (char *dir,
                               savewd_chdir_options, open_result);
               if (chdir_result < -1)
                 return true;
-              else
+              else if (chdir_result == 0 || errno == EACCES)
                 {
                   bool chdir_ok = (chdir_result == 0);
                   char const *subdir = (chdir_ok ? "." : dir + prefix_len);
@@ -182,8 +184,7 @@ make_dir_parents (char *dir,
                     return true;
 
                   if (mkdir_errno == 0
-                      || (mkdir_errno != ENOENT && make_ancestor
-                          && errno != ENOTDIR))
+                      || (make_ancestor && errno != ENOENT && errno != ENOTDIR))
                     {
                       error (0, errno,
                              _(keep_owner
@@ -192,6 +193,13 @@ make_dir_parents (char *dir,
                              quote (dir));
                       return false;
                     }
+                }
+              else
+                {
+                  if (mkdir_errno == 0)
+                    mkdir_errno = errno;
+                  if (0 <= open_result[0])
+                    close (open_result[0]);
                 }
             }
         }

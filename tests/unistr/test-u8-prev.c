@@ -1,5 +1,5 @@
 /* Test of u8_prev() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 #include "unistr.h"
 
+#include <stdcountof.h>
+
 #include "macros.h"
 
 static int
@@ -35,12 +37,11 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 'x';
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -53,13 +54,12 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 0xC3;
     *ptr++ = 0x97;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -72,14 +72,13 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 0xE2;
     *ptr++ = 0x84;
     *ptr++ = 0x82;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -92,7 +91,6 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
@@ -100,7 +98,7 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
     *ptr++ = 0x9D;
     *ptr++ = 0x94;
     *ptr++ = 0x9E;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -129,11 +127,10 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 'x';
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -147,12 +144,11 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0xC3;
     *ptr++ = 0x97;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -166,13 +162,12 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0xE2;
     *ptr++ = 0x84;
     *ptr++ = 0x82;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -186,14 +181,13 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0xF0;
     *ptr++ = 0x9D;
     *ptr++ = 0x94;
     *ptr++ = 0x9E;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -213,10 +207,9 @@ main ()
 
   /* Test ISO 646 unit input.  */
   {
-    ucs4_t c;
     uint8_t buf[1];
 
-    for (c = 0; c < 0x80; c++)
+    for (ucs4_t c = 0; c < 0x80; c++)
       {
         buf[0] = c;
         uc = 0xBADFACE;
@@ -229,7 +222,7 @@ main ()
   {
     static const uint8_t input[] = { 0xC3, 0x97 };
     uc = 0xBADFACE;
-    ASSERT (check (input, SIZEOF (input), &uc) == 0);
+    ASSERT (check (input, countof (input), &uc) == 0);
     ASSERT (uc == 0x00D7);
   }
 
@@ -237,7 +230,7 @@ main ()
   {
     static const uint8_t input[] = { 0xE2, 0x82, 0xAC };
     uc = 0xBADFACE;
-    ASSERT (check (input, SIZEOF (input), &uc) == 0);
+    ASSERT (check (input, countof (input), &uc) == 0);
     ASSERT (uc == 0x20AC);
   }
 
@@ -245,71 +238,71 @@ main ()
   {
     static const uint8_t input[] = { 0xF4, 0x8F, 0xBF, 0xBD };
     uc = 0xBADFACE;
-    ASSERT (check (input, SIZEOF (input), &uc) == 0);
+    ASSERT (check (input, countof (input), &uc) == 0);
     ASSERT (uc == 0x10FFFD);
   }
 
   /* Test incomplete/invalid 1-byte input.  */
   {
     static const uint8_t input[] = { 0xC1 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xC3 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xE2 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xF4 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xFE };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
 
   /* Test incomplete/invalid 2-byte input.  */
   {
     static const uint8_t input[] = { 0xE0, 0x9F };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xE2, 0x82 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xE2, 0xD0 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xF0, 0x8F };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xF3, 0x8F };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xF3, 0xD0 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
 
   /* Test incomplete/invalid 3-byte input.  */
   {
     static const uint8_t input[] = { 0xF3, 0x8F, 0xBF };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xF3, 0xE4, 0xBF };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
   {
     static const uint8_t input[] = { 0xF3, 0x8F, 0xD0 };
-    ASSERT (check_invalid (input, SIZEOF (input)) == 0);
+    ASSERT (check_invalid (input, countof (input)) == 0);
   }
 
-  return 0;
+  return test_exit_status;
 }

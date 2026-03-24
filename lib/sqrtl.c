@@ -1,7 +1,7 @@
 /* Emulation for sqrtl.
    Contributed by Paolo Bonzini
 
-   Copyright 2002-2003, 2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright 2002-2003, 2007, 2009-2026 Free Software Foundation, Inc.
 
    This file is part of gnulib.
 
@@ -39,9 +39,6 @@ sqrtl (long double x)
 long double
 sqrtl (long double x)
 {
-  long double delta, y;
-  int exponent;
-
   /* Check for NaN */
   if (isnanl (x))
     return x;
@@ -54,9 +51,11 @@ sqrtl (long double x)
   if (x + x == x)
     return x;
 
+  int exponent;
   frexpl (x, &exponent);
-  y = ldexpl (x, -exponent / 2);
+  long double y = ldexpl (x, -exponent / 2);
 
+  long double delta;
   do
     {
       delta = y;

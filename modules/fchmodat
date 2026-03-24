@@ -7,13 +7,14 @@ lib/at-func.c
 m4/fchmodat.m4
 
 Depends-on:
-sys_stat
+sys_stat-h
 extensions
-errno           [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
+errno-h         [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
 fcntl-h         [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
-unistd          [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
+unistd-h        [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
 intprops        [test $HAVE_FCHMODAT = 0 || test $REPLACE_FCHMODAT = 1]
 c99             [test $REPLACE_FCHMODAT = 1]
+issymlinkat     [test $REPLACE_FCHMODAT = 1]
 at-internal     [test $HAVE_FCHMODAT = 0]
 chmod           [test $HAVE_FCHMODAT = 0]
 extern-inline   [test $HAVE_FCHMODAT = 0]
@@ -40,6 +41,9 @@ endif
 
 Include:
 <sys/stat.h>
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

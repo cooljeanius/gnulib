@@ -1,7 +1,7 @@
 /* sha512.c - Functions to compute SHA512 and SHA384 message digest of files or
    memory blocks according to the NIST specification FIPS-180-2.
 
-   Copyright (C) 2005-2006, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2006, 2008-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -23,9 +23,6 @@
 #include <config.h>
 
 /* Specification.  */
-#if HAVE_OPENSSL_SHA512
-# define GL_OPENSSL_INLINE _GL_EXTERN_INLINE
-#endif
 #include "sha512.h"
 
 #include <stdlib.h>
@@ -46,9 +43,11 @@
    The initial and finishing operations are INIT_CTX and FINISH_CTX.
    Return zero if and only if successful.  */
 static int
-shaxxx_stream (FILE *stream, char const *alg, void *resblock,
+shaxxx_stream (FILE *restrict stream, char const *restrict alg,
+               void *restrict resblock,
                ssize_t hashlen, void (*init_ctx) (struct sha512_ctx *),
-               void *(*finish_ctx) (struct sha512_ctx *, void *))
+               void *(*finish_ctx) (struct sha512_ctx *restrict,
+                                    void *restrict))
 {
   switch (afalg_stream (stream, alg, resblock, hashlen))
     {
@@ -56,7 +55,7 @@ shaxxx_stream (FILE *stream, char const *alg, void *resblock,
     case -EIO: return 1;
     }
 
-  char *buffer = malloc (BLOCKSIZE + 72);
+  char *buffer = malloc (BLOCKSIZE);
   if (!buffer)
     return 1;
 
@@ -70,7 +69,6 @@ shaxxx_stream (FILE *stream, char const *alg, void *resblock,
       /* We read the file in blocks of BLOCKSIZE bytes.  One call of the
          computation function processes the whole buffer so that with the
          next round of the loop another block can be read.  */
-      size_t n;
       sum = 0;
 
       /* Read block.  Take care for partial reads.  */
@@ -80,11 +78,11 @@ shaxxx_stream (FILE *stream, char const *alg, void *resblock,
              or the fread() in afalg_stream may have gotten EOF.
              We need to avoid a subsequent fread() as EOF may
              not be sticky.  For details of such systems, see:
-             https://sourceware.org/bugzilla/show_bug.cgi?id=1190  */
+             https://sourceware.org/PR1190  */
           if (feof (stream))
             goto process_partial_block;
 
-          n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
+          size_t n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
 
           sum += n;
 
@@ -124,14 +122,14 @@ shaxxx_stream (FILE *stream, char const *alg, void *resblock,
 }
 
 int
-sha512_stream (FILE *stream, void *resblock)
+sha512_stream (FILE *restrict stream, void *restrict resblock)
 {
   return shaxxx_stream (stream, "sha512", resblock, SHA512_DIGEST_SIZE,
                         sha512_init_ctx, sha512_finish_ctx);
 }
 
 int
-sha384_stream (FILE *stream, void *resblock)
+sha384_stream (FILE *restrict stream, void *restrict resblock)
 {
   return shaxxx_stream (stream, "sha384", resblock, SHA384_DIGEST_SIZE,
                         sha384_init_ctx, sha384_finish_ctx);

@@ -1,5 +1,5 @@
 /* Test of u8_strlen() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 #include <config.h>
 
 #include "unistr.h"
+
+#include <stdcountof.h>
 
 #include "macros.h"
 
@@ -43,8 +45,8 @@ main ()
         0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, ',',
         0xED, 0x95, 0x9C, 0xEA, 0xB8, 0x80, '\0'
       };
-    ASSERT (u8_strlen (input) == SIZEOF (input) - 1);
+    ASSERT (u8_strlen (input) == countof (input) - 1);
   }
 
-  return 0;
+  return test_exit_status;
 }

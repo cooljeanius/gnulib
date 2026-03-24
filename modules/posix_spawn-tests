@@ -14,13 +14,15 @@ Depends-on:
 posix_spawn_file_actions_init
 posix_spawn_file_actions_addopen
 posix_spawn_file_actions_destroy
-stdbool
-unistd
-sys_wait
+bool
+unistd-h
+sys_wait-h
 environ
 fflush
 freopen
 waitpid
+streq
+memeq
 
 configure.ac:
 

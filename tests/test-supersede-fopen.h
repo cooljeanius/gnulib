@@ -1,6 +1,6 @@
 /* Tests for opening a file without destroying an old file with the same name.
 
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
     size_t file_size;
     char *file_contents = read_file (filename, RF_BINARY, &file_size);
     ASSERT (file_size == 12);
-    ASSERT (memcmp (file_contents, "Hello world\n", 12) == 0);
+    ASSERT (memeq (file_contents, "Hello world\n", 12));
   }
 
   /* Test the case that the file exists and is a regular file.  */
@@ -70,12 +70,12 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
       if (supersede_if_exists)
         {
           ASSERT (file_size == 12);
-          ASSERT (memcmp (file_contents, "Hello world\n", 12) == 0);
+          ASSERT (memeq (file_contents, "Hello world\n", 12));
         }
       else
         {
           ASSERT (file_size == 7);
-          ASSERT (memcmp (file_contents, "Foobar\n", 7) == 0);
+          ASSERT (memeq (file_contents, "Foobar\n", 7));
         }
     }
     ASSERT (fclose_supersede (fp, &action) == 0);
@@ -85,7 +85,7 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
     size_t file_size;
     char *file_contents = read_file (filename, RF_BINARY, &file_size);
     ASSERT (file_size == 7);
-    ASSERT (memcmp (file_contents, "Foobar\n", 7) == 0);
+    ASSERT (memeq (file_contents, "Foobar\n", 7));
 
     if (supersede_if_exists)
       {
@@ -94,8 +94,8 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
 #if !(defined _WIN32 && !defined __CYGWIN__)
         /* Note: On Linux/mips, statbuf.st_dev is smaller than a dev_t!  */
         dev_t new_dev = statbuf.st_dev;
-        ASSERT (memcmp (&orig_dev, &new_dev, sizeof (dev_t)) == 0);
-        ASSERT (memcmp (&orig_ino, &statbuf.st_ino, sizeof (ino_t)) != 0);
+        ASSERT (memeq (&orig_dev, &new_dev, sizeof (dev_t)));
+        ASSERT (!memeq (&orig_ino, &statbuf.st_ino, sizeof (ino_t)));
 #endif
       }
   }
@@ -142,12 +142,12 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
           if (supersede_if_exists)
             {
               ASSERT (file_size == 7);
-              ASSERT (memcmp (file_contents, "Foobar\n", 7) == 0);
+              ASSERT (memeq (file_contents, "Foobar\n", 7));
             }
           else
             {
               ASSERT (file_size == 4);
-              ASSERT (memcmp (file_contents, "New\n", 4) == 0);
+              ASSERT (memeq (file_contents, "New\n", 4));
             }
         }
         ASSERT (fclose_supersede (fp, &action) == 0);
@@ -157,7 +157,7 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
         size_t file_size;
         char *file_contents = read_file (linkname, RF_BINARY, &file_size);
         ASSERT (file_size == 4);
-        ASSERT (memcmp (file_contents, "New\n", 4) == 0);
+        ASSERT (memeq (file_contents, "New\n", 4));
 
         if (supersede_if_exists)
           {
@@ -166,8 +166,8 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
 #if !(defined _WIN32 && !defined __CYGWIN__)
             /* Note: On Linux/mips, statbuf.st_dev is smaller than a dev_t!  */
             dev_t new_dev = statbuf.st_dev;
-            ASSERT (memcmp (&orig_dev, &new_dev, sizeof (dev_t)) == 0);
-            ASSERT (memcmp (&orig_ino, &statbuf.st_ino, sizeof (ino_t)) != 0);
+            ASSERT (memeq (&orig_dev, &new_dev, sizeof (dev_t)));
+            ASSERT (!memeq (&orig_ino, &statbuf.st_ino, sizeof (ino_t)));
 #endif
           }
 
@@ -232,7 +232,7 @@ test_fopen_supersede (bool supersede_if_exists, bool supersede_if_does_not_exist
         size_t file_size;
         char *file_contents = read_file (linkname, RF_BINARY, &file_size);
         ASSERT (file_size == 12);
-        ASSERT (memcmp (file_contents, "Hello world\n", 12) == 0);
+        ASSERT (memeq (file_contents, "Hello world\n", 12));
 
         /* Clean up.  */
         unlink (linkname);

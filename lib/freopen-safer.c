@@ -1,6 +1,6 @@
 /* Invoke freopen, but avoid some glitches.
 
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 #include <unistd.h>
 
 /* GCC 13 misunderstands the dup2 trickery in this file.  */
-#if 13 <= __GNUC__
+#if _GL_GNUC_PREREQ (13, 0)
 # pragma GCC diagnostic ignored "-Wanalyzer-fd-leak"
 #endif
 
@@ -68,7 +68,6 @@ freopen_safer (char const *name, char const *mode, FILE *f)
   bool protect_in = false;
   bool protect_out = false;
   bool protect_err = false;
-  int saved_errno;
 
   switch (fileno (f))
     {
@@ -96,7 +95,7 @@ freopen_safer (char const *name, char const *mode, FILE *f)
     f = NULL;
   else
     f = freopen (name, mode, f);
-  saved_errno = errno;
+  int saved_errno = errno;
   if (protect_err)
     close (STDERR_FILENO);
   if (protect_out)

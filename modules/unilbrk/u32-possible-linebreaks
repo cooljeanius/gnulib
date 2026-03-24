@@ -9,10 +9,10 @@ lib/uniwidth/cjk.h
 Depends-on:
 unilbrk/base
 unilbrk/tables
-streq
+streq-opt
 
 configure.ac:
-gl_LIBUNISTRING_MODULE([1.1], [unilbrk/u32-possible-linebreaks])
+gl_LIBUNISTRING_MODULE([1.4], [unilbrk/u32-possible-linebreaks])
 
 Makefile.am:
 if LIBUNISTRING_COMPILE_UNILBRK_U32_POSSIBLE_LINEBREAKS

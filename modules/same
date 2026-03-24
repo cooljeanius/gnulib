@@ -15,7 +15,8 @@ fstat
 fstatat
 openat
 same-inode
-stdbool
+memeq
+bool
 memcmp
 
 configure.ac:
@@ -26,6 +27,9 @@ lib_SOURCES += same.c
 
 Include:
 "same.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

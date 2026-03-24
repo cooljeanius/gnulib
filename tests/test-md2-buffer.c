@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,29 +34,25 @@ main (int argc, char *argv[])
     "\x4e\x8d\xdf\xf3\x65\x02\x92\xab\x5a\x41\x08\xc3\xaa\x47\x94\x0b";
   char buf[MD2_DIGEST_SIZE];
 
-  if (memcmp (md2_buffer (in1, strlen (in1), buf), out1, MD2_DIGEST_SIZE) !=
-      0)
+  if (!memeq (md2_buffer (in1, strlen (in1), buf), out1, MD2_DIGEST_SIZE))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < MD2_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD2_DIGEST_SIZE; i++)
         printf ("%02x ", out1[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < MD2_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD2_DIGEST_SIZE; i++)
         printf ("%02x ", buf[i] & 0xFF);
       printf ("\n");
       return 1;
     }
 
-  if (memcmp (md2_buffer (in2, strlen (in2), buf), out2, MD2_DIGEST_SIZE) !=
-      0)
+  if (!memeq (md2_buffer (in2, strlen (in2), buf), out2, MD2_DIGEST_SIZE))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < MD2_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD2_DIGEST_SIZE; i++)
         printf ("%02x ", out2[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < MD2_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD2_DIGEST_SIZE; i++)
         printf ("%02x ", buf[i] & 0xFF);
       printf ("\n");
       return 1;

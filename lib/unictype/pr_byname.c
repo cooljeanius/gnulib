@@ -1,5 +1,5 @@
 /* Properties of Unicode characters.
-   Copyright (C) 2007, 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2007.
 
    This file is free software.
@@ -69,6 +69,8 @@ enum
   UC_PROPERTY_INDEX_OTHER_ID_CONTINUE,
   UC_PROPERTY_INDEX_XID_START,
   UC_PROPERTY_INDEX_XID_CONTINUE,
+  UC_PROPERTY_INDEX_ID_COMPAT_MATH_START,
+  UC_PROPERTY_INDEX_ID_COMPAT_MATH_CONTINUE,
   UC_PROPERTY_INDEX_PATTERN_WHITE_SPACE,
   UC_PROPERTY_INDEX_PATTERN_SYNTAX,
   /* Shaping and rendering.  */
@@ -77,6 +79,7 @@ enum
   UC_PROPERTY_INDEX_GRAPHEME_EXTEND,
   UC_PROPERTY_INDEX_OTHER_GRAPHEME_EXTEND,
   UC_PROPERTY_INDEX_GRAPHEME_LINK,
+  UC_PROPERTY_INDEX_MODIFIER_COMBINING_MARK,
   /* Bidi.  */
   UC_PROPERTY_INDEX_BIDI_CONTROL,
   UC_PROPERTY_INDEX_BIDI_LEFT_TO_RIGHT,
@@ -102,6 +105,7 @@ enum
   UC_PROPERTY_INDEX_IDEOGRAPHIC,
   UC_PROPERTY_INDEX_UNIFIED_IDEOGRAPH,
   UC_PROPERTY_INDEX_RADICAL,
+  UC_PROPERTY_INDEX_IDS_UNARY_OPERATOR,
   UC_PROPERTY_INDEX_IDS_BINARY_OPERATOR,
   UC_PROPERTY_INDEX_IDS_TRINARY_OPERATOR,
   /* Misc.  */
@@ -110,6 +114,7 @@ enum
   UC_PROPERTY_INDEX_NON_BREAK,
   UC_PROPERTY_INDEX_ISO_CONTROL,
   UC_PROPERTY_INDEX_FORMAT_CONTROL,
+  UC_PROPERTY_INDEX_PREPENDED_CONCATENATION_MARK,
   UC_PROPERTY_INDEX_DASH,
   UC_PROPERTY_INDEX_HYPHEN,
   UC_PROPERTY_INDEX_PUNCTUATION,
@@ -141,27 +146,29 @@ uc_property_t
 uc_property_byname (const char *property_name)
 {
   char buf[MAX_WORD_LENGTH + 1];
-  const char *cp;
   char *bp;
-  unsigned int count;
-  const struct named_property *found;
 
-  for (cp = property_name, bp = buf, count = MAX_WORD_LENGTH + 1; ; cp++, bp++)
-    {
-      unsigned char c = (unsigned char) *cp;
-      if (c >= 0x80)
-        goto invalid;
-      if (c >= 'A' && c <= 'Z')
-        c += 'a' - 'A';
-      else if (c == ' ' || c == '-')
-        c = '_';
-      *bp = c;
-      if (c == '\0')
-        break;
-      if (--count == 0)
-        goto invalid;
-    }
-  found = uc_property_lookup (buf, bp - buf);
+  {
+    const char *cp;
+    unsigned int count;
+    for (cp = property_name, bp = buf, count = MAX_WORD_LENGTH + 1; ; cp++, bp++)
+      {
+        unsigned char c = (unsigned char) *cp;
+        if (c >= 0x80)
+          goto invalid;
+        if (c >= 'A' && c <= 'Z')
+          c += 'a' - 'A';
+        else if (c == ' ' || c == '-')
+          c = '_';
+        *bp = c;
+        if (c == '\0')
+          break;
+        if (--count == 0)
+          goto invalid;
+      }
+  }
+
+  const struct named_property *found = uc_property_lookup (buf, bp - buf);
   if (found != NULL)
     /* Use a 'switch' statement here, because a table would introduce load-time
        relocations.  */
@@ -227,6 +234,10 @@ uc_property_byname (const char *property_name)
         return UC_PROPERTY_XID_START;
       case UC_PROPERTY_INDEX_XID_CONTINUE:
         return UC_PROPERTY_XID_CONTINUE;
+      case UC_PROPERTY_INDEX_ID_COMPAT_MATH_START:
+        return UC_PROPERTY_ID_COMPAT_MATH_START;
+      case UC_PROPERTY_INDEX_ID_COMPAT_MATH_CONTINUE:
+        return UC_PROPERTY_ID_COMPAT_MATH_CONTINUE;
       case UC_PROPERTY_INDEX_PATTERN_WHITE_SPACE:
         return UC_PROPERTY_PATTERN_WHITE_SPACE;
       case UC_PROPERTY_INDEX_PATTERN_SYNTAX:
@@ -241,6 +252,8 @@ uc_property_byname (const char *property_name)
         return UC_PROPERTY_OTHER_GRAPHEME_EXTEND;
       case UC_PROPERTY_INDEX_GRAPHEME_LINK:
         return UC_PROPERTY_GRAPHEME_LINK;
+      case UC_PROPERTY_INDEX_MODIFIER_COMBINING_MARK:
+        return UC_PROPERTY_MODIFIER_COMBINING_MARK;
       case UC_PROPERTY_INDEX_BIDI_CONTROL:
         return UC_PROPERTY_BIDI_CONTROL;
       case UC_PROPERTY_INDEX_BIDI_LEFT_TO_RIGHT:
@@ -285,6 +298,8 @@ uc_property_byname (const char *property_name)
         return UC_PROPERTY_UNIFIED_IDEOGRAPH;
       case UC_PROPERTY_INDEX_RADICAL:
         return UC_PROPERTY_RADICAL;
+      case UC_PROPERTY_INDEX_IDS_UNARY_OPERATOR:
+        return UC_PROPERTY_IDS_UNARY_OPERATOR;
       case UC_PROPERTY_INDEX_IDS_BINARY_OPERATOR:
         return UC_PROPERTY_IDS_BINARY_OPERATOR;
       case UC_PROPERTY_INDEX_IDS_TRINARY_OPERATOR:
@@ -299,6 +314,8 @@ uc_property_byname (const char *property_name)
         return UC_PROPERTY_ISO_CONTROL;
       case UC_PROPERTY_INDEX_FORMAT_CONTROL:
         return UC_PROPERTY_FORMAT_CONTROL;
+      case UC_PROPERTY_INDEX_PREPENDED_CONCATENATION_MARK:
+        return UC_PROPERTY_PREPENDED_CONCATENATION_MARK;
       case UC_PROPERTY_INDEX_DASH:
         return UC_PROPERTY_DASH;
       case UC_PROPERTY_INDEX_HYPHEN:

@@ -4,6 +4,8 @@ tests/signature.h
 tests/macros.h
 
 Depends-on:
+streq
+memeq
 
 configure.ac:
 

@@ -1,5 +1,5 @@
 /* Test of getting user name.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ test_getlogin_result (const char *buf, int err)
   {
     const char *name = getenv ("USERNAME");
     if (name != NULL && name[0] != '\0')
-      ASSERT (strcmp (buf, name) == 0);
+      ASSERT (streq (buf, name));
   }
 #endif
 }

@@ -1,7 +1,7 @@
 /* Sequential list data type backed by another list, with out-of-memory
    checking.
 
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published
@@ -16,7 +16,6 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#include <config.h>
-
 #define GL_XSUBLIST_INLINE _GL_EXTERN_INLINE
+#include <config.h>
 #include "gl_xsublist.h"

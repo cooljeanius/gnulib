@@ -6,10 +6,11 @@ Files:
 lib/c32_get_mapping.c
 
 Depends-on:
-uchar
+uchar-h
 wctrans
 c32tolower
 c32toupper
+streq
 
 configure.ac:
 gl_UCHAR_MODULE_INDICATOR([c32_get_mapping])

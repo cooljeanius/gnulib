@@ -1,5 +1,5 @@
 /* Test of line breaking of strings.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "unilbrk.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "macros.h"
@@ -33,14 +34,13 @@ test_function (int (*my_ulc_width_linebreaks) (const char *, size_t, int, int, i
 
 #if HAVE_ICONV
   {
-    static const char input[36] =
+    static const char input[36] _GL_ATTRIBUTE_NONSTRING =
       /* "Grüß Gott. x=(-b±sqrt(b²-4ac))/(2a)" */
       "Gr\374\337 Gott. x=(-b\261sqrt(b\262-4ac))/(2a)\n";
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_ulc_width_linebreaks (input, SIZEOF (input), 12, 0, 0, NULL, "ISO-8859-1", p);
-    for (i = 0; i < 36; i++)
+    my_ulc_width_linebreaks (input, countof (input), 12, 0, 0, NULL, "ISO-8859-1", p);
+    for (size_t i = 0; i < 36; i++)
       {
         ASSERT (p[i] == (i == 35 ? UC_BREAK_MANDATORY :
                          i == 11 || i == 15 || i == 31 ? UC_BREAK_POSSIBLE :
@@ -60,5 +60,5 @@ main ()
   test_function (ulc_width_linebreaks, 1);
 #endif
 
-  return 0;
+  return test_exit_status;
 }

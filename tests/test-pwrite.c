@@ -1,5 +1,5 @@
 /* Test the pwrite function.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ main (void)
   int fd;
   char buf[] = "0123456789";
   off_t pos = 2;
-  size_t i;
   off_t init_pos;
 
   ASSERT (file);
@@ -53,7 +52,7 @@ main (void)
   init_pos = lseek (fd, pos, SEEK_SET);
   ASSERT (init_pos == pos);
 
-  for (i = 0; i < N; i+=2)
+  for (size_t i = 0; i < N; i+=2)
     {
       const char byte = 'W';
       ASSERT (pwrite (fd, &byte, 1, i) == 1);
@@ -74,7 +73,7 @@ main (void)
     ASSERT (0 <= fd);
     ASSERT (read (fd, buf, N) == N);
     ASSERT (close (fd) == 0);
-    ASSERT (strcmp ("W1W3W5W7W9",buf) == 0);
+    ASSERT (streq ("W1W3W5W7W9",buf));
   }
 
   /* Test behaviour for invalid file descriptors.  */
@@ -92,5 +91,5 @@ main (void)
     ASSERT (errno == EBADF);
   }
 
-  return 0;
+  return test_exit_status;
 }

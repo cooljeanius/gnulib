@@ -1,5 +1,5 @@
 /* Test of u8_mbsnlen() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 #include "unistr.h"
 
+#include <stdcountof.h>
+
 #include "macros.h"
 
 int
@@ -37,7 +39,7 @@ main ()
         0xE4, 0xB8, 0xAD, 0xE6, 0x96, 0x87, ',',
         0xED, 0x95, 0x9C, 0xEA, 0xB8, 0x80, '\n'
       };
-    static const size_t expected[SIZEOF (input) + 1] =
+    static const size_t expected[countof (input) + 1] =
       { 0,
         1, 2, 3, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11,
         12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17,
@@ -48,9 +50,8 @@ main ()
         56, 56, 56, 57, 57, 57, 58,
         59, 59, 59, 60, 60, 60, 61
       };
-    size_t n;
 
-    for (n = 0; n <= SIZEOF (input); n++)
+    for (size_t n = 0; n <= countof (input); n++)
       {
         size_t len = u8_mbsnlen (input, n);
         ASSERT (len == expected[n]);
@@ -82,10 +83,9 @@ main ()
   }
   /* 3.2. Lonely start characters.  */
   {
-    ucs4_t c;
     uint8_t input[2];
 
-    for (c = 0xC0; c <= 0xFF; c++)
+    for (ucs4_t c = 0xC0; c <= 0xFF; c++)
       {
         input[0] = c;
         input[1] = ' ';
@@ -140,5 +140,5 @@ main ()
     ASSERT (u8_mbsnlen (input, 5) == 5);
   }
 
-  return 0;
+  return test_exit_status;
 }

@@ -9,15 +9,20 @@ Depends-on:
 stdopen
 error
 gettext-h
+gnulib-i18n
 exitfail
 
 configure.ac:
+gl_MODULE_INDICATOR([xstdopen])
 
 Makefile.am:
 lib_SOURCES += xstdopen.c
 
 Include:
 "xstdopen.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

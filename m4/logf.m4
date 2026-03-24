@@ -1,8 +1,10 @@
-# logf.m4 serial 13
-dnl Copyright (C) 2011-2023 Free Software Foundation, Inc.
+# logf.m4
+# serial 17
+dnl Copyright (C) 2011-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_LOGF],
 [
@@ -15,29 +17,20 @@ AC_DEFUN([gl_FUNC_LOGF],
 
   dnl Test whether logf() exists. Assume that logf(), if it exists, is
   dnl defined in the same library as log().
-  save_LIBS="$LIBS"
+  saved_LIBS="$LIBS"
   LIBS="$LIBS $LOG_LIBM"
   AC_CHECK_FUNCS([logf])
-  LIBS="$save_LIBS"
+  LIBS="$saved_LIBS"
   if test $ac_cv_func_logf = yes; then
     LOGF_LIBM="$LOG_LIBM"
 
-    save_LIBS="$LIBS"
-    LIBS="$LIBS $LOGF_LIBM"
-    gl_FUNC_LOGF_WORKS
-    LIBS="$save_LIBS"
-    case "$gl_cv_func_logf_works" in
-      *yes) ;;
-      *) REPLACE_LOGF=1 ;;
-    esac
-
     m4_ifdef([gl_FUNC_LOGF_IEEE], [
-      if test $gl_logf_required = ieee && test $REPLACE_LOGF = 0; then
+      if test $gl_logf_required = ieee; then
         AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
         AC_CACHE_CHECK([whether logf works according to ISO C 99 with IEC 60559],
           [gl_cv_func_logf_ieee],
           [
-            save_LIBS="$LIBS"
+            saved_LIBS="$LIBS"
             LIBS="$LIBS $LOGF_LIBM"
             AC_RUN_IFELSE(
               [AC_LANG_SOURCE([[
@@ -46,8 +39,7 @@ AC_DEFUN([gl_FUNC_LOGF],
 #endif
 #include <math.h>
 /* Compare two numbers with ==.
-   This is a separate function because IRIX 6.5 "cc -O" miscompiles an
-   'x == x' test.  */
+   This is a separate function in order to disable compiler optimizations.  */
 static int
 numeric_equal (float x, float y)
 {
@@ -73,12 +65,12 @@ int main (int argc, char *argv[])
                                      # Guess yes on musl systems.
                  *-musl* | midipix*) gl_cv_func_logf_ieee="guessing yes" ;;
                                      # Guess yes on native Windows.
-                 mingw*)             gl_cv_func_logf_ieee="guessing yes" ;;
+                 mingw* | windows*)  gl_cv_func_logf_ieee="guessing yes" ;;
                                      # If we don't know, obey --enable-cross-guesses.
                  *)                  gl_cv_func_logf_ieee="$gl_cross_guess_normal" ;;
                esac
               ])
-            LIBS="$save_LIBS"
+            LIBS="$saved_LIBS"
           ])
         case "$gl_cv_func_logf_ieee" in
           *yes) ;;
@@ -100,38 +92,4 @@ int main (int argc, char *argv[])
     fi
   fi
   AC_SUBST([LOGF_LIBM])
-])
-
-dnl Test whether logf() works.
-dnl On OSF/1 5.1, logf(-0.0f) is NaN.
-AC_DEFUN([gl_FUNC_LOGF_WORKS],
-[
-  AC_REQUIRE([AC_PROG_CC])
-  AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
-  AC_CACHE_CHECK([whether logf works], [gl_cv_func_logf_works],
-    [
-      AC_RUN_IFELSE(
-        [AC_LANG_SOURCE([[
-#include <math.h>
-volatile float x;
-float y;
-int main ()
-{
-  x = -0.0f;
-  y = logf (x);
-  if (!(y + y == y))
-    return 1;
-  return 0;
-}
-]])],
-        [gl_cv_func_logf_works=yes],
-        [gl_cv_func_logf_works=no],
-        [case "$host_os" in
-           osf*)   gl_cv_func_logf_works="guessing no" ;;
-                   # Guess yes on native Windows.
-           mingw*) gl_cv_func_logf_works="guessing yes" ;;
-           *)      gl_cv_func_logf_works="guessing yes" ;;
-         esac
-        ])
-    ])
 ])

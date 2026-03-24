@@ -1,5 +1,5 @@
 /* Test of u16_uctomb() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 #include "unistr.h"
 
+#include <stdcountof.h>
+
 #include "macros.h"
 
 #define MAGIC 0xBADE
@@ -28,24 +30,20 @@ int
 main ()
 {
   /* Test ISO 646 character, in particular the NUL character.  */
-  {
-    ucs4_t uc;
+  for (ucs4_t uc = 0; uc < 0x80; uc++)
+    {
+      uint16_t buf[3] = { MAGIC, MAGIC, MAGIC };
+      int ret;
 
-    for (uc = 0; uc < 0x80; uc++)
-      {
-        uint16_t buf[3] = { MAGIC, MAGIC, MAGIC };
-        int ret;
+      ret = u16_uctomb (buf, uc, 0);
+      ASSERT (ret == -2);
+      ASSERT (buf[0] == MAGIC);
 
-        ret = u16_uctomb (buf, uc, 0);
-        ASSERT (ret == -2);
-        ASSERT (buf[0] == MAGIC);
-
-        ret = u16_uctomb (buf, uc, 1);
-        ASSERT (ret == 1);
-        ASSERT (buf[0] == uc);
-        ASSERT (buf[1] == MAGIC);
-      }
-  }
+      ret = u16_uctomb (buf, uc, 1);
+      ASSERT (ret == 1);
+      ASSERT (buf[0] == uc);
+      ASSERT (buf[1] == MAGIC);
+    }
 
   /* Test BMP character.  */
   {
@@ -88,14 +86,12 @@ main ()
   {
     ucs4_t invalid[] = { 0x110000, 0xD800, 0xDBFF, 0xDC00, 0xDFFF };
     uint16_t buf[3] = { MAGIC, MAGIC, MAGIC };
-    size_t i;
 
-    for (i = 0; i < SIZEOF (invalid); i++)
+    for (size_t i = 0; i < countof (invalid); i++)
       {
         ucs4_t uc = invalid[i];
-        int n;
 
-        for (n = 0; n <= 2; n++)
+        for (int n = 0; n <= 2; n++)
           {
             int ret = u16_uctomb (buf, uc, n);
             ASSERT (ret == -1);
@@ -106,5 +102,5 @@ main ()
       }
   }
 
-  return 0;
+  return test_exit_status;
 }

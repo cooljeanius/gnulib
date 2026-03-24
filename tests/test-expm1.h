@@ -1,5 +1,5 @@
 /* Test of expm1*() function family.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
 static void
 test_function (void)
 {
-  int i;
-  int j;
   const DOUBLE TWO_MANT_DIG =
     /* Assume MANT_DIG <= 5 * 31.
        Use the identity
@@ -31,6 +29,7 @@ test_function (void)
 
   /* Arguments near zero.  */
   {
+    int i;
     DOUBLE x;
 
     for (i = -1, x = L_(0.5); i >= MIN_EXP; i--, x *= L_(0.5))
@@ -52,7 +51,9 @@ test_function (void)
     /* Error bound, in ulps.  */
     const DOUBLE err_bound =
       (sizeof (DOUBLE) > sizeof (double) ?
-#if defined __i386__ && defined __FreeBSD__
+#if defined __i386__ && defined __NetBSD__
+       L_(1025.0)
+#elif defined __i386__ && defined __FreeBSD__
        /* On FreeBSD/x86 6.4, the 'long double' type really has only 53 bits of
           precision in the compiler but 64 bits of precision at runtime.  See
           <https://lists.gnu.org/r/bug-gnulib/2008-07/msg00063.html>.
@@ -64,7 +65,7 @@ test_function (void)
 #endif
        : L_(5.0));
 
-    for (i = 0; i < SIZEOF (RANDOM); i++)
+    for (int i = 0; i < countof (RANDOM); i++)
       {
         DOUBLE x = L_(2.0) * RANDOM[i]; /* 0.0 <= x <= 2.0 */
         DOUBLE y = EXPM1 (x);
@@ -83,13 +84,15 @@ test_function (void)
       (sizeof (DOUBLE) > sizeof (double) ?
 #if defined __i386__ && defined __FreeBSD__
        L_(1536.0)
+#elif defined __i386__ && defined __NetBSD__
+       L_(1026.0)
 #else
        L_(11.0)
 #endif
        : L_(9.0));
 
-    for (i = 0; i < SIZEOF (RANDOM) / 5; i++)
-      for (j = 0; j < SIZEOF (RANDOM) / 5; j++)
+    for (int i = 0; i < countof (RANDOM) / 5; i++)
+      for (int j = 0; j < countof (RANDOM) / 5; j++)
         {
           DOUBLE x = L_(2.0) * RANDOM[i] - L_(1.0); /* -1.0 <= x <= 1.0 */
           DOUBLE y = L_(2.0) * RANDOM[j] - L_(1.0); /* -1.0 <= y <= 1.0 */

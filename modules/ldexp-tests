@@ -3,15 +3,16 @@ tests/test-ldexp.c
 tests/test-ldexp.h
 tests/minus-zero.h
 tests/infinity.h
-tests/nan.h
 tests/signature.h
 tests/macros.h
 tests/randomd.c
 
 Depends-on:
 isnand-nolibm
-signbit
-float
+signbit-no-c++
+float-h
+nan
+stdcountof-h
 
 configure.ac:
 

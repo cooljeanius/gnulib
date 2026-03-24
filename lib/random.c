@@ -1,4 +1,4 @@
-/* Copyright (C) 1995-2023 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -67,10 +67,10 @@
 #ifdef _LIBC
 # include <libc-lock.h>
 #else
-/* Allow memory races; that's random enough.  */
-# define __libc_lock_define_initialized(class, name)
-# define __libc_lock_lock(name) ((void) 0)
-# define __libc_lock_unlock(name) ((void) 0)
+# include "glthread/lock.h"
+# define __libc_lock_define_initialized gl_lock_define_initialized
+# define __libc_lock_lock gl_lock_lock
+# define __libc_lock_unlock gl_lock_unlock
 #endif
 
 /* An improved random number generation package.  In addition to the standard
@@ -246,14 +246,11 @@ weak_alias (__srandom, srand)
 char *
 __initstate (unsigned int seed, char *arg_state, size_t n)
 {
-  int32_t *ostate;
-  int ret;
-
   __libc_lock_lock (lock);
 
-  ostate = &unsafe_state.state[-1];
+  int32_t *ostate = &unsafe_state.state[-1];
 
-  ret = __initstate_r (seed, arg_state, n, &unsafe_state);
+  int ret = __initstate_r (seed, arg_state, n, &unsafe_state);
 
   __libc_lock_unlock (lock);
 
@@ -273,11 +270,9 @@ weak_alias (__initstate, initstate)
 char *
 __setstate (char *arg_state)
 {
-  int32_t *ostate;
-
   __libc_lock_lock (lock);
 
-  ostate = &unsafe_state.state[-1];
+  int32_t *ostate = &unsafe_state.state[-1];
 
   if (__setstate_r (arg_state, &unsafe_state) < 0)
     ostate = NULL;
@@ -303,10 +298,9 @@ weak_alias (__setstate, setstate)
 long int
 __random (void)
 {
-  int32_t retval;
-
   __libc_lock_lock (lock);
 
+  int32_t retval;
   (void) __random_r (&unsafe_state, &retval);
 
   __libc_lock_unlock (lock);

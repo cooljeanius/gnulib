@@ -14,10 +14,10 @@ ialloc
 idx
 malloc-gnu
 minmax
-realloc-gnu
+realloc-posix
 reallocarray
-stdckdint
-stdint
+stdckdint-h
+stdint-h
 xalloc-die
 
 configure.ac:
@@ -29,6 +29,9 @@ lib_SOURCES += xmalloc.c
 
 Include:
 "xalloc.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

@@ -1,5 +1,5 @@
 /* Test of vasnwprintf() and asnwprintf() functions.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "vasnwprintf.h"
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,9 +32,8 @@ static void
 test_function (wchar_t * (*my_asnwprintf) (wchar_t *, size_t *, const wchar_t *, ...))
 {
   wchar_t buf[8];
-  int size;
 
-  for (size = 0; size <= 8; size++)
+  for (int size = 0; size <= 8; size++)
     {
       size_t length = size;
       wchar_t *result = my_asnwprintf (NULL, &length, L"%d", 12345);
@@ -43,7 +43,7 @@ test_function (wchar_t * (*my_asnwprintf) (wchar_t *, size_t *, const wchar_t *,
       free (result);
     }
 
-  for (size = 0; size <= 8; size++)
+  for (int size = 0; size <= 8; size++)
     {
       size_t length;
       wchar_t *result;
@@ -62,7 +62,7 @@ test_function (wchar_t * (*my_asnwprintf) (wchar_t *, size_t *, const wchar_t *,
     }
 
   /* Note: This test assumes IEEE 754 representation of 'double' floats.  */
-  for (size = 0; size <= 8; size++)
+  for (int size = 0; size <= 8; size++)
     {
       size_t length;
       wchar_t *result;
@@ -75,7 +75,7 @@ test_function (wchar_t * (*my_asnwprintf) (wchar_t *, size_t *, const wchar_t *,
          163141592653589790215729350939528493057529598899734151772468186268423257777068536614838678161083520756952076273094236944990208
          On Cygwin, the result is
          163141592653589790215729350939528493057529600000000000000000000000000000000000000000000000000000000000000000000000000000000000
-         On HP-UX 11.31 / hppa and IRIX 6.5, the result is
+         On HP-UX 11.31 / hppa, the result is
          163141592653589790000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
        */
       ASSERT (wcslen (result) == 126);
@@ -87,6 +87,58 @@ test_function (wchar_t * (*my_asnwprintf) (wchar_t *, size_t *, const wchar_t *,
       if (result != buf)
         free (result);
     }
+
+  /* Verify that [v]asnwprintf() rejects a width > 2 GiB, < 4 GiB.  */
+  {
+    size_t length;
+    wchar_t *s = my_asnwprintf (NULL, &length, L"x%03000000000dy\n", -17);
+    ASSERT (s == NULL);
+    ASSERT (errno == EOVERFLOW);
+  }
+  {
+    size_t length;
+    wchar_t *s = my_asnwprintf (NULL, &length, L"x%03000000000cy\n", '@');
+    ASSERT (s == NULL);
+    ASSERT (errno == EOVERFLOW);
+  }
+
+  /* Verify that [v]asnwprintf() rejects a width > 4 GiB.  */
+  {
+    size_t length;
+    wchar_t *s =
+      my_asnwprintf (NULL, &length,
+                     L"x%04294967306dy\n", /* 2^32 + 10 */
+                     -17);
+    ASSERT (s == NULL);
+    ASSERT (errno == EOVERFLOW);
+  }
+  {
+    size_t length;
+    wchar_t *s =
+      my_asnwprintf (NULL, &length,
+                     L"x%04294967306cy\n", /* 2^32 + 10 */
+                     '@');
+    ASSERT (s == NULL);
+    ASSERT (errno == EOVERFLOW);
+  }
+  {
+    size_t length;
+    wchar_t *s =
+      my_asnwprintf (NULL, &length,
+                     L"x%018446744073709551626dy\n", /* 2^64 + 10 */
+                     -17);
+    ASSERT (s == NULL);
+    ASSERT (errno == EOVERFLOW);
+  }
+  {
+    size_t length;
+    wchar_t *s =
+      my_asnwprintf (NULL, &length,
+                     L"x%018446744073709551626cy\n", /* 2^64 + 10 */
+                     '@');
+    ASSERT (s == NULL);
+    ASSERT (errno == EOVERFLOW);
+  }
 }
 
 static wchar_t *
@@ -118,5 +170,5 @@ main (int argc, char *argv[])
 {
   test_vasnwprintf ();
   test_asnwprintf ();
-  return 0;
+  return test_exit_status;
 }

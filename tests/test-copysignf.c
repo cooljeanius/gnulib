@@ -1,5 +1,5 @@
 /* Test of copysignf() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -87,25 +87,25 @@ main ()
   y = 1.0f;
   z = copysignf (x, y);
   ASSERT (z == 0.0f);
-  ASSERT (memcmp (&z, &zero, sizeof z) == 0);
+  ASSERT (memeq (&z, &zero, sizeof z));
 
   x = 0.0f;
   y = -1.0f;
   z = copysignf (x, y);
   ASSERT (z == 0.0f);
-  ASSERT (memcmp (&z, &zero, sizeof z) != 0);
+  ASSERT (!memeq (&z, &zero, sizeof z));
 
   x = minus_zerof;
   y = 1.0f;
   z = copysignf (x, y);
   ASSERT (z == 0.0f);
-  ASSERT (memcmp (&z, &zero, sizeof z) == 0);
+  ASSERT (memeq (&z, &zero, sizeof z));
 
   x = minus_zerof;
   y = -1.0f;
   z = copysignf (x, y);
   ASSERT (z == 0.0f);
-  ASSERT (memcmp (&z, &zero, sizeof z) != 0);
+  ASSERT (!memeq (&z, &zero, sizeof z));
 
-  return 0;
+  return test_exit_status;
 }

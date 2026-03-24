@@ -1,5 +1,5 @@
 /* Tests of mkdirat.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ main (_GL_UNUSED int argc, char *argv[])
   /* Test behaviour for invalid file descriptors.  */
   {
     errno = 0;
-    ASSERT (mkdirat (-1, "foo", 0700) == -1);
+    ASSERT (mkdirat (AT_FDCWD == -2 ? -1 : -2, "foo", 0700) == -1);
     ASSERT (errno == EBADF);
   }
   {
@@ -93,5 +93,5 @@ main (_GL_UNUSED int argc, char *argv[])
   ASSERT (rmdir (BASE "dir1") == 0);
   ASSERT (rmdir (BASE "dir2") == 0);
 
-  return result;
+  return (result ? result : test_exit_status);
 }

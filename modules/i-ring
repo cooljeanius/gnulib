@@ -8,7 +8,7 @@ m4/i-ring.m4
 
 Depends-on:
 assert-h
-stdbool
+bool
 
 configure.ac:
 gl_I_RING
@@ -20,7 +20,7 @@ Include:
 "i-ring.h"
 
 License:
-LGPL
+LGPLv2+
 
 Maintainer:
 Jim Meyering

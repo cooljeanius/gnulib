@@ -1,6 +1,6 @@
 /* Test whether a file descriptor is a pipe.
 
-   Copyright (C) 2006, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2008-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -73,9 +73,9 @@ isapipe (int fd)
 {
   nlink_t pipe_link_count_max = PIPE_LINK_COUNT_MAX;
   bool check_for_fifo = (HAVE_FIFO_PIPES == 1);
+
   struct stat st;
   int fstat_result = fstat (fd, &st);
-
   if (fstat_result != 0)
     return fstat_result;
 

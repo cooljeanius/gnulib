@@ -1,5 +1,5 @@
 /* Test of set data type implementation as a C++ class.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2020.
 
    This program is free software: you can redistribute it and/or modify
@@ -43,14 +43,14 @@ main (int argc, char *argv[])
   gl_Set<const char *>::iterator iter1 = set1.begin ();
   const char *elt;
   ASSERT (iter1.next (elt));
-  ASSERT (strcmp (elt, "A") == 0 || strcmp (elt, "D") == 0 || strcmp (elt, "C") == 0);
+  ASSERT (streq (elt, "A") || streq (elt, "D") || streq (elt, "C"));
   ASSERT (iter1.next (elt));
-  ASSERT (strcmp (elt, "A") == 0 || strcmp (elt, "D") == 0 || strcmp (elt, "C") == 0);
+  ASSERT (streq (elt, "A") || streq (elt, "D") || streq (elt, "C"));
   ASSERT (iter1.next (elt));
-  ASSERT (strcmp (elt, "A") == 0 || strcmp (elt, "D") == 0 || strcmp (elt, "C") == 0);
+  ASSERT (streq (elt, "A") || streq (elt, "D") || streq (elt, "C"));
   ASSERT (!iter1.next (elt));
 
   set1.free ();
 
-  return 0;
+  return test_exit_status;
 }

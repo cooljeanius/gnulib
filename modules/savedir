@@ -7,11 +7,13 @@ lib/savedir.c
 m4/savedir.m4
 
 Depends-on:
+attribute
 closedir
-dirent-safer
+dirent-h
 fdopendir
 free-posix
 opendir
+qsort_r
 readdir
 stpcpy
 xalloc
@@ -24,6 +26,9 @@ lib_SOURCES += savedir.c
 
 Include:
 "savedir.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

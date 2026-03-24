@@ -1,5 +1,5 @@
 /* Test of character set conversion.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ main ()
                         &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + strlen (expected));
-    ASSERT (memcmp (buf, expected, strlen (expected)) == 0);
+    ASSERT (memeq (buf, expected, strlen (expected)));
   }
 
   /* Test conversion from ISO-8859-1 to UTF-8 with E2BIG.  */
@@ -105,7 +105,7 @@ main ()
                         &outptr, &outbytesleft);
     ASSERT (res == 0 && inbytesleft == 0);
     ASSERT (outptr == buf + strlen (expected));
-    ASSERT (memcmp (buf, expected, strlen (expected)) == 0);
+    ASSERT (memeq (buf, expected, strlen (expected)));
   }
 
   /* Test conversion from UTF-8 to ISO-8859-1 with EILSEQ.  */
@@ -155,5 +155,5 @@ main ()
 
 #endif /* HAVE_ICONV */
 
-  return 0;
+  return test_exit_status;
 }

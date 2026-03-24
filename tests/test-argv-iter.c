@@ -1,5 +1,5 @@
 /* Test argv iterator
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,13 +20,11 @@
 
 #include "argv-iter.h"
 
+#include <stdcountof.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "macros.h"
-
-#define ARRAY_CARDINALITY(Array) (sizeof (Array) / sizeof *(Array))
-#define STREQ(a, b) (strcmp (a, b) == 0)
 
 static FILE *
 write_nul_delimited_argv (char **argv)
@@ -57,11 +55,9 @@ main (void)
     {one, two, three, NULL}
   };
 
-  int use_stream;
-  for (use_stream = 0; use_stream < 2; use_stream++)
+  for (int use_stream = 0; use_stream < 2; use_stream++)
     {
-      size_t i;
-      for (i = 0; i < ARRAY_CARDINALITY (av); i++)
+      for (size_t i = 0; i < countof (av); i++)
         {
           FILE *fp;
           struct argv_iterator *ai;
@@ -86,15 +82,14 @@ main (void)
               ASSERT ((i == n_found) == (ai_err == AI_ERR_EOF));
               ASSERT ((s == NULL) ^ (ai_err == AI_ERR_OK));
               ASSERT (ai_err == AI_ERR_OK || ai_err == AI_ERR_EOF);
-              if (ai_err == AI_ERR_OK)
-                ++n_found;
               if (ai_err == AI_ERR_EOF)
                 break;
               /* In stream mode, the strings are equal, but
                  in argv mode the actual pointers are equal.  */
               ASSERT (use_stream
-                      ? STREQ (s, av[i][n_found - 1])
-                      : s == av[i][n_found - 1]);
+                      ? streq (s, av[i][n_found])
+                      : s == av[i][n_found]);
+              ++n_found;
             }
           ASSERT (argv_iter_n_args (ai) == i);
           argv_iter_free (ai);
@@ -103,5 +98,5 @@ main (void)
         }
     }
 
-  return 0;
+  return test_exit_status;
 }

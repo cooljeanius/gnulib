@@ -1,6 +1,6 @@
 /* Declarations of functions and data types used for SM3 sum library
    function.
-   Copyright (C) 2017-2023 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -22,7 +22,7 @@
 
    The official SM3 cryptographic hash algorithm specification is
    available at
-   <http://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>. */
+   <https://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>. */
 
 #ifndef SM3_H
 # define SM3_H 1
@@ -39,7 +39,21 @@
 #  ifndef OPENSSL_API_COMPAT
 #   define OPENSSL_API_COMPAT 0x10101000L /* FIXME: Use OpenSSL 1.1+ API.  */
 #  endif
-#  include <openssl/sm3.h>
+/* If <openssl/macros.h> would give a compile-time error, don't use OpenSSL.  */
+#  include <openssl/opensslv.h>
+#  if OPENSSL_VERSION_MAJOR >= 3
+#   include <openssl/configuration.h>
+#   if (OPENSSL_CONFIGURED_API \
+        < (OPENSSL_API_COMPAT < 0x900000L ? OPENSSL_API_COMPAT : \
+           ((OPENSSL_API_COMPAT >> 28) & 0xF) * 10000 \
+           + ((OPENSSL_API_COMPAT >> 20) & 0xFF) * 100 \
+           + ((OPENSSL_API_COMPAT >> 12) & 0xFF)))
+#    undef HAVE_OPENSSL_SM3
+#   endif
+#  endif
+#  if HAVE_OPENSSL_SM3
+#   include <openssl/sm3.h>
+#  endif
 # endif
 
 # ifdef __cplusplus
@@ -69,32 +83,34 @@ extern void sm3_init_ctx (struct sm3_ctx *ctx);
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is necessary that LEN is a multiple of 64!!! */
-extern void sm3_process_block (const void *buffer, size_t len,
-                               struct sm3_ctx *ctx);
+extern void sm3_process_block (void const *restrict buffer, size_t len,
+                               struct sm3_ctx *restrict ctx);
 
 /* Starting with the result of former calls of this function (or the
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is NOT required that LEN is a multiple of 64.  */
-extern void sm3_process_bytes (const void *buffer, size_t len,
-                               struct sm3_ctx *ctx);
+extern void sm3_process_bytes (void const *restrict buffer, size_t len,
+                               struct sm3_ctx *restrict ctx);
 
 /* Process the remaining bytes in the buffer and put result from CTX
    in first 32 bytes following RESBUF.  The result is always in little
    endian byte order, so that a byte-wise output yields to the wanted
    ASCII representation of the message digest.  */
-extern void *sm3_finish_ctx (struct sm3_ctx *ctx, void *restrict resbuf);
+extern void *sm3_finish_ctx (struct sm3_ctx *restrict ctx,
+                             void *restrict resbuf);
 
 /* Put result from CTX in first 32 bytes following RESBUF.  The result is
    always in little endian byte order, so that a byte-wise output yields
    to the wanted ASCII representation of the message digest.  */
-extern void *sm3_read_ctx (const struct sm3_ctx *ctx, void *restrict resbuf);
+extern void *sm3_read_ctx (struct sm3_ctx const *restrict ctx,
+                           void *restrict resbuf);
 
 /* Compute SM3 message digest for LEN bytes beginning at BUFFER.  The
    result is always in little endian byte order, so that a byte-wise
    output yields to the wanted ASCII representation of the message
    digest.  */
-extern void *sm3_buffer (const char *buffer, size_t len,
+extern void *sm3_buffer (char const *restrict buffer, size_t len,
                          void *restrict resblock);
 
 # endif
@@ -102,7 +118,7 @@ extern void *sm3_buffer (const char *buffer, size_t len,
 /* Compute SM3 message digest for bytes read from STREAM.  The
    resulting message digest number will be written into the 32 bytes
    beginning at RESBLOCK.  */
-extern int sm3_stream (FILE *stream, void *resblock);
+extern int sm3_stream (FILE *restrict stream, void *restrict resblock);
 
 
 # ifdef __cplusplus

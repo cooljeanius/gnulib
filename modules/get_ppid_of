@@ -7,8 +7,9 @@ lib/get_ppid_of.c
 
 Depends-on:
 extensions
-sys_types
-unistd
+memeq
+sys_types-h
+unistd-h
 open
 
 configure.ac:

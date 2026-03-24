@@ -5,6 +5,9 @@ tests/unistdio/test-ulc-printf1.h
 tests/macros.h
 
 Depends-on:
+unistdio/ulc-asnprintf-extra-tests
+streq
+memeq
 
 configure.ac:
 

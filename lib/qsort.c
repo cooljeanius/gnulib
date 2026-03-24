@@ -1,4 +1,4 @@
-/* Copyright (C) 1991-2023 Free Software Foundation, Inc.
+/* Copyright (C) 1991-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Written by Douglas C. Schmidt (schmidt@ics.uci.edu).
 
@@ -98,13 +98,13 @@ void
 _quicksort (void *const pbase, size_t total_elems, size_t size,
 	    __compar_d_fn_t cmp, void *arg)
 {
-  char *base_ptr = (char *) pbase;
-
-  const size_t max_thresh = MAX_THRESH * size;
-
   if (total_elems == 0)
     /* Avoid lossage with unsigned arithmetic below.  */
     return;
+
+  char *base_ptr = (char *) pbase;
+
+  const size_t max_thresh = MAX_THRESH * size;
 
   if (total_elems > MAX_THRESH)
     {
@@ -214,14 +214,13 @@ _quicksort (void *const pbase, size_t total_elems, size_t size,
   {
     char *const end_ptr = &base_ptr[size * (total_elems - 1)];
     char *tmp_ptr = base_ptr;
-    char *thresh = min(end_ptr, base_ptr + max_thresh);
-    char *run_ptr;
+    char *thresh = min (end_ptr, base_ptr + max_thresh);
 
     /* Find smallest element in first threshold and place it at the
        array's beginning.  This is the smallest array element,
        and the operation speeds up insertion sort's inner loop. */
 
-    for (run_ptr = tmp_ptr + size; run_ptr <= thresh; run_ptr += size)
+    for (char *run_ptr = tmp_ptr + size; run_ptr <= thresh; run_ptr += size)
       if ((*cmp) ((void *) run_ptr, (void *) tmp_ptr, arg) < 0)
         tmp_ptr = run_ptr;
 
@@ -230,7 +229,7 @@ _quicksort (void *const pbase, size_t total_elems, size_t size,
 
     /* Insertion sort, running from left-hand-side up to right-hand-side.  */
 
-    run_ptr = base_ptr + size;
+    char *run_ptr = base_ptr + size;
     while ((run_ptr += size) <= end_ptr)
       {
 	tmp_ptr = run_ptr - size;
@@ -240,9 +239,7 @@ _quicksort (void *const pbase, size_t total_elems, size_t size,
 	tmp_ptr += size;
         if (tmp_ptr != run_ptr)
           {
-            char *trav;
-
-	    trav = run_ptr + size;
+            char *trav = run_ptr + size;
 	    while (--trav >= run_ptr)
               {
                 char c = *trav;

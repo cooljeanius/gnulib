@@ -8,10 +8,10 @@ lib/fstrcmp.c
 Depends-on:
 c99
 diffseq
-lock
+once
 tls
 minmax
-stdint
+stdint-h
 xalloc
 
 configure.ac:
@@ -21,6 +21,9 @@ lib_SOURCES += fstrcmp.h fstrcmp.c
 
 Include:
 "fstrcmp.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

@@ -13,10 +13,12 @@ error
 xalloc
 xalloc-die
 gettext-h
-stdbool
-stdlib
-sys_wait
-unistd
+gnulib-i18n
+bool
+stdcountof-h
+stdlib-h
+sys_wait-h
+unistd-h
 atexit
 waitpid
 
@@ -31,6 +33,7 @@ Include:
 
 Link:
 $(LIBTHREAD)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

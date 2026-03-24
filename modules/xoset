@@ -8,7 +8,7 @@ lib/gl_xoset.c
 Depends-on:
 oset
 extern-inline
-stdbool
+bool
 xalloc-die
 
 configure.ac:
@@ -18,6 +18,9 @@ lib_SOURCES += gl_xoset.h gl_xoset.c
 
 Include:
 "gl_xoset.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

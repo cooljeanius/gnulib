@@ -7,13 +7,15 @@ lib/term-style-control.c
 m4/tcgetattr.m4
 
 Depends-on:
-stdbool
+bool
 fatal-signal
 sigaction
 sigprocmask
 full-write
 fstat
 same-inode
+stdcountof-h
+strnul
 xalloc-die
 
 configure.ac:
@@ -28,6 +30,7 @@ Include:
 
 Link:
 $(LIBTHREAD)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

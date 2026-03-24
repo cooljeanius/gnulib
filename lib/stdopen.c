@@ -1,6 +1,6 @@
 /* stdopen.c - ensure that the three standard file descriptors are in use
 
-   Copyright (C) 2005-2006, 2019-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2006, 2019-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,6 +26,12 @@
 #include <unistd.h>
 #include <errno.h>
 
+/* It is normal that stdopen() opens file descriptors without closing them.
+   Tell GCC not to warn about it.  */
+#if _GL_GNUC_PREREQ (13, 1)
+# pragma GCC diagnostic ignored "-Wanalyzer-fd-leak"
+#endif
+
 /* Try to ensure that all of the standard file numbers (0, 1, 2)
    are in use.  Without this, each application would have to guard
    every call to open, dup, fopen, etc. with tests to ensure they
@@ -36,8 +42,7 @@
 int
 stdopen (void)
 {
-  int fd;
-  for (fd = STDIN_FILENO; fd <= STDERR_FILENO; fd++)
+  for (int fd = STDIN_FILENO; fd <= STDERR_FILENO; fd++)
     {
       if (fcntl (fd, F_GETFD) < 0)
         {

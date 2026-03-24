@@ -1,8 +1,10 @@
-# ilogbf.m4 serial 6
-dnl Copyright (C) 2010-2023 Free Software Foundation, Inc.
+# ilogbf.m4
+# serial 9
+dnl Copyright (C) 2010-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_ILOGBF],
 [
@@ -15,10 +17,10 @@ AC_DEFUN([gl_FUNC_ILOGBF],
   gl_MATHFUNC([ilogbf], [int], [(float)])
   if test $gl_cv_func_ilogbf_no_libm = yes \
      || test $gl_cv_func_ilogbf_in_libm = yes; then
-    save_LIBS="$LIBS"
+    saved_LIBS="$LIBS"
     LIBS="$LIBS $ILOGBF_LIBM"
     gl_FUNC_ILOGBF_WORKS
-    LIBS="$save_LIBS"
+    LIBS="$saved_LIBS"
     case "$gl_cv_func_ilogbf_works" in
       *yes) ;;
       *) REPLACE_ILOGBF=1 ;;
@@ -68,8 +70,8 @@ AC_DEFUN([gl_FUNC_ILOGBF_WORKS],
 #  define FP_ILOGBNAN (- 2147483647 - 1) /* INT_MIN */
 # endif
 #else
-# if defined __NetBSD__ || defined __sgi
-  /* NetBSD, IRIX 6.5: match what ilogbf() does */
+# if defined __NetBSD__
+  /* NetBSD: match what ilogbf() does */
 #  define FP_ILOGB0   INT_MIN
 #  define FP_ILOGBNAN INT_MIN
 # elif defined _AIX
@@ -108,10 +110,10 @@ int main (int argc, char *argv[])
         [gl_cv_func_ilogbf_works=no],
         [case "$host_os" in
            openbsd* | netbsd*)
-                   gl_cv_func_ilogbf_works="guessing no" ;;
-                   # Guess yes on native Windows.
-           mingw*) gl_cv_func_ilogbf_works="guessing yes" ;;
-           *)      gl_cv_func_ilogbf_works="guessing yes" ;;
+                              gl_cv_func_ilogbf_works="guessing no" ;;
+                              # Guess yes on native Windows.
+           mingw* | windows*) gl_cv_func_ilogbf_works="guessing yes" ;;
+           *)                 gl_cv_func_ilogbf_works="guessing yes" ;;
          esac
         ])
     ])

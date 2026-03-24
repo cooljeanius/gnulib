@@ -1,5 +1,5 @@
 /* Test of locking in multithreaded situations.
-   Copyright (C) 2005, 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,8 +50,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "glthread/lock.h"
-
 #if HAVE_DECL_ALARM
 # include <signal.h>
 # include <unistd.h>
@@ -92,16 +90,16 @@ static int account[ACCOUNT_COUNT];
 static int
 random_account (void)
 {
-  return ((unsigned int) rand () >> 3) % ACCOUNT_COUNT;
+  return ((unsigned long) random () >> 3) % ACCOUNT_COUNT;
 }
 
 static void
 check_accounts (void)
 {
-  int i, sum;
+  int sum;
 
   sum = 0;
-  for (i = 0; i < ACCOUNT_COUNT; i++)
+  for (int i = 0; i < ACCOUNT_COUNT; i++)
     sum += account[i];
   if (sum != ACCOUNT_COUNT * 1000)
     abort ();
@@ -119,9 +117,7 @@ static mtx_t my_lock;
 static int
 lock_mutator_thread (void *arg)
 {
-  int repeat;
-
-  for (repeat = REPEAT_COUNT; repeat > 0; repeat--)
+  for (int repeat = REPEAT_COUNT; repeat > 0; repeat--)
     {
       int i1, i2, value;
 
@@ -131,7 +127,7 @@ lock_mutator_thread (void *arg)
 
       i1 = random_account ();
       i2 = random_account ();
-      value = ((unsigned int) rand () >> 3) % 10;
+      value = ((unsigned long) random () >> 3) % 10;
       account[i1] += value;
       account[i2] -= value;
 
@@ -175,12 +171,11 @@ lock_checker_thread (void *arg)
 static void
 test_mtx_plain (void)
 {
-  int i;
   thrd_t checkerthread;
   thrd_t threads[THREAD_COUNT];
 
   /* Initialization.  */
-  for (i = 0; i < ACCOUNT_COUNT; i++)
+  for (int i = 0; i < ACCOUNT_COUNT; i++)
     account[i] = 1000;
   init_atomic_int (&lock_checker_done);
   set_atomic_int_value (&lock_checker_done, 0);
@@ -188,12 +183,12 @@ test_mtx_plain (void)
   /* Spawn the threads.  */
   ASSERT (thrd_create (&checkerthread, lock_checker_thread, NULL)
           == thrd_success);
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (thrd_create (&threads[i], lock_mutator_thread, NULL)
             == thrd_success);
 
   /* Wait for the threads to terminate.  */
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (thrd_join (threads[i], NULL) == thrd_success);
   set_atomic_int_value (&lock_checker_done, 1);
   ASSERT (thrd_join (checkerthread, NULL) == thrd_success);
@@ -220,12 +215,12 @@ recshuffle (void)
 
   i1 = random_account ();
   i2 = random_account ();
-  value = ((unsigned int) rand () >> 3) % 10;
+  value = ((unsigned long) random () >> 3) % 10;
   account[i1] += value;
   account[i2] -= value;
 
   /* Recursive with probability 0.5.  */
-  if (((unsigned int) rand () >> 3) % 2)
+  if (((unsigned long) random () >> 3) % 2)
     recshuffle ();
 
   dbgprintf ("Mutator %p before unlock\n", thrd_current_pointer ());
@@ -236,9 +231,7 @@ recshuffle (void)
 static int
 reclock_mutator_thread (void *arg)
 {
-  int repeat;
-
-  for (repeat = REPEAT_COUNT; repeat > 0; repeat--)
+  for (int repeat = REPEAT_COUNT; repeat > 0; repeat--)
     {
       recshuffle ();
 
@@ -278,12 +271,11 @@ reclock_checker_thread (void *arg)
 static void
 test_mtx_recursive (void)
 {
-  int i;
   thrd_t checkerthread;
   thrd_t threads[THREAD_COUNT];
 
   /* Initialization.  */
-  for (i = 0; i < ACCOUNT_COUNT; i++)
+  for (int i = 0; i < ACCOUNT_COUNT; i++)
     account[i] = 1000;
   init_atomic_int (&reclock_checker_done);
   set_atomic_int_value (&reclock_checker_done, 0);
@@ -291,12 +283,12 @@ test_mtx_recursive (void)
   /* Spawn the threads.  */
   ASSERT (thrd_create (&checkerthread, reclock_checker_thread, NULL)
           == thrd_success);
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (thrd_create (&threads[i], reclock_mutator_thread, NULL)
             == thrd_success);
 
   /* Wait for the threads to terminate.  */
-  for (i = 0; i < THREAD_COUNT; i++)
+  for (int i = 0; i < THREAD_COUNT; i++)
     ASSERT (thrd_join (threads[i], NULL) == thrd_success);
   set_atomic_int_value (&reclock_checker_done, 1);
   ASSERT (thrd_join (checkerthread, NULL) == thrd_success);
@@ -331,5 +323,5 @@ main ()
   printf (" OK\n"); fflush (stdout);
 #endif
 
-  return 0;
+  return test_exit_status;
 }

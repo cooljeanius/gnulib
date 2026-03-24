@@ -1,5 +1,5 @@
 /* Test <ieee754.h>.
-   Copyright 2018-2023 Free Software Foundation, Inc.
+   Copyright 2018-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,9 +26,9 @@ static struct {
   unsigned sign; unsigned exponent; unsigned frac;
 } const float_tests[] =
   {
-   {0, 0, 0, 0},
-   {-0.0, 1, 0, 0},
-   {0.1, 0, 0x7b, 0x4ccccd}
+   {0.0f, 0, 0, 0},
+   {-0.0f, 1, 0, 0},
+   {0.1f, 0, 0x7b, 0x4ccccd}
   };
 
 static struct {
@@ -36,17 +36,15 @@ static struct {
   unsigned sign; unsigned exponent; unsigned frac_hi; unsigned frac_lo;
 } const double_tests[] =
   {
-   {0, 0, 0, 0},
-   {-0.0, 1, 0, 0 },
+   {0.0, 0, 0, 0, 0},
+   {-0.0, 1, 0, 0, 0},
    {0.1, 0, 0x3fb, 0x99999, 0x9999999a}
   };
 
 int
 main (void)
 {
-  int i;
-
-  for (i = 0; i < sizeof float_tests / sizeof *float_tests; i++)
+  for (int i = 0; i < sizeof float_tests / sizeof *float_tests; i++)
     {
       union ieee754_float u;
       u.f = float_tests[i].x;
@@ -58,7 +56,7 @@ main (void)
         return 3;
     }
 
-  for (i = 0; i < sizeof double_tests / sizeof *double_tests; i++)
+  for (int i = 0; i < sizeof double_tests / sizeof *double_tests; i++)
     {
       union ieee754_double u;
       u.d = double_tests[i].x;

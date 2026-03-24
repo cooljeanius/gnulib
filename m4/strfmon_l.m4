@@ -1,13 +1,16 @@
-# strfmon_l.m4 serial 3
-dnl Copyright (C) 2017-2023 Free Software Foundation, Inc.
+# strfmon_l.m4
+# serial 4
+dnl Copyright (C) 2017-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_STRFMON_L],
 [
   AC_REQUIRE([gl_MONETARY_H_DEFAULTS])
   AC_REQUIRE([gt_LOCALE_FR_UTF8])
+  AC_REQUIRE([AC_CANONICAL_HOST])
 
   dnl Persuade glibc <monetary.h> to declare strfmon_l().
   AC_REQUIRE([gl_USE_SYSTEM_EXTENSIONS])
@@ -17,7 +20,7 @@ AC_DEFUN([gl_FUNC_STRFMON_L],
 
   AC_CHECK_FUNCS_ONCE([strfmon_l])
   if test $ac_cv_func_strfmon_l = yes; then
-    dnl Test for bug <https://sourceware.org/bugzilla/show_bug.cgi?id=19633>
+    dnl Test for bug <https://sourceware.org/PR19633>
     dnl which was fixed in glibc-2.24.
     AC_CACHE_CHECK([whether strfmon_l works],
       [gl_cv_strfmon_l_works],

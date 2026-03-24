@@ -1,6 +1,6 @@
 /* Generate time strings directly to the output.  */
 
-/* Copyright (C) 2005, 2009-2023 Free Software Foundation, Inc.
+/* Copyright (C) 2005, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,7 +16,13 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <stdio.h>
+#include <sys/types.h>
 #include <time.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* A cross between fprintf and nstrftime, that prints directly
    to the output stream, without the need for the potentially
@@ -24,6 +30,14 @@
 
    Output to stream FP the result of formatting (according to the
    nstrftime format string, FMT) the time data, *TM, and the ZONE
-   and NANOSECONDS values.  */
-size_t fprintftime (FILE *fp, char const *fmt, struct tm const *tm,
-                    timezone_t zone, int nanoseconds);
+   and NANOSECONDS values.
+
+   Return the number of bytes written to the stream.
+   Upon failure, return -1 with errno set.  */
+off64_t fprintftime (FILE *fp, char const *fmt, struct tm const *tm,
+                     timezone_t zone, int nanoseconds);
+
+
+#ifdef __cplusplus
+}
+#endif

@@ -1,5 +1,5 @@
 /* Benchmarks for mbswidth().
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,8 +34,7 @@ do_test (char test, int repeat, const char *locale_name, const char *text)
       struct timings_state ts;
       timing_start (&ts);
 
-      int count;
-      for (count = 0; count < repeat; count++)
+      for (int count = 0; count < repeat; count++)
         {
           mbswidth (text, 0);
         }
@@ -78,8 +77,7 @@ main (int argc, char *argv[])
   text_init ();
 
   /* Execute each test.  */
-  size_t i;
-  for (i = 0; i < strlen (tests); i++)
+  for (size_t i = 0; i < strlen (tests); i++)
     {
       char test = tests[i];
 

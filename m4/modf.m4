@@ -1,8 +1,10 @@
-# modf.m4 serial 10
-dnl Copyright (C) 2011-2023 Free Software Foundation, Inc.
+# modf.m4
+# serial 15
+dnl Copyright (C) 2011-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_MODF],
 [
@@ -18,7 +20,7 @@ AC_DEFUN([gl_FUNC_MODF],
       AC_CACHE_CHECK([whether modf works according to ISO C 99 with IEC 60559],
         [gl_cv_func_modf_ieee],
         [
-          save_LIBS="$LIBS"
+          saved_LIBS="$LIBS"
           LIBS="$LIBS $MODF_LIBM"
           AC_RUN_IFELSE(
             [AC_LANG_SOURCE([[
@@ -29,8 +31,7 @@ AC_DEFUN([gl_FUNC_MODF],
 ]gl_DOUBLE_MINUS_ZERO_CODE[
 ]gl_DOUBLE_SIGNBIT_CODE[
 /* Compare two numbers with ==.
-   This is a separate function because IRIX 6.5 "cc -O" miscompiles an
-   'x == x' test.  */
+   This is a separate function in order to disable compiler optimizations.  */
 static int
 numeric_equal (double x, double y)
 {
@@ -51,7 +52,7 @@ int main (int argc, char *argv[])
   if (numeric_equal (f, f))
     result |= 1;
   /* Test modf(-Inf,...).
-     This test fails on FreeBSD 6.4, OpenBSD 6.7, IRIX 6.5, OSF/1 5.1.  */
+     This test fails on FreeBSD 6.4, OpenBSD 6.7.  */
   f = my_modf (minus_one / zero, &i);
   if (!(f == 0.0) || (signbitd (minus_zerod) && !signbitd (f)))
     result |= 2;
@@ -66,7 +67,8 @@ int main (int argc, char *argv[])
                                    # Guess yes on musl systems.
                *-musl* | midipix*) gl_cv_func_modf_ieee="guessing yes" ;;
                                    # Guess yes on MSVC, no on mingw.
-               mingw*)             AC_EGREP_CPP([Known], [
+               windows*-msvc*)     gl_cv_func_modf_ieee="guessing yes" ;;
+               mingw* | windows*)  AC_EGREP_CPP([Known], [
 #ifdef _MSC_VER
  Known
 #endif
@@ -78,7 +80,7 @@ int main (int argc, char *argv[])
                *)                  gl_cv_func_modf_ieee="$gl_cross_guess_normal" ;;
              esac
             ])
-          LIBS="$save_LIBS"
+          LIBS="$saved_LIBS"
         ])
       case "$gl_cv_func_modf_ieee" in
         *yes) ;;

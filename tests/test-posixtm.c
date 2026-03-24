@@ -1,5 +1,5 @@
 /* Test that posixtime works as required.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ static struct posixtm_test const T[] =
     { "12131415",        LY, 1,            0}, /* ??? Dec 13 14:15:00 ???? */
 
 #if !((defined __APPLE__ && defined __MACH__) || defined __sun \
-      || (defined _WIN32 && !defined __CYGWIN__))
+      || defined __HAIKU__ || (defined _WIN32 && !defined __CYGWIN__))
     /* These two tests fail on 64-bit Mac OS X 10.5 and on 64-bit Solaris up
        through at least Solaris 11.3, which is off by one day for timestamps
        before 0001-01-01 00:00:00 UTC.  */
@@ -57,8 +57,10 @@ static struct posixtm_test const T[] =
                       - INT64_C (62135596801)},/* Fri Dec 31 23:59:59 0    */
 #endif
 #if !(defined _WIN32 && !defined __CYGWIN__)
+# if !defined __HAIKU__
     { "000101010000.00", LY, 1,
                       - INT64_C (62135596800)},/* Sat Jan  1 00:00:00 1    */
+# endif
     { "190112132045.51", LY, 1,
                        - INT64_C (2147483649)},/* Fri Dec 13 20:45:51 1901 */
     { "190112132045.52", LY, 1,
@@ -116,8 +118,6 @@ static struct posixtm_test const T[] =
 int
 main (void)
 {
-  unsigned int i;
-  int fail = 0;
   char curr_year_str[30];
   struct tm *tm;
   time_t t_now;
@@ -135,7 +135,7 @@ main (void)
   n_bytes = strftime (curr_year_str, sizeof curr_year_str, "%Y", tm);
   ASSERT (0 < n_bytes);
 
-  for (i = 0; T[i].in; i++)
+  for (unsigned int i = 0; T[i].in; i++)
     {
       time_t t_out;
       time_t t_exp;
@@ -176,7 +176,7 @@ main (void)
         {
           printf ("%s return value mismatch: got %d, expected %d\n",
                   T[i].in, !!ok, T[i].valid);
-          fail = 1;
+          test_exit_status = EXIT_FAILURE;
           continue;
         }
 
@@ -187,11 +187,11 @@ main (void)
         {
           printf ("%s mismatch (-: actual; +:expected)\n-%12ld\n+%12ld\n",
                   T[i].in, (long) t_out, (long) t_exp);
-          fail = 1;
+          test_exit_status = EXIT_FAILURE;
         }
     }
 
-  return fail;
+  return test_exit_status;
 }
 
 /*

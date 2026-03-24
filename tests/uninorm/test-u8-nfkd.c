@@ -1,5 +1,5 @@
 /* Test of compatibility decomposition of UTF-8 strings.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,10 +23,12 @@
 #include "uninorm.h"
 
 #include <signal.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include "unistr.h"
+#define NO_MAIN_HERE
 #include "macros.h"
 
 static int
@@ -95,121 +97,121 @@ test_u8_nfkd (void)
   }
   { /* SPACE */
     static const uint8_t input[]    = { 0x20 };
-    ASSERT (check (input, SIZEOF (input), input, SIZEOF (input)) == 0);
+    ASSERT (check (input, countof (input), input, countof (input)) == 0);
   }
 
   { /* LATIN CAPITAL LETTER A WITH DIAERESIS */
     static const uint8_t input[]    = { 0xC3, 0x84 };
     static const uint8_t expected[] = { 0x41, 0xCC, 0x88 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* LATIN CAPITAL LETTER A WITH DIAERESIS AND MACRON */
     static const uint8_t input[]    = { 0xC7, 0x9E };
     static const uint8_t expected[] = { 0x41, 0xCC, 0x88, 0xCC, 0x84 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* GREEK DIALYTIKA AND PERISPOMENI */
     static const uint8_t input[]    = { 0xE1, 0xBF, 0x81 };
     static const uint8_t expected[] = { 0x20, 0xCC, 0x88, 0xCD, 0x82 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* SCRIPT SMALL L */
     static const uint8_t input[]    = { 0xE2, 0x84, 0x93 };
     static const uint8_t expected[] = { 0x6C };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* NO-BREAK SPACE */
     static const uint8_t input[]    = { 0xC2, 0xA0 };
     static const uint8_t expected[] = { 0x20 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* ARABIC LETTER VEH INITIAL FORM */
     static const uint8_t input[]    = { 0xEF, 0xAD, 0xAC };
     static const uint8_t expected[] = { 0xDA, 0xA4 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* ARABIC LETTER VEH MEDIAL FORM */
     static const uint8_t input[]    = { 0xEF, 0xAD, 0xAD };
     static const uint8_t expected[] = { 0xDA, 0xA4 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* ARABIC LETTER VEH FINAL FORM */
     static const uint8_t input[]    = { 0xEF, 0xAD, 0xAB };
     static const uint8_t expected[] = { 0xDA, 0xA4 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* ARABIC LETTER VEH ISOLATED FORM */
     static const uint8_t input[]    = { 0xEF, 0xAD, 0xAA };
     static const uint8_t expected[] = { 0xDA, 0xA4 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* CIRCLED NUMBER FIFTEEN */
     static const uint8_t input[]    = { 0xE2, 0x91, 0xAE };
     static const uint8_t expected[] = { 0x31, 0x35 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* TRADE MARK SIGN */
     static const uint8_t input[]    = { 0xE2, 0x84, 0xA2 };
     static const uint8_t expected[] = { 0x54, 0x4D };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* LATIN SUBSCRIPT SMALL LETTER I */
     static const uint8_t input[]    = { 0xE1, 0xB5, 0xA2 };
     static const uint8_t expected[] = { 0x69 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* PRESENTATION FORM FOR VERTICAL LEFT PARENTHESIS */
     static const uint8_t input[]    = { 0xEF, 0xB8, 0xB5 };
     static const uint8_t expected[] = { 0x28 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* FULLWIDTH LATIN CAPITAL LETTER A */
     static const uint8_t input[]    = { 0xEF, 0xBC, 0xA1 };
     static const uint8_t expected[] = { 0x41 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* HALFWIDTH IDEOGRAPHIC COMMA */
     static const uint8_t input[]    = { 0xEF, 0xBD, 0xA4 };
     static const uint8_t expected[] = { 0xE3, 0x80, 0x81 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* SMALL IDEOGRAPHIC COMMA */
     static const uint8_t input[]    = { 0xEF, 0xB9, 0x91 };
     static const uint8_t expected[] = { 0xE3, 0x80, 0x81 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* SQUARE MHZ */
     static const uint8_t input[]    = { 0xE3, 0x8E, 0x92 };
     static const uint8_t expected[] = { 0x4D, 0x48, 0x7A };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* VULGAR FRACTION THREE EIGHTHS */
     static const uint8_t input[]    = { 0xE2, 0x85, 0x9C };
     static const uint8_t expected[] = { 0x33, 0xE2, 0x81, 0x84, 0x38 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* MICRO SIGN */
     static const uint8_t input[]    = { 0xC2, 0xB5 };
     static const uint8_t expected[] = { 0xCE, 0xBC };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* ARABIC LIGATURE SALLALLAHOU ALAYHE WASALLAM */
@@ -219,20 +221,20 @@ test_u8_nfkd (void)
         0x84, 0xD9, 0x87, 0x20, 0xD8, 0xB9, 0xD9, 0x84, 0xD9, 0x8A, 0xD9, 0x87,
         0x20, 0xD9, 0x88, 0xD8, 0xB3, 0xD9, 0x84, 0xD9, 0x85
       };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* HANGUL SYLLABLE GEUL */
     static const uint8_t input[]    = { 0xEA, 0xB8, 0x80 };
     static const uint8_t expected[] =
       { 0xE1, 0x84, 0x80, 0xE1, 0x85, 0xB3, 0xE1, 0x86, 0xAF };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* HANGUL SYLLABLE GEU */
     static const uint8_t input[]    = { 0xEA, 0xB7, 0xB8 };
     static const uint8_t expected[] = { 0xE1, 0x84, 0x80, 0xE1, 0x85, 0xB3 };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
   { /* "Grüß Gott. Здравствуйте! x=(-b±sqrt(b²-4ac))/(2a)  日本語,中文,한글" */
@@ -258,7 +260,7 @@ test_u8_nfkd (void)
         0xE1, 0x84, 0x92, 0xE1, 0x85, 0xA1, 0xE1, 0x86, 0xAB,
         0xE1, 0x84, 0x80, 0xE1, 0x85, 0xB3, 0xE1, 0x86, 0xAF, '\n'
       };
-    ASSERT (check (input, SIZEOF (input), expected, SIZEOF (expected)) == 0);
+    ASSERT (check (input, countof (input), expected, countof (expected)) == 0);
   }
 
 #if HAVE_DECL_ALARM
@@ -269,91 +271,87 @@ test_u8_nfkd (void)
 #endif
 
   /* Check that the sorting is not O(n²) but O(n log n).  */
-  {
-    int pass;
-    for (pass = 0; pass < 3; pass++)
-      {
-        size_t repeat = 1;
-        size_t m = 100000;
-        uint8_t *input = (uint8_t *) malloc (2 * (2 * m - 1) * sizeof (uint8_t));
-        if (input != NULL)
-          {
-            uint8_t *expected = input + (2 * m - 1);
-            size_t m1 = m / 2;
-            size_t m2 = (m - 1) / 2;
-            /* NB: m1 + m2 == m - 1.  */
-            uint8_t *p;
-            size_t i;
+  for (int pass = 0; pass < 3; pass++)
+    {
+      size_t repeat = 1;
+      size_t m = 100000;
+      uint8_t *input = (uint8_t *) malloc (2 * (2 * m - 1) * sizeof (uint8_t));
+      if (input != NULL)
+        {
+          uint8_t *expected = input + (2 * m - 1);
+          size_t m1 = m / 2;
+          size_t m2 = (m - 1) / 2;
+          /* NB: m1 + m2 == m - 1.  */
+          uint8_t *p;
 
-            input[0] = 0x41;
-            p = input + 1;
-            switch (pass)
-              {
-              case 0:
-                for (i = 0; i < m1; i++)
-                  {
-                    *p++ = 0xCC;
-                    *p++ = 0x99;
-                  }
-                for (i = 0; i < m2; i++)
-                  {
-                    *p++ = 0xCC;
-                    *p++ = 0x80;
-                  }
-                break;
+          input[0] = 0x41;
+          p = input + 1;
+          switch (pass)
+            {
+            case 0:
+              for (size_t i = 0; i < m1; i++)
+                {
+                  *p++ = 0xCC;
+                  *p++ = 0x99;
+                }
+              for (size_t i = 0; i < m2; i++)
+                {
+                  *p++ = 0xCC;
+                  *p++ = 0x80;
+                }
+              break;
 
-              case 1:
-                for (i = 0; i < m2; i++)
-                  {
-                    *p++ = 0xCC;
-                    *p++ = 0x80;
-                  }
-                for (i = 0; i < m1; i++)
-                  {
-                    *p++ = 0xCC;
-                    *p++ = 0x99;
-                  }
-                break;
+            case 1:
+              for (size_t i = 0; i < m2; i++)
+                {
+                  *p++ = 0xCC;
+                  *p++ = 0x80;
+                }
+              for (size_t i = 0; i < m1; i++)
+                {
+                  *p++ = 0xCC;
+                  *p++ = 0x99;
+                }
+              break;
 
-              case 2:
-                for (i = 0; i < m2; i++)
-                  {
-                    *p++ = 0xCC;
-                    *p++ = 0x99;
-                    *p++ = 0xCC;
-                    *p++ = 0x80;
-                  }
-                for (; i < m1; i++)
-                  {
-                    *p++ = 0xCC;
-                    *p++ = 0x99;
-                  }
-                break;
+            case 2:
+              for (size_t i = 0; i < m2; i++)
+                {
+                  *p++ = 0xCC;
+                  *p++ = 0x99;
+                  *p++ = 0xCC;
+                  *p++ = 0x80;
+                }
+              for (size_t i = m2; i < m1; i++)
+                {
+                  *p++ = 0xCC;
+                  *p++ = 0x99;
+                }
+              break;
 
-              default:
-                abort ();
-              }
+            default:
+              abort ();
+            }
 
-            expected[0] = 0x41;
-            p = expected + 1;
-            for (i = 0; i < m1; i++)
-              {
-                *p++ = 0xCC;
-                *p++ = 0x99;
-              }
-            for (i = 0; i < m2; i++)
-              {
-                *p++ = 0xCC;
-                *p++ = 0x80;
-              }
+          expected[0] = 0x41;
+          p = expected + 1;
+          for (size_t i = 0; i < m1; i++)
+            {
+              *p++ = 0xCC;
+              *p++ = 0x99;
+            }
+          for (size_t i = 0; i < m2; i++)
+            {
+              *p++ = 0xCC;
+              *p++ = 0x80;
+            }
 
-            for (; repeat > 0; repeat--)
-              ASSERT (check (input, 2 * m - 1, expected, 2 * m - 1) == 0);
+          for (; repeat > 0; repeat--)
+            ASSERT (check (input, 2 * m - 1, expected, 2 * m - 1) == 0);
 
-            free (input);
-          }
-      }
-  }
+          free (input);
+        }
+    }
 }
 
 #else

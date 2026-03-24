@@ -1,5 +1,5 @@
 /* Test of rint*() function family.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,32 +24,28 @@ test_function (void)
   ASSERT (ISNAN (RINT (NAN)));
 
   /* Randomized tests.  */
-  {
-    int i;
+  for (int i = 0; i < countof (RANDOM); i++)
+    {
+      DOUBLE x;
 
-    for (i = 0; i < SIZEOF (RANDOM); i++)
-      {
-        DOUBLE x;
+      x = L_(0.5) * RANDOM[i];
+      ASSERT (RINT (x) == L_(0.0));
+      x = - x;
+      ASSERT (RINT (x) == L_(0.0));
 
-        x = L_(0.5) * RANDOM[i];
-        ASSERT (RINT (x) == L_(0.0));
-        x = - x;
-        ASSERT (RINT (x) == L_(0.0));
+      x = L_(1.0) - L_(0.5) * RANDOM[i];
+      ASSERT (RINT (x) == L_(1.0));
+      x = - x;
+      ASSERT (RINT (x) == - L_(1.0));
 
-        x = L_(1.0) - L_(0.5) * RANDOM[i];
-        ASSERT (RINT (x) == L_(1.0));
-        x = - x;
-        ASSERT (RINT (x) == - L_(1.0));
+      x = L_(1.0) + L_(0.5) * RANDOM[i];
+      ASSERT (RINT (x) == L_(1.0));
+      x = - x;
+      ASSERT (RINT (x) == - L_(1.0));
 
-        x = L_(1.0) + L_(0.5) * RANDOM[i];
-        ASSERT (RINT (x) == L_(1.0));
-        x = - x;
-        ASSERT (RINT (x) == - L_(1.0));
-
-        x = L_(2.0) - L_(0.5) * RANDOM[i];
-        ASSERT (RINT (x) == L_(2.0));
-        x = - x;
-        ASSERT (RINT (x) == - L_(2.0));
-      }
-  }
+      x = L_(2.0) - L_(0.5) * RANDOM[i];
+      ASSERT (RINT (x) == L_(2.0));
+      x = - x;
+      ASSERT (RINT (x) == - L_(2.0));
+    }
 }

@@ -10,8 +10,8 @@ m4/modechange.m4
 Depends-on:
 stat
 stat-macros
-stdbool
-sys_stat
+bool
+sys_stat-h
 xalloc
 
 configure.ac:
@@ -22,6 +22,9 @@ lib_SOURCES += modechange.c
 
 Include:
 "modechange.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

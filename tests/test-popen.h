@@ -1,5 +1,5 @@
 /* Test of opening a subcommand stream.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ main (int argc, char **argv)
 {
   size_t len;
   char *cmd;
-  int i;
 
   /* Children - use the pipe.  */
   if (argc > 1)
@@ -53,7 +52,7 @@ main (int argc, char **argv)
   strcpy (cmd, argv[0]);
   cmd[len] = ' ';
   cmd[len + 2] = '\0';
-  for (i = 0; i < 2; i++)
+  for (int i = 0; i < 2; i++)
     {
       FILE *child;
       int status;
@@ -89,5 +88,5 @@ main (int argc, char **argv)
         }
     }
   free (cmd);
-  return 0;
+  return test_exit_status;
 }

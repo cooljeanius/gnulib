@@ -1,6 +1,6 @@
 /* A more useful interface to strtol.
 
-   Copyright (C) 1995-1996, 1998-1999, 2001-2004, 2006-2023 Free Software
+   Copyright (C) 1995-1996, 1998-1999, 2001-2004, 2006-2026 Free Software
    Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -21,10 +21,11 @@
 
 #include <stdlib.h>
 
-#include "error.h"
+#include <error.h>
 #include "exitfail.h"
 #include "gettext.h"
 
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 #define N_(msgid) msgid
 
 /* Report an error for an invalid integer in an option argument.
@@ -49,14 +50,10 @@ xstrtol_error (enum strtol_error err,
                char const *arg,
                int exit_status)
 {
-  char const *hyphens = "--";
   char const *msgid;
-  char const *option;
-  char option_buffer[2];
-
   switch (err)
     {
-    default:
+    case LONGINT_OK: default:
       abort ();
 
     case LONGINT_INVALID:
@@ -73,6 +70,9 @@ xstrtol_error (enum strtol_error err,
       break;
     }
 
+  char const *hyphens = "--";
+  char option_buffer[2];
+  char const *option;
   if (opt_idx < 0)
     {
       hyphens -= opt_idx;
@@ -83,7 +83,8 @@ xstrtol_error (enum strtol_error err,
   else
     option = long_options[opt_idx].name;
 
-  error (exit_status, 0, gettext (msgid), hyphens, option, arg);
+  error (exit_status, 0, dgettext (GNULIB_TEXT_DOMAIN, msgid),
+         hyphens, option, arg);
 }
 
 /* Like xstrtol_error, except exit with a failure status.  */

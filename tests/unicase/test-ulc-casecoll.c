@@ -1,6 +1,6 @@
 /* Test of locale dependent, case and normalization insensitive comparison of
    strings.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "unicase.h"
 
 #include <locale.h>
+#include <stdcountof.h>
 
 #include "uninorm.h"
 #include "macros.h"
@@ -41,5 +42,5 @@ main ()
      on ASCII strings should behave like strcasecmp.  */
   test_ascii (ulc_casecoll, UNINORM_NFC);
 
-  return 0;
+  return test_exit_status;
 }

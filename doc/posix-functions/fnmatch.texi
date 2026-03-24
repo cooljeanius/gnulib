@@ -1,8 +1,8 @@
 @node fnmatch
-@section @code{fnmatch}
+@subsection @code{fnmatch}
 @findex fnmatch
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/fnmatch.html}
 
 LSB specification:@* @url{https://refspecs.linuxbase.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/baselib-fnmatch-3.html}
 
@@ -20,6 +20,8 @@ Documentation:
 @end itemize
 
 Gnulib module: fnmatch or fnmatch-gnu
+@mindex fnmatch
+@mindex fnmatch-gnu
 
 Portability problems fixed by either Gnulib module @code{fnmatch} or @code{fnmatch-gnu}:
 @itemize
@@ -39,7 +41,7 @@ single-byte range on some platforms:
 @c fnmatch ("x?y", "x\250\271y", 0) == 0
 @c fnmatch ("x?y", "x\201\060\211\070y", 0) == 0
 @c fnmatch ("x?y", "x\224\071\375\067y", 0) == 0
-NetBSD 9.3,
+NetBSD 10.0,
 @c Failing test cases:
 @c fnmatch ("x?y", "x\303\274y", 0) == 0
 @c fnmatch ("x?y", "x\303\237y", 0) == 0
@@ -84,7 +86,7 @@ bracket expressions are not supported on some platforms:
 @c etc.
 @c https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=57911
 FreeBSD 13.2,
-NetBSD 9.3, Solaris 11 OpenIndiana, Cygwin 3.4.6.
+NetBSD 10.0, Solaris 11 OpenIndiana, Cygwin 3.4.6.
 @item
 In the pattern, character classes (such as @code{[:alnum:]}) inside
 bracket expressions fail to match characters outside the single-byte
@@ -113,12 +115,12 @@ on some platforms:
 Solaris 11.4.
 @item
 Ranges that start or end with a backslash don't work right on some platforms:
-@c https://sourceware.org/bugzilla/show_bug.cgi?id=361
+@c https://sourceware.org/PR361
 glibc 2.3.3.
 @item
 In the pattern, an opening bracket without closing bracket does not match
 a literal @code{'['} on some platforms:
-@c https://sourceware.org/bugzilla/show_bug.cgi?id=12378
+@c https://sourceware.org/PR12378
 @c Failing test cases:
 @c fnmatch ("[[:alpha:]'[:alpha:]\0]", "a", 0) == FNM_NOMATCH
 @c fnmatch ("[a[.\0.]]", "a", 0) == FNM_NOMATCH
@@ -135,7 +137,7 @@ macOS 12.5,
 @c Failing test cases:
 @c fnmatch ("[", "[", 0) == 0
 @c fnmatch ("[/-/]", "/", 0) == 0
-NetBSD 9.3.
+NetBSD 10.0.
 @end itemize
 
 Portability problems fixed by Gnulib module @code{fnmatch-gnu}:
@@ -143,7 +145,7 @@ Portability problems fixed by Gnulib module @code{fnmatch-gnu}:
 @item
 This function does not support the flags @code{FNM_LEADING_DIR} and
 @code{FNM_CASEFOLD} on some platforms:
-AIX 7.2, HP-UX 11.31, IRIX 6.5, Solaris 10.
+AIX 7.2, HP-UX 11.31, Solaris 10.
 @item
 The flag @code{FNM_CASEFOLD} does not work in many situations on some platforms:
 @c Failing test cases:
@@ -155,7 +157,7 @@ The flag @code{FNM_CASEFOLD} does not work in many situations on some platforms:
 @c etc.
 @c fnmatch ("\201\060\213\062zg\250\271r", "\201\060\211\060ZG\201\060\211\065R", FNM_CASEFOLD) == 0
 @c etc.
-NetBSD 9.3.
+NetBSD 10.0.
 @item
 The flag @code{FNM_CASEFOLD} does not work for multibyte characters
 consisting of more than one byte on some platforms:
@@ -166,11 +168,11 @@ Android 13.
 @item
 This function does not support the flag @code{FNM_EXTMATCH}
 on all non-glibc platforms:
-musl libc, macOS 12.5, FreeBSD 13.2, NetBSD 9.3, OpenBSD 7.2, Minix 3.3, AIX 7.2, HP-UX 11.31, IRIX 6.5, Solaris 11.4, Cygwin 3.4.6, Android 13.
+musl libc, macOS 12.5, FreeBSD 13.2, NetBSD 10.0, OpenBSD 7.2, Minix 3.3, AIX 7.2, HP-UX 11.31, Solaris 11.4, Cygwin 3.4.6, Android 13.
 @item
 This function does not support the flag @code{FNM_FILE_NAME} as an
 alias of @code{FNM_PATHNAME} on some platforms:
-NetBSD 9.3, AIX 7.2, HP-UX 11.31, IRIX 6.5, Solaris 10.
+NetBSD 10.0, AIX 7.2, HP-UX 11.31, Solaris 10.
 @end itemize
 
 Portability problems not fixed by Gnulib:

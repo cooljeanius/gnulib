@@ -1,5 +1,5 @@
 /* Extra functions for resource usage.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@ extern uintptr_t get_rusage_as (void);
    Note: This function always returns zero on HP-UX 11.00.
    Note: The total size of all malloc()ed memory is bounded by the size of
    the data segment only on the following platforms:
-   FreeBSD, AIX, HP-UX 11.23 and newer, IRIX, OSF/1, Solaris, BeOS, Haiku.  */
+   FreeBSD, AIX, HP-UX 11.23 and newer, Solaris, BeOS, Haiku.  */
 extern uintptr_t get_rusage_data (void);
 
 

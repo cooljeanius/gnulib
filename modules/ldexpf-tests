@@ -3,15 +3,16 @@ tests/test-ldexpf.c
 tests/test-ldexp.h
 tests/minus-zero.h
 tests/infinity.h
-tests/nan.h
 tests/signature.h
 tests/macros.h
 tests/randomf.c
 
 Depends-on:
 isnanf-nolibm
-signbit
-float
+signbit-no-c++
+float-h
+nan
+stdcountof-h
 
 configure.ac:
 

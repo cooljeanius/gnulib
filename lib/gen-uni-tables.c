@@ -1,7 +1,7 @@
 /* Generate Unicode conforming character classification tables and
    line break properties tables and word break property tables and
    decomposition/composition and case mapping tables from a UnicodeData file.
-   Copyright (C) 2000-2002, 2004, 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2000-2002, 2004, 2007-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2000-2002.
 
    This program is free software: you can redistribute it and/or modify
@@ -18,22 +18,23 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Usage example:
-     $ gen-uni-tables /usr/local/share/www.unicode.org/Public/15.0.0/ucd/UnicodeData.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/PropList.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/emoji/emoji-data.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/ArabicShaping.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/Scripts.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/Blocks.txt \
+     $ gen-uni-tables /usr/local/share/www.unicode.org/Public/17.0.0/ucd/UnicodeData.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/PropList.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/DerivedCoreProperties.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/emoji/emoji-data.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/ArabicShaping.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/Scripts.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/Blocks.txt \
                       /usr/local/share/www.unicode.org/Public/3.0-Update1/PropList-3.0.1.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/EastAsianWidth.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/LineBreak.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/auxiliary/WordBreakProperty.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/auxiliary/GraphemeBreakProperty.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/CompositionExclusions.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/SpecialCasing.txt \
-                      /usr/local/share/www.unicode.org/Public/15.0.0/ucd/CaseFolding.txt \
-                      15.0.0
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/BidiMirroring.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/EastAsianWidth.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/LineBreak.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/auxiliary/WordBreakProperty.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/auxiliary/GraphemeBreakProperty.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/CompositionExclusions.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/SpecialCasing.txt \
+                      /usr/local/share/www.unicode.org/Public/17.0.0/ucd/CaseFolding.txt \
+                      17.0.0
  */
 
 #include <assert.h>
@@ -46,7 +47,39 @@
 #include <string.h>
 #include <time.h>
 
-#define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
+/* We can't assume that <stdcountof.h> exists, yet.  */
+#undef countof
+#define countof(a) (sizeof(a) / sizeof(a[0]))
+
+/* ========================================================================= */
+
+/* Utility functions.  */
+
+static bool
+streq (char const *s1, char const *s2)
+{
+  return strcmp (s1, s2) == 0;
+}
+
+static bool
+memeq (void const *s1, void const *s2, size_t n)
+{
+  return memcmp (s1, s2, n) == 0;
+}
+
+static bool
+str_startswith (const char *string, const char *prefix)
+{
+  return strncmp (string, prefix, strlen (prefix)) == 0;
+}
+
+static bool
+str_endswith (const char *string, const char *suffix)
+{
+  size_t len = strlen (string);
+  size_t n = strlen (suffix);
+  return len >= n && streq (string + len - n, suffix);
+}
 
 /* ========================================================================= */
 
@@ -97,7 +130,7 @@ fill_attribute (unsigned int i,
       fprintf (stderr, "index too large\n");
       exit (1);
     }
-  if (strcmp (field2, "Cs") == 0)
+  if (streq (field2, "Cs"))
     /* Surrogates are UTF-16 artifacts, not real characters. Ignore them.  */
     return;
   uni = &unicode_attributes[i];
@@ -158,8 +191,6 @@ getfield (FILE *stream, char *buffer, int delim)
 static void
 fill_attributes (const char *unicodedata_filename)
 {
-  unsigned int i, j;
-  FILE *stream;
   char field0[FIELDLEN];
   char field1[FIELDLEN];
   char field2[FIELDLEN];
@@ -177,10 +208,10 @@ fill_attributes (const char *unicodedata_filename)
   char field14[FIELDLEN];
   int lineno = 0;
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     unicode_attributes[i].name = NULL;
 
-  stream = fopen (unicodedata_filename, "r");
+  FILE *stream = fopen (unicodedata_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", unicodedata_filename);
@@ -215,10 +246,10 @@ fill_attributes (const char *unicodedata_filename)
                    unicodedata_filename, lineno);
           exit (1);
         }
-      i = strtoul (field0, NULL, 16);
+      unsigned int i = strtoul (field0, NULL, 16);
       if (field1[0] == '<'
           && strlen (field1) >= 9
-          && strcmp (field1 + strlen (field1) - 8, ", First>") == 0)
+          && str_endswith (field1, ", First>"))
         {
           /* Deal with a range. */
           lineno++;
@@ -245,14 +276,14 @@ fill_attributes (const char *unicodedata_filename)
             }
           if (!(field1[0] == '<'
                 && strlen (field1) >= 8
-                && strcmp (field1 + strlen (field1) - 7, ", Last>") == 0))
+                && str_endswith (field1, ", Last>")))
             {
               fprintf (stderr, "missing end range in '%s':%d\n",
                        unicodedata_filename, lineno);
               exit (1);
             }
           field1[strlen (field1) - 7] = '\0';
-          j = strtoul (field0, NULL, 16);
+          unsigned int j = strtoul (field0, NULL, 16);
           for (; i <= j; i++)
             fill_attribute (i, field1+1, field2, field3, field4, field5,
                                field6, field7, field8, field9, field10,
@@ -650,10 +681,7 @@ is_category_Cn (unsigned int ch)
 static void
 debug_output_predicate (const char *filename, bool (*predicate) (unsigned int))
 {
-  FILE *stream;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -661,21 +689,20 @@ debug_output_predicate (const char *filename, bool (*predicate) (unsigned int))
     }
 
 #if 0 /* This yields huge text output.  */
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     if (predicate (ch))
       {
         fprintf (stream, "0x%04X\n", ch);
       }
 #else
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     if (predicate (ch))
       {
         unsigned int first = ch;
-        unsigned int last;
 
         while (ch + 1 < 0x110000 && predicate (ch + 1))
           ch++;
-        last = ch;
+        unsigned int last = ch;
         if (first < last)
           fprintf (stream, "0x%04X..0x%04X\n", first, last);
         else
@@ -694,11 +721,7 @@ debug_output_predicate (const char *filename, bool (*predicate) (unsigned int))
 static void
 output_predicate_test (const char *filename, bool (*predicate) (unsigned int), const char *expression)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -707,23 +730,22 @@ output_predicate_test (const char *filename, bool (*predicate) (unsigned int), c
 
   fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
   fprintf (stream, "/* Test the Unicode character type functions.\n");
-  fprintf (stream, "   Copyright (C) 2007-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "   Copyright (C) 2007-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
   fprintf (stream, "#include \"test-predicate-part1.h\"\n");
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     if (predicate (ch))
       {
         unsigned int first = ch;
-        unsigned int last;
 
         while (ch + 1 < 0x110000 && predicate (ch + 1))
           ch++;
-        last = ch;
+        unsigned int last = ch;
         if (need_comma)
           fprintf (stream, ",\n");
         fprintf (stream, "    { 0x%04X, 0x%04X }", first, last);
@@ -753,12 +775,7 @@ output_predicate_test (const char *filename, bool (*predicate) (unsigned int), c
 static void
 output_predicate (const char *filename, bool (*predicate) (unsigned int), const char *name, const char *comment, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct predicate_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -771,36 +788,37 @@ output_predicate (const char *filename, bool (*predicate) (unsigned int), const 
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2023 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream,
-                          strcmp (filename, "unictype/categ_M.h") == 0
-                          || strncmp (filename, "unictype/ctype_", 15) == 0
-                          || strcmp (filename, "uniwidth/width2.h") == 0);
+                          streq (filename, "unictype/categ_M.h")
+                          || str_startswith (filename, "unictype/ctype_")
+                          || streq (filename, "uniwidth/width2.h"));
   fprintf (stream, "\n");
 
+  struct predicate_table t;
   t.p = 4; /* or: 5 */
   t.q = 7; /* or: 6 */
   predicate_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     if (predicate (ch))
       predicate_table_add (&t, ch);
 
   predicate_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     if (i != 1)
       fprintf (stream, "#define header_%d %d\n", i,
                ((uint32_t *) t.result)[i]);
@@ -819,12 +837,11 @@ output_predicate (const char *filename, bool (*predicate) (unsigned int), const 
   fprintf (stream, "  {");
   if (t.level1_size > 1)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 1) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -839,12 +856,11 @@ output_predicate (const char *filename, bool (*predicate) (unsigned int), const 
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 1)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 1) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -859,7 +875,7 @@ output_predicate (const char *filename, bool (*predicate) (unsigned int), const 
   fprintf (stream, "  {");
   if (t.level3_size << t.p > 4)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       if (i > 0 && (i % 4) == 0)
         fprintf (stream, "\n   ");
@@ -1068,13 +1084,7 @@ general_category_byname (const char *category_name)
 static void
 output_category (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct category_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-  uint16_t *level3_packed;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -1087,20 +1097,19 @@ output_category (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, true);
   fprintf (stream, "\n");
 
+  struct category_table t;
   t.p = 7;
   t.q = 9;
   category_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value;
-      unsigned int log2_value;
-
       if (is_category_Cs (ch))
         value = UC_CATEGORY_MASK_Cs;
       else if (unicode_attributes[ch].name != NULL)
@@ -1111,6 +1120,7 @@ output_category (const char *filename, const char *version)
       /* Now value should contain exactly one bit.  */
       assert (value != 0 && (value & (value - 1)) == 0);
 
+      unsigned int log2_value;
       for (log2_value = 0; value > 1; value >>= 1, log2_value++);
 
       assert (log2_value <= 0x1f);
@@ -1121,24 +1131,24 @@ output_category (const char *filename, const char *version)
   category_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define category_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
   fprintf (stream, "struct\n");
   fprintf (stream, "  {\n");
   fprintf (stream, "    int level1[%zu];\n", t.level1_size);
-  fprintf (stream, "    short level2[%zu << %d];\n", t.level2_size, t.q);
+  fprintf (stream, "    unsigned short level2[%zu << %d];\n", t.level2_size, t.q);
   fprintf (stream, "    unsigned short level3[%zu * %d + 1];\n", t.level3_size,
            (1 << t.p) * 5 / 16);
   fprintf (stream, "  }\n");
@@ -1147,12 +1157,11 @@ output_category (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -1167,17 +1176,18 @@ output_category (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
+      /* To make the level2 values fit in 16 bits, we use 'unsigned short'
+         instead of 'short' and add 1 to each value.  */
       if (offset == 0)
-        fprintf (stream, " %5d", -1);
+        fprintf (stream, " %5d", -1 + 1);
       else
         fprintf (stream, " %5zu",
-                 (offset - level3_offset) / sizeof (uint8_t));
+                 (offset - level3_offset) / sizeof (uint8_t) + 1);
       if (i+1 < t.level2_size << t.q)
         fprintf (stream, ",");
     }
@@ -1186,10 +1196,10 @@ output_category (const char *filename, const char *version)
   fprintf (stream, " },\n");
   /* Pack the level3 array.  Each entry needs 5 bits only.  Use 16-bit units,
      not 32-bit units, in order to make the lookup function easier.  */
-  level3_packed =
+  uint16_t *level3_packed =
     (uint16_t *)
     calloc ((t.level3_size << t.p) * 5 / 16 + 1, sizeof (uint16_t));
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned int j = (i * 5) / 16;
       unsigned int k = (i * 5) % 16;
@@ -1201,7 +1211,7 @@ output_category (const char *filename, const char *version)
   fprintf (stream, "  {");
   if ((t.level3_size << t.p) * 5 / 16 + 1 > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < (t.level3_size << t.p) * 5 / 16 + 1; i++)
+  for (unsigned int i = 0; i < (t.level3_size << t.p) * 5 / 16 + 1; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -1240,12 +1250,7 @@ output_category (const char *filename, const char *version)
 static void
 output_combclass (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct combclass_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -1258,16 +1263,17 @@ output_combclass (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, true);
   fprintf (stream, "\n");
 
+  struct combclass_table t;
   t.p = 7;
   t.q = 9;
   combclass_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     if (unicode_attributes[ch].name != NULL)
       {
         int value = atoi (unicode_attributes[ch].combining);
@@ -1278,17 +1284,17 @@ output_combclass (const char *filename, const char *version)
   combclass_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define combclass_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -1303,12 +1309,11 @@ output_combclass (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -1323,12 +1328,11 @@ output_combclass (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -1343,7 +1347,7 @@ output_combclass (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level3_size << t.p > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -1613,13 +1617,7 @@ get_bidi_category (unsigned int ch)
 static void
 output_bidi_category (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct bidi_category_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-  uint16_t *level3_packed;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -1632,16 +1630,17 @@ output_bidi_category (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, true);
   fprintf (stream, "\n");
 
+  struct bidi_category_table t;
   t.p = 7;
   t.q = 9;
   bidi_category_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = get_bidi_category (ch);
 
@@ -1653,17 +1652,17 @@ output_bidi_category (const char *filename, const char *version)
   bidi_category_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define bidi_category_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -1679,12 +1678,11 @@ output_bidi_category (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -1699,12 +1697,11 @@ output_bidi_category (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -1718,10 +1715,10 @@ output_bidi_category (const char *filename, const char *version)
   fprintf (stream, " },\n");
   /* Pack the level3 array.  Each entry needs 5 bits only.  Use 16-bit units,
      not 32-bit units, in order to make the lookup function easier.  */
-  level3_packed =
+  uint16_t *level3_packed =
     (uint16_t *)
     calloc ((t.level3_size << t.p) * 5 / 16 + 1, sizeof (uint16_t));
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned int j = (i * 5) / 16;
       unsigned int k = (i * 5) % 16;
@@ -1733,7 +1730,7 @@ output_bidi_category (const char *filename, const char *version)
   fprintf (stream, "  {");
   if ((t.level3_size << t.p) * 5 / 16 + 1 > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < (t.level3_size << t.p) * 5 / 16 + 1; i++)
+  for (unsigned int i = 0; i < (t.level3_size << t.p) * 5 / 16 + 1; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -1780,11 +1777,7 @@ get_decdigit_value (unsigned int ch)
 static void
 output_decimal_digit_test (const char *filename, const char *version)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -1797,13 +1790,13 @@ output_decimal_digit_test (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = get_decdigit_value (ch);
 
@@ -1831,12 +1824,7 @@ output_decimal_digit_test (const char *filename, const char *version)
 static void
 output_decimal_digit (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct decdigit_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -1849,16 +1837,17 @@ output_decimal_digit (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
+  struct decdigit_table t;
   t.p = 7;
   t.q = 9;
   decdigit_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = 1 + get_decdigit_value (ch);
 
@@ -1870,17 +1859,17 @@ output_decimal_digit (const char *filename, const char *version)
   decdigit_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define decdigit_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -1896,12 +1885,11 @@ output_decimal_digit (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -1916,12 +1904,11 @@ output_decimal_digit (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -1937,7 +1924,7 @@ output_decimal_digit (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level3_size << (t.p - 1) > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << (t.p - 1); i++)
+  for (unsigned int i = 0; i < t.level3_size << (t.p - 1); i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -1977,11 +1964,7 @@ get_digit_value (unsigned int ch)
 static void
 output_digit_test (const char *filename, const char *version)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -1994,13 +1977,13 @@ output_digit_test (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = get_digit_value (ch);
 
@@ -2028,12 +2011,7 @@ output_digit_test (const char *filename, const char *version)
 static void
 output_digit (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct decdigit_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -2046,16 +2024,17 @@ output_digit (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
+  struct decdigit_table t;
   t.p = 7;
   t.q = 9;
   decdigit_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = 1 + get_digit_value (ch);
 
@@ -2067,17 +2046,17 @@ output_digit (const char *filename, const char *version)
   decdigit_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define digit_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -2093,12 +2072,11 @@ output_digit (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -2113,12 +2091,11 @@ output_digit (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -2134,7 +2111,7 @@ output_digit (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level3_size << (t.p - 1) > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << (t.p - 1); i++)
+  for (unsigned int i = 0; i < t.level3_size << (t.p - 1); i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -2191,11 +2168,7 @@ get_numeric_value (unsigned int ch)
 static void
 output_numeric_test (const char *filename, const char *version)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -2208,13 +2181,13 @@ output_numeric_test (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       uc_fraction_t value = get_numeric_value (ch);
 
@@ -2249,15 +2222,7 @@ output_numeric_test (const char *filename, const char *version)
 static void
 output_numeric (const char *filename, const char *version)
 {
-  FILE *stream;
-  uc_fraction_t fractions[160];
-  unsigned int nfractions;
-  unsigned int ch, i, j;
-  struct numeric_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-  uint16_t *level3_packed;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -2270,30 +2235,32 @@ output_numeric (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
   /* Create table of occurring fractions.  */
-  nfractions = 0;
-  for (ch = 0; ch < 0x110000; ch++)
+  uc_fraction_t fractions[160];
+  unsigned int nfractions = 0;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       uc_fraction_t value = get_numeric_value (ch);
 
+      unsigned int i;
       for (i = 0; i < nfractions; i++)
         if (value.numerator == fractions[i].numerator
             && value.denominator == fractions[i].denominator)
           break;
       if (i == nfractions)
         {
-          assert (nfractions != SIZEOF (fractions));
+          assert (nfractions != countof (fractions));
           for (i = 0; i < nfractions; i++)
             if (value.denominator < fractions[i].denominator
                 || (value.denominator == fractions[i].denominator
                     && value.numerator < fractions[i].numerator))
               break;
-          for (j = nfractions; j > i; j--)
+          for (unsigned int j = nfractions; j > i; j--)
             fractions[j] = fractions[j - 1];
           fractions[i] = value;
           nfractions++;
@@ -2303,7 +2270,7 @@ output_numeric (const char *filename, const char *version)
   fprintf (stream, "static const uc_fraction_t u_numeric_values[%d] =\n",
            nfractions);
   fprintf (stream, "{\n");
-  for (i = 0; i < nfractions; i++)
+  for (unsigned int i = 0; i < nfractions; i++)
     {
       fprintf (stream, "  { %d, %d }", fractions[i].numerator,
                fractions[i].denominator);
@@ -2313,14 +2280,16 @@ output_numeric (const char *filename, const char *version)
     }
   fprintf (stream, "};\n");
 
+  struct numeric_table t;
   t.p = 7;
   t.q = 9;
   numeric_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       uc_fraction_t value = get_numeric_value (ch);
 
+      unsigned int i;
       for (i = 0; i < nfractions; i++)
         if (value.numerator == fractions[i].numerator
             && value.denominator == fractions[i].denominator)
@@ -2333,17 +2302,17 @@ output_numeric (const char *filename, const char *version)
   numeric_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define numeric_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -2359,12 +2328,11 @@ output_numeric (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -2379,12 +2347,11 @@ output_numeric (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -2398,10 +2365,10 @@ output_numeric (const char *filename, const char *version)
   fprintf (stream, " },\n");
   /* Pack the level3 array.  Each entry needs 8 bits only.  Use 16-bit units,
      not 32-bit units, in order to make the lookup function easier.  */
-  level3_packed =
+  uint16_t *level3_packed =
     (uint16_t *)
     calloc ((t.level3_size << t.p) * 8 / 16 + 1, sizeof (uint16_t));
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned int j = (i * 8) / 16;
       unsigned int k = (i * 8) % 16;
@@ -2413,7 +2380,7 @@ output_numeric (const char *filename, const char *version)
   fprintf (stream, "  {");
   if ((t.level3_size << t.p) * 8 / 16 + 1 > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < (t.level3_size << t.p) * 8 / 16 + 1; i++)
+  for (unsigned int i = 0; i < (t.level3_size << t.p) * 8 / 16 + 1; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -2440,83 +2407,180 @@ output_numeric (const char *filename, const char *version)
 /* See Unicode 3.0 book, section 4.7,
        UAX #9.  */
 
-/* List of mirrored character pairs.  This is a subset of the characters
-   having the BidiMirrored property.  */
-static unsigned int mirror_pairs[][2] =
+/* A pair of mirrored characters.  */
+struct mirror_pair { unsigned int uc[2]; };
+
+/* List of mirrored character pairs, from the BidiMirroring.txt file.
+   This is a subset of the characters having the BidiMirrored property.  */
+static struct mirror_pair mirror_pairs[1000];
+static unsigned int mirror_pairs_count;
+
+/* Stores in mirror_pairs[] the mirrored character pairs from the
+   BidiMirroring.txt file.  */
+static void
+fill_mirror (const char *bidimirroring_filename)
 {
-  { 0x0028, 0x0029 },
-  { 0x003C, 0x003E },
-  { 0x005B, 0x005D },
-  { 0x007B, 0x007D },
-  { 0x00AB, 0x00BB },
-  { 0x2039, 0x203A },
-  { 0x2045, 0x2046 },
-  { 0x207D, 0x207E },
-  { 0x208D, 0x208E },
-  { 0x2208, 0x220B },
-  { 0x220A, 0x220D },
-  { 0x223C, 0x223D },
-  { 0x2243, 0x22CD },
-  { 0x2252, 0x2253 },
-  { 0x2254, 0x2255 },
-  { 0x2264, 0x2265 },
-  { 0x2266, 0x2267 },
-  { 0x226A, 0x226B },
-  { 0x2276, 0x2277 },
-  { 0x2278, 0x2279 },
-  { 0x227A, 0x227B },
-  { 0x227C, 0x227D },
-  { 0x2282, 0x2283 },
-  { 0x2286, 0x2287 },
-  { 0x228F, 0x2290 },
-  { 0x2291, 0x2292 },
-  { 0x22A2, 0x22A3 },
-  { 0x22B0, 0x22B1 },
-  { 0x22B2, 0x22B3 },
-  { 0x22B4, 0x22B5 },
-  { 0x22B6, 0x22B7 },
-  { 0x22C9, 0x22CA },
-  { 0x22CB, 0x22CC },
-  { 0x22D0, 0x22D1 },
-  { 0x22D6, 0x22D7 },
-  { 0x22D8, 0x22D9 },
-  { 0x22DA, 0x22DB },
-  { 0x22DC, 0x22DD },
-  { 0x22DE, 0x22DF },
-  { 0x22F0, 0x22F1 },
-  { 0x2308, 0x2309 },
-  { 0x230A, 0x230B },
-  { 0x2329, 0x232A },
-  { 0x3008, 0x3009 },
-  { 0x300A, 0x300B },
-  { 0x300C, 0x300D },
-  { 0x300E, 0x300F },
-  { 0x3010, 0x3011 },
-  { 0x3014, 0x3015 },
-  { 0x3016, 0x3017 },
-  { 0x3018, 0x3019 },
-  { 0x301A, 0x301B }
-};
+  FILE *stream = fopen (bidimirroring_filename, "r");
+  if (stream == NULL)
+    {
+      fprintf (stderr, "error during fopen of '%s'\n", bidimirroring_filename);
+      exit (1);
+    }
+
+  char field0[FIELDLEN];
+  char field1[FIELDLEN];
+  char field2[FIELDLEN];
+  int lineno = 0;
+
+  mirror_pairs_count = 0;
+  for (;;)
+    {
+      lineno++;
+      int c = getc (stream);
+      if (c == EOF)
+        break;
+      if (c == '\n')
+        continue;
+      if (c == '#')
+        {
+          do c = getc (stream); while (c != EOF && c != '\n');
+          continue;
+        }
+      ungetc (c, stream);
+      int n = getfield (stream, field0, ';');
+      do c = getc (stream); while (c == ' ');
+      ungetc (c, stream);
+      n += getfield (stream, field1, '#');
+      n += getfield (stream, field2, '\n');
+      if (n == 0)
+        break;
+      if (n != 3)
+        {
+          fprintf (stderr, "short line in '%s':%d\n",
+                   bidimirroring_filename, lineno);
+          exit (1);
+        }
+      /* Remove trailing spaces from field1.  */
+      while (strlen (field1) > 0 && field1[strlen (field1) - 1] == ' ')
+        field1[strlen (field1) - 1] = '\0';
+      /* The line should contain two characters.  */
+      unsigned int uc1 = strtoul (field0, NULL, 16);
+      unsigned int uc2 = strtoul (field1, NULL, 16);
+      if (uc1 == 0 || uc2 == 0 || uc1 == uc2)
+        {
+          fprintf (stderr, "parse error at '%s':%d\n",
+                   bidimirroring_filename, lineno);
+          exit (1);
+        }
+      /* Verify that uc1 and uc2 are in range.  */
+      if (!(uc1 < 0x110000))
+        {
+          fprintf (stderr, "%s mentions 0x%04X, which is out-of-range.\n",
+                   bidimirroring_filename, uc1);
+          exit (1);
+        }
+      if (!(uc2 < 0x110000))
+        {
+          fprintf (stderr, "%s mentions 0x%04X, which is out-of-range.\n",
+                   bidimirroring_filename, uc2);
+          exit (1);
+        }
+      /* Have we seen uc1 or uc2 already?  */
+      for (unsigned int i = 0; i < mirror_pairs_count; i++)
+        {
+          if (uc1 == mirror_pairs[i].uc[0])
+            {
+              fprintf (stderr, "%s: mapping conflict for 0x%04X\n",
+                       bidimirroring_filename, uc1);
+              exit (1);
+            }
+          if (uc2 == mirror_pairs[i].uc[1])
+            {
+              fprintf (stderr, "%s: mapping conflict for 0x%04X\n",
+                       bidimirroring_filename, uc2);
+              exit (1);
+            }
+        }
+      {
+        unsigned int i;
+        for (i = 0; i < mirror_pairs_count; i++)
+          if (uc1 == mirror_pairs[i].uc[1] || uc2 == mirror_pairs[i].uc[0])
+            break;
+        if (i < mirror_pairs_count)
+          {
+            if (uc1 != mirror_pairs[i].uc[1])
+              {
+                /* uc1 != mirror_pairs[i].uc[1], uc2 == mirror_pairs[i].uc[0] */
+                fprintf (stderr, "%s: mapping conflict for 0x%04X\n",
+                         bidimirroring_filename, uc2);
+                exit (1);
+              }
+            if (uc2 != mirror_pairs[i].uc[0])
+              {
+                /* uc1 == mirror_pairs[i].uc[1], uc2 != mirror_pairs[i].uc[0] */
+                fprintf (stderr, "%s: mapping conflict for 0x%04X\n",
+                         bidimirroring_filename, uc1);
+                exit (1);
+              }
+            /* uc1 == mirror_pairs[i].uc[1], uc2 == mirror_pairs[i].uc[0].
+               (uc1, uc2) is the reverse pair of a pair that we already had
+               encountered: (uc2, uc1).  */
+          }
+        else
+          {
+            /* A new pair.  */
+            if (mirror_pairs_count == countof (mirror_pairs))
+              {
+                fprintf (stderr, "%s contains more pairs than expected, "
+                         "increase mirror_pairs' size.\n",
+                         bidimirroring_filename);
+                exit (1);
+              }
+            mirror_pairs[mirror_pairs_count].uc[0] = uc1;
+            mirror_pairs[mirror_pairs_count].uc[1] = uc2;
+            mirror_pairs_count++;
+          }
+      }
+      /* Verify that uc1 and uc2 have the BidiMirrored property.  */
+      if (!(unicode_attributes[uc1].name != NULL
+            && unicode_attributes[uc1].mirrored))
+        {
+          fprintf (stderr, "%s mentions 0x%04X, which is not BidiMirrored\n",
+                           bidimirroring_filename, uc1);
+          exit (1);
+        }
+      if (!(unicode_attributes[uc2].name != NULL
+            && unicode_attributes[uc2].mirrored))
+        {
+          fprintf (stderr, "%s mentions 0x%04X, which is not BidiMirrored\n",
+                           bidimirroring_filename, uc2);
+          exit (1);
+        }
+    }
+
+  if (ferror (stream) || fclose (stream))
+    {
+      fprintf (stderr, "error reading from '%s'\n", bidimirroring_filename);
+      exit (1);
+    }
+}
 
 static int
 get_mirror_value (unsigned int ch)
 {
-  bool mirrored;
-  unsigned int mirror_char;
-  unsigned int i;
+  bool mirrored = (unicode_attributes[ch].name != NULL
+                   && unicode_attributes[ch].mirrored);
 
-  mirrored = (unicode_attributes[ch].name != NULL
-              && unicode_attributes[ch].mirrored);
-  mirror_char = 0xfffd;
-  for (i = 0; i < sizeof (mirror_pairs) / sizeof (mirror_pairs[0]); i++)
-    if (ch == mirror_pairs[i][0])
+  unsigned int mirror_char = 0xfffd;
+  for (unsigned int i = 0; i < mirror_pairs_count; i++)
+    if (ch == mirror_pairs[i].uc[0])
       {
-        mirror_char = mirror_pairs[i][1];
+        mirror_char = mirror_pairs[i].uc[1];
         break;
       }
-    else if (ch == mirror_pairs[i][1])
+    else if (ch == mirror_pairs[i].uc[1])
       {
-        mirror_char = mirror_pairs[i][0];
+        mirror_char = mirror_pairs[i].uc[0];
         break;
       }
   if (mirrored)
@@ -2540,12 +2604,7 @@ get_mirror_value (unsigned int ch)
 static void
 output_mirror (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct mirror_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -2558,16 +2617,17 @@ output_mirror (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
+  struct mirror_table t;
   t.p = 7;
   t.q = 9;
   mirror_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = get_mirror_value (ch);
 
@@ -2577,17 +2637,17 @@ output_mirror (const char *filename, const char *version)
   mirror_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define mirror_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -2602,12 +2662,11 @@ output_mirror (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -2622,12 +2681,11 @@ output_mirror (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -2642,7 +2700,7 @@ output_mirror (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level3_size << t.p > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -2692,6 +2750,7 @@ enum
   PROP_WHITE_SPACE,
   PROP_BIDI_CONTROL,
   PROP_JOIN_CONTROL,
+  PROP_PREPENDED_CONCATENATION_MARK,
   PROP_DASH,
   PROP_HYPHEN,
   PROP_QUOTATION_MARK,
@@ -2709,6 +2768,7 @@ enum
   PROP_OTHER_GRAPHEME_EXTEND,
   PROP_IDS_BINARY_OPERATOR,
   PROP_IDS_TRINARY_OPERATOR,
+  PROP_IDS_UNARY_OPERATOR,
   PROP_RADICAL,
   PROP_UNIFIED_IDEOGRAPH,
   PROP_OTHER_DEFAULT_IGNORABLE_CODE_POINT,
@@ -2717,12 +2777,14 @@ enum
   PROP_LOGICAL_ORDER_EXCEPTION,
   PROP_OTHER_ID_START,
   PROP_OTHER_ID_CONTINUE,
-  PROP_STERM,
+  PROP_ID_COMPAT_MATH_CONTINUE,
+  PROP_ID_COMPAT_MATH_START,
+  PROP_SENTENCE_TERMINAL,
   PROP_VARIATION_SELECTOR,
   PROP_PATTERN_WHITE_SPACE,
   PROP_PATTERN_SYNTAX,
-  PROP_PREPENDED_CONCATENATION_MARK,
   PROP_REGIONAL_INDICATOR,
+  PROP_MODIFIER_COMBINING_MARK,
   /* DerivedCoreProperties.txt */
   PROP_MATH,
   PROP_ALPHABETIC,
@@ -2753,12 +2815,19 @@ enum
 };
 unsigned long long unicode_properties[0x110000];
 
+enum
+{
+  UC_INDIC_CONJUNCT_BREAK_NONE = 0,          /* None */
+  UC_INDIC_CONJUNCT_BREAK_CONSONANT,         /* Consonant */
+  UC_INDIC_CONJUNCT_BREAK_LINKER,            /* Linker */
+  UC_INDIC_CONJUNCT_BREAK_EXTEND             /* Extend */
+};
+static uint8_t unicode_indic_conjunct_break[0x110000];
+
 static void
 clear_properties (void)
 {
-  unsigned int i;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     unicode_properties[i] = 0;
 }
 
@@ -2767,10 +2836,7 @@ clear_properties (void)
 static void
 fill_properties (const char *proplist_filename)
 {
-  unsigned int i;
-  FILE *stream;
-
-  stream = fopen (proplist_filename, "r");
+  FILE *stream = fopen (proplist_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", proplist_filename);
@@ -2780,32 +2846,33 @@ fill_properties (const char *proplist_filename)
   for (;;)
     {
       char buf[200+1];
-      unsigned int i1, i2;
-      char padding[200+1];
-      char propname[200+1];
-      unsigned int propvalue;
-
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
-      if (sscanf (buf, "%X..%X%[ ;]%[^ #]", &i1, &i2, padding, propname) != 4)
+      unsigned int i1, i2;
+      char padding[200+1];
+      char propname[200+1];
+      char rest_of_line[200+1];
+      if (sscanf (buf, "%X..%X%[ ;]%[^ #]%200s", &i1, &i2, padding, propname, rest_of_line) != 5)
         {
-          if (sscanf (buf, "%X%[ ;]%[^ #]", &i1, padding, propname) != 3)
+          if (sscanf (buf, "%X%[ ;]%[^ #]%200s", &i1, padding, propname, rest_of_line) != 4)
             {
               fprintf (stderr, "parse error in '%s'\n", proplist_filename);
               exit (1);
             }
           i2 = i1;
         }
-#define PROP(name,value) \
-      if (strcmp (propname, name) == 0) propvalue = value; else
+      unsigned int propcode;
+#define PROP(name,code) \
+      if (streq (propname, name)) propcode = code; else
       /* PropList.txt */
       PROP ("White_Space", PROP_WHITE_SPACE)
       PROP ("Bidi_Control", PROP_BIDI_CONTROL)
       PROP ("Join_Control", PROP_JOIN_CONTROL)
+      PROP ("Prepended_Concatenation_Mark", PROP_PREPENDED_CONCATENATION_MARK)
       PROP ("Dash", PROP_DASH)
       PROP ("Hyphen", PROP_HYPHEN)
       PROP ("Quotation_Mark", PROP_QUOTATION_MARK)
@@ -2823,6 +2890,7 @@ fill_properties (const char *proplist_filename)
       PROP ("Other_Grapheme_Extend", PROP_OTHER_GRAPHEME_EXTEND)
       PROP ("IDS_Binary_Operator", PROP_IDS_BINARY_OPERATOR)
       PROP ("IDS_Trinary_Operator", PROP_IDS_TRINARY_OPERATOR)
+      PROP ("IDS_Unary_Operator", PROP_IDS_UNARY_OPERATOR)
       PROP ("Radical", PROP_RADICAL)
       PROP ("Unified_Ideograph", PROP_UNIFIED_IDEOGRAPH)
       PROP ("Other_Default_Ignorable_Code_Point", PROP_OTHER_DEFAULT_IGNORABLE_CODE_POINT)
@@ -2831,12 +2899,14 @@ fill_properties (const char *proplist_filename)
       PROP ("Logical_Order_Exception", PROP_LOGICAL_ORDER_EXCEPTION)
       PROP ("Other_ID_Start", PROP_OTHER_ID_START)
       PROP ("Other_ID_Continue", PROP_OTHER_ID_CONTINUE)
-      PROP ("Sentence_Terminal", PROP_STERM)
+      PROP ("ID_Compat_Math_Continue", PROP_ID_COMPAT_MATH_CONTINUE)
+      PROP ("ID_Compat_Math_Start", PROP_ID_COMPAT_MATH_START)
+      PROP ("Sentence_Terminal", PROP_SENTENCE_TERMINAL)
       PROP ("Variation_Selector", PROP_VARIATION_SELECTOR)
       PROP ("Pattern_White_Space", PROP_PATTERN_WHITE_SPACE)
       PROP ("Pattern_Syntax", PROP_PATTERN_SYNTAX)
-      PROP ("Prepended_Concatenation_Mark", PROP_PREPENDED_CONCATENATION_MARK)
       PROP ("Regional_Indicator", PROP_REGIONAL_INDICATOR)
+      PROP ("Modifier_Combining_Mark", PROP_MODIFIER_COMBINING_MARK)
       /* DerivedCoreProperties.txt */
       PROP ("Math", PROP_MATH)
       PROP ("Alphabetic", PROP_ALPHABETIC)
@@ -2865,15 +2935,51 @@ fill_properties (const char *proplist_filename)
       PROP ("Emoji_Component", PROP_EMOJI_COMPONENT)
       PROP ("Extended_Pictographic", PROP_EXTENDED_PICTOGRAPHIC)
 #undef PROP
+      /* An enum-valued property from DerivedCoreProperties.txt */
+      if (streq (propname, "InCB;"))
+        {
+          char valuename[200+1];
+
+          if (sscanf (rest_of_line, "%[^ #]", valuename) != 1)
+            {
+              fprintf (stderr, "parse error 2 in '%s'\n", proplist_filename);
+              exit (1);
+            }
+
+          unsigned int valuecode;
+          if (streq (valuename, "None"))
+            valuecode = UC_INDIC_CONJUNCT_BREAK_NONE;
+          else if (streq (valuename, "Consonant"))
+            valuecode = UC_INDIC_CONJUNCT_BREAK_CONSONANT;
+          else if (streq (valuename, "Linker"))
+            valuecode = UC_INDIC_CONJUNCT_BREAK_LINKER;
+          else if (streq (valuename, "Extend"))
+            valuecode = UC_INDIC_CONJUNCT_BREAK_EXTEND;
+          else
+            {
+              fprintf (stderr, "unknown InCB value named '%s' in '%s'\n",
+                       valuename, proplist_filename);
+              exit (1);
+            }
+
+          assert (i1 <= i2 && i2 < 0x110000);
+          for (unsigned int i = i1; i <= i2; i++)
+            unicode_indic_conjunct_break[i] = valuecode;
+
+          goto done_line;
+        }
+      else
         {
           fprintf (stderr, "unknown property named '%s' in '%s'\n", propname,
                    proplist_filename);
           exit (1);
         }
-      assert (i1 <= i2 && i2 < 0x110000);
 
-      for (i = i1; i <= i2; i++)
-        unicode_properties[i] |= 1ULL << propvalue;
+      assert (i1 <= i2 && i2 < 0x110000);
+      for (unsigned int i = i1; i <= i2; i++)
+        unicode_properties[i] |= 1ULL << propcode;
+
+     done_line: ;
     }
 
   if (ferror (stream) || fclose (stream))
@@ -2888,14 +2994,11 @@ fill_properties (const char *proplist_filename)
 static void
 fill_property30 (char array[0x110000], const char *proplist_filename, const char *property_name)
 {
-  unsigned int i;
-  FILE *stream;
-  char buf[100+1];
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     array[i] = 0;
 
-  stream = fopen (proplist_filename, "r");
+  FILE *stream = fopen (proplist_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", proplist_filename);
@@ -2903,6 +3006,7 @@ fill_property30 (char array[0x110000], const char *proplist_filename, const char
     }
 
   /* Search for the "Property dump for: ..." line.  */
+  char buf[100+1];
   do
     {
       if (fscanf (stream, "%100[^\n]\n", buf) < 1)
@@ -2915,12 +3019,11 @@ fill_property30 (char array[0x110000], const char *proplist_filename, const char
 
   for (;;)
     {
-      unsigned int i1, i2;
-
       if (fscanf (stream, "%100[^\n]\n", buf) < 1)
         break;
       if (buf[0] == '*')
         break;
+      unsigned int i1, i2;
       if (strlen (buf) >= 10 && buf[4] == '.' && buf[5] == '.')
         {
           if (sscanf (buf, "%4X..%4X", &i1, &i2) < 2)
@@ -2947,7 +3050,7 @@ fill_property30 (char array[0x110000], const char *proplist_filename, const char
           exit (1);
         }
       assert (i1 <= i2 && i2 < 0x110000);
-      for (i = i1; i <= i2; i++)
+      for (unsigned int i = i1; i <= i2; i++)
         array[i] = 1;
     }
 
@@ -3005,7 +3108,8 @@ is_property_alphabetic (unsigned int ch)
     || (ch == 0x10341) /* GOTHIC LETTER NINETY */
     || (ch == 0x1034A) /* GOTHIC LETTER NINE HUNDRED */
     || (ch >= 0x103D1 && ch <= 0x103D5) /* OLD PERSIAN NUMBERS */
-    || (ch >= 0x12400 && ch <= 0x1246E); /* CUNEIFORM NUMERIC SIGNS */
+    || (ch >= 0x12400 && ch <= 0x1246E) /* CUNEIFORM NUMERIC SIGNS */
+    || (ch >= 0x16FF4 && ch <= 0x16FF6); /* YANGQIN SIGN SLOW ONE BEAT .. YANGQIN SIGN SLOW TWO BEATS */
   bool result2 =
     ((unicode_properties[ch] & (1ULL << PROP_ALPHABETIC)) != 0);
 
@@ -3264,6 +3368,20 @@ is_property_xid_continue (unsigned int ch)
 
 /* See PropList.txt, UCD.html.  */
 static bool
+is_property_id_compat_math_start (unsigned int ch)
+{
+  return ((unicode_properties[ch] & (1ULL << PROP_ID_COMPAT_MATH_START)) != 0);
+}
+
+/* See PropList.txt, UCD.html.  */
+static bool
+is_property_id_compat_math_continue (unsigned int ch)
+{
+  return ((unicode_properties[ch] & (1ULL << PROP_ID_COMPAT_MATH_CONTINUE)) != 0);
+}
+
+/* See PropList.txt, UCD.html.  */
+static bool
 is_property_pattern_white_space (unsigned int ch)
 {
   return ((unicode_properties[ch] & (1ULL << PROP_PATTERN_WHITE_SPACE)) != 0);
@@ -3309,6 +3427,13 @@ static bool
 is_property_grapheme_link (unsigned int ch)
 {
   return ((unicode_properties[ch] & (1ULL << PROP_GRAPHEME_LINK)) != 0);
+}
+
+/* See PropList.txt, UCD.html.  */
+static bool
+is_property_modifier_combining_mark (unsigned int ch)
+{
+  return ((unicode_properties[ch] & (1ULL << PROP_MODIFIER_COMBINING_MARK)) != 0);
 }
 
 /* See PropList.txt, UCD.html.  */
@@ -3470,6 +3595,13 @@ is_property_radical (unsigned int ch)
 
 /* See PropList.txt, UCD.html.  */
 static bool
+is_property_ids_unary_operator (unsigned int ch)
+{
+  return ((unicode_properties[ch] & (1ULL << PROP_IDS_UNARY_OPERATOR)) != 0);
+}
+
+/* See PropList.txt, UCD.html.  */
+static bool
 is_property_ids_binary_operator (unsigned int ch)
 {
   return ((unicode_properties[ch] & (1ULL << PROP_IDS_BINARY_OPERATOR)) != 0);
@@ -3528,7 +3660,7 @@ is_property_iso_control (unsigned int ch)
 {
   bool result1 =
     (unicode_attributes[ch].name != NULL
-     && strcmp (unicode_attributes[ch].name, "<control>") == 0);
+     && streq (unicode_attributes[ch].name, "<control>"));
   bool result2 =
     is_category_Cc (ch);
 
@@ -3544,6 +3676,13 @@ is_property_format_control (unsigned int ch)
           && get_bidi_category (ch) == UC_BIDI_BN
           && !is_property_join_control (ch)
           && ch != 0xFEFF);
+}
+
+/* See PropList.txt, UCD.html.  */
+static bool
+is_property_prepended_concatenation_mark (unsigned int ch)
+{
+  return ((unicode_properties[ch] & (1ULL << PROP_PREPENDED_CONCATENATION_MARK)) != 0);
 }
 
 /* See PropList.txt, UCD.html.  */
@@ -3592,7 +3731,7 @@ is_property_quotation_mark (unsigned int ch)
 static bool
 is_property_sentence_terminal (unsigned int ch)
 {
-  return ((unicode_properties[ch] & (1ULL << PROP_STERM)) != 0);
+  return ((unicode_properties[ch] & (1ULL << PROP_SENTENCE_TERMINAL)) != 0);
 }
 
 /* See PropList.txt, UCD.html.  */
@@ -3651,7 +3790,7 @@ static bool
 is_property_combining (unsigned int ch)
 {
   return (unicode_attributes[ch].name != NULL
-          && (strcmp (unicode_attributes[ch].combining, "0") != 0
+          && (!streq (unicode_attributes[ch].combining, "0")
               || is_category_Mc (ch)
               || is_category_Me (ch)
               || is_category_Mn (ch)));
@@ -3687,7 +3826,7 @@ is_property_composite (unsigned int ch)
           if (decomp[0] == ' ')
             decomp++;
         }
-      return strchr (decomp, ' ') != NULL && strncmp (decomp, "0020 ", 5) != 0;
+      return strchr (decomp, ' ') != NULL && !str_startswith (decomp, "0020 ");
     }
   return false;
 }
@@ -3820,6 +3959,8 @@ output_properties (const char *version)
   PROPERTY(other_id_continue)
   PROPERTY(xid_start)
   PROPERTY(xid_continue)
+  PROPERTY(id_compat_math_start)
+  PROPERTY(id_compat_math_continue)
   PROPERTY(pattern_white_space)
   PROPERTY(pattern_syntax)
   PROPERTY(join_control)
@@ -3827,6 +3968,7 @@ output_properties (const char *version)
   PROPERTY(grapheme_extend)
   PROPERTY(other_grapheme_extend)
   PROPERTY(grapheme_link)
+  PROPERTY(modifier_combining_mark)
   PROPERTY(bidi_control)
   PROPERTY(bidi_left_to_right)
   PROPERTY(bidi_hebrew_right_to_left)
@@ -3849,6 +3991,7 @@ output_properties (const char *version)
   PROPERTY(ideographic)
   PROPERTY(unified_ideograph)
   PROPERTY(radical)
+  PROPERTY(ids_unary_operator)
   PROPERTY(ids_binary_operator)
   PROPERTY(ids_trinary_operator)
   PROPERTY(zero_width)
@@ -3856,6 +3999,7 @@ output_properties (const char *version)
   PROPERTY(non_break)
   PROPERTY(iso_control)
   PROPERTY(format_control)
+  PROPERTY(prepended_concatenation_mark)
   PROPERTY(dash)
   PROPERTY(hyphen)
   PROPERTY(punctuation)
@@ -3884,6 +4028,205 @@ output_properties (const char *version)
   PROPERTY(emoji_component)
   PROPERTY(extended_pictographic)
 #undef PROPERTY
+}
+
+/* ------------------------------------------------------------------------- */
+
+/* Convert an Indic_Conjunct_Break value to a C identifier.  */
+static const char *
+indic_conjunct_break_as_c_identifier (int indic_conjunct_break)
+{
+#define TRY(value) if (indic_conjunct_break == value) return #value;
+  TRY(UC_INDIC_CONJUNCT_BREAK_NONE)
+  TRY(UC_INDIC_CONJUNCT_BREAK_CONSONANT)
+  TRY(UC_INDIC_CONJUNCT_BREAK_LINKER)
+  TRY(UC_INDIC_CONJUNCT_BREAK_EXTEND)
+#undef TRY
+  abort ();
+}
+
+static void
+output_indic_conjunct_break_test (const char *filename, const char *version)
+{
+  FILE *stream = fopen (filename, "w");
+  if (stream == NULL)
+    {
+      fprintf (stderr, "cannot open '%s' for writing\n", filename);
+      exit (1);
+    }
+
+  fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
+  fprintf (stream, "/* Indic_Conjunct_Break attribute of Unicode characters.  */\n");
+  fprintf (stream, "/* Generated automatically by gen-uni-tables.c for Unicode %s.  */\n",
+           version);
+  fprintf (stream, "\n");
+
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
+  fprintf (stream, "\n");
+  output_tests_license (stream);
+  fprintf (stream, "\n");
+
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
+    {
+      int value = unicode_indic_conjunct_break[ch];
+
+      if (value != UC_INDIC_CONJUNCT_BREAK_NONE)
+        {
+          if (need_comma)
+            fprintf (stream, ",\n");
+          fprintf (stream, "    { 0x%04X, %s }", ch, indic_conjunct_break_as_c_identifier (value));
+          need_comma = true;
+        }
+    }
+  if (need_comma)
+    fprintf (stream, "\n");
+
+  if (ferror (stream) || fclose (stream))
+    {
+      fprintf (stderr, "error writing to '%s'\n", filename);
+      exit (1);
+    }
+}
+
+/* Construction of sparse 3-level tables.  */
+#define TABLE indic_conjunct_break_table
+#define ELEMENT uint8_t
+#define DEFAULT UC_INDIC_CONJUNCT_BREAK_NONE
+#define xmalloc malloc
+#define xrealloc realloc
+#include "3level.h"
+
+static void
+output_indic_conjunct_break (const char *filename, const char *version)
+{
+  FILE *stream = fopen (filename, "w");
+  if (stream == NULL)
+    {
+      fprintf (stderr, "cannot open '%s' for writing\n", filename);
+      exit (1);
+    }
+
+  fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
+  fprintf (stream, "/* Indic_Conjunct_Break attribute of Unicode characters.  */\n");
+  fprintf (stream, "/* Generated automatically by gen-uni-tables.c for Unicode %s.  */\n",
+           version);
+  fprintf (stream, "\n");
+
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
+  fprintf (stream, "\n");
+  output_library_license (stream, false);
+  fprintf (stream, "\n");
+
+  struct indic_conjunct_break_table t;
+  t.p = 6; /* or 5 */
+  t.q = 4; /* or 5 */
+  indic_conjunct_break_table_init (&t);
+
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
+    {
+      uint8_t value = unicode_indic_conjunct_break[ch];
+
+      assert (value <= 0x03);
+
+      if (value != UC_INDIC_CONJUNCT_BREAK_NONE)
+        indic_conjunct_break_table_add (&t, ch, value);
+    }
+
+  indic_conjunct_break_table_finalize (&t);
+
+  /* Offsets in t.result, in memory of this process.  */
+  unsigned int level1_offset =
+    5 * sizeof (uint32_t);
+  unsigned int level2_offset =
+    5 * sizeof (uint32_t)
+    + t.level1_size * sizeof (uint32_t);
+  unsigned int level3_offset =
+    5 * sizeof (uint32_t)
+    + t.level1_size * sizeof (uint32_t)
+    + (t.level2_size << t.q) * sizeof (uint32_t);
+
+  for (unsigned int i = 0; i < 5; i++)
+    fprintf (stream, "#define indic_conjunct_break_header_%d %d\n", i,
+             ((uint32_t *) t.result)[i]);
+  fprintf (stream, "static const\n");
+  fprintf (stream, "struct\n");
+  fprintf (stream, "  {\n");
+  fprintf (stream, "    int level1[%zu];\n", t.level1_size);
+  fprintf (stream, "    short level2[%zu << %d];\n", t.level2_size, t.q);
+  fprintf (stream, "    unsigned short level3[%zu * %d];\n", t.level3_size,
+           (1 << t.p) * 2 / 16);
+  fprintf (stream, "  }\n");
+  fprintf (stream, "u_indic_conjunct_break =\n");
+  fprintf (stream, "{\n");
+  fprintf (stream, "  {");
+  if (t.level1_size > 8)
+    fprintf (stream, "\n   ");
+  for (unsigned int i = 0; i < t.level1_size; i++)
+    {
+      if (i > 0 && (i % 8) == 0)
+        fprintf (stream, "\n   ");
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
+      if (offset == 0)
+        fprintf (stream, " %5d", -1);
+      else
+        fprintf (stream, " %5zu",
+                 (offset - level2_offset) / sizeof (uint32_t));
+      if (i+1 < t.level1_size)
+        fprintf (stream, ",");
+    }
+  if (t.level1_size > 8)
+    fprintf (stream, "\n ");
+  fprintf (stream, " },\n");
+  fprintf (stream, "  {");
+  if (t.level2_size << t.q > 8)
+    fprintf (stream, "\n   ");
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
+    {
+      if (i > 0 && (i % 8) == 0)
+        fprintf (stream, "\n   ");
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
+      if (offset == 0)
+        fprintf (stream, " %5d", -1);
+      else
+        fprintf (stream, " %5zu",
+                 (offset - level3_offset) / sizeof (uint8_t));
+      if (i+1 < t.level2_size << t.q)
+        fprintf (stream, ",");
+    }
+  if (t.level2_size << t.q > 8)
+    fprintf (stream, "\n ");
+  fprintf (stream, " },\n");
+  /* Pack the level3 array.  Each entry needs 2 bits only.  */
+  fprintf (stream, "  {");
+  if ((t.level3_size << t.p) * 2 / 16 > 8)
+    fprintf (stream, "\n   ");
+  for (unsigned int i = 0; i < (t.level3_size << t.p) * 2 / 16; i++)
+    {
+      if (i > 0 && (i % 8) == 0)
+        fprintf (stream, "\n   ");
+      fprintf (stream, " 0x%04x",
+               (((uint8_t *) (t.result + level3_offset))[8 * i] << 0)
+               | (((uint8_t *) (t.result + level3_offset))[8 * i + 1] << 2)
+               | (((uint8_t *) (t.result + level3_offset))[8 * i + 2] << 4)
+               | (((uint8_t *) (t.result + level3_offset))[8 * i + 3] << 6)
+               | (((uint8_t *) (t.result + level3_offset))[8 * i + 4] << 8)
+               | (((uint8_t *) (t.result + level3_offset))[8 * i + 5] << 10)
+               | (((uint8_t *) (t.result + level3_offset))[8 * i + 6] << 12)
+               | (((uint8_t *) (t.result + level3_offset))[8 * i + 7] << 14));
+      if (i+1 < (t.level3_size << t.p) * 2 / 16)
+        fprintf (stream, ",");
+    }
+  if ((t.level3_size << t.p) * 2 / 16 > 8)
+    fprintf (stream, "\n ");
+  fprintf (stream, " }\n");
+  fprintf (stream, "};\n");
+
+  if (ferror (stream) || fclose (stream))
+    {
+      fprintf (stderr, "error writing to '%s'\n", filename);
+      exit (1);
+    }
 }
 
 /* ========================================================================= */
@@ -4007,7 +4350,9 @@ enum
   UC_JOINING_GROUP_HANIFI_ROHINGYA_PA,       /* Hanifi_Rohingya_Pa */
   UC_JOINING_GROUP_HANIFI_ROHINGYA_KINNA_YA, /* Hanifi_Rohingya_Kinna_Ya */
   UC_JOINING_GROUP_THIN_YEH,                 /* Thin_Yeh */
-  UC_JOINING_GROUP_VERTICAL_TAIL             /* Vertical_Tail */
+  UC_JOINING_GROUP_VERTICAL_TAIL,            /* Vertical_Tail */
+  UC_JOINING_GROUP_KASHMIRI_YEH,             /* Kashmiri_Yeh */
+  UC_JOINING_GROUP_THIN_NOON                 /* Thin_Noon */
 };
 
 static uint8_t unicode_joining_group[0x110000];
@@ -4015,43 +4360,37 @@ static uint8_t unicode_joining_group[0x110000];
 static void
 fill_arabicshaping (const char *arabicshaping_filename)
 {
-  FILE *stream;
-  unsigned int i;
-  int lineno;
-
-  stream = fopen (arabicshaping_filename, "r");
+  FILE *stream = fopen (arabicshaping_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", arabicshaping_filename);
       exit (1);
     }
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     {
       unicode_joining_type[i] = (uint8_t)~(uint8_t)0;
       unicode_joining_group[i] = UC_JOINING_GROUP_NONE;
     }
 
-  lineno = 0;
+  int lineno = 0;
   for (;;)
     {
-      char buf[200+1];
-      char separator1[200+1];
-      char schematic_name[200+1];
-      char separator2[200+1];
-      char joining_type_name[200+1];
-      char separator3[200+1];
-      char joining_group_name[200+1];
-      int joining_type;
-      int joining_group;
-
       lineno++;
+      char buf[200+1];
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      unsigned int i;
+      char separator1[200+1];
+      char schematic_name[200+1];
+      char separator2[200+1];
+      char joining_type_name[200+1];
+      char separator3[200+1];
+      char joining_group_name[200+1];
       if (sscanf (buf, "%X%[; ]%[^;]%[; ]%[^;]%[; ]%100[^\n]",
                   &i, separator1, schematic_name, separator2, joining_type_name,
                   separator3, joining_group_name) != 7)
@@ -4062,7 +4401,8 @@ fill_arabicshaping (const char *arabicshaping_filename)
         }
       assert (i < 0x110000);
 
-#define TRY(name) else if (strcmp (joining_type_name, #name + 16) == 0) joining_type = name;
+      int joining_type;
+#define TRY(name) else if (streq (joining_type_name, #name + 16)) joining_type = name;
       if (false) {}
       TRY(UC_JOINING_TYPE_U)
       TRY(UC_JOINING_TYPE_T)
@@ -4083,7 +4423,8 @@ fill_arabicshaping (const char *arabicshaping_filename)
              && joining_group_name[strlen (joining_group_name) - 1] == ' ')
         joining_group_name[strlen (joining_group_name) - 1] = '\0';
 
-#define TRY(value,name) else if (strcmp (joining_group_name, name) == 0) joining_group = value;
+      int joining_group;
+#define TRY(value,name) else if (streq (joining_group_name, name)) joining_group = value;
       if (false) {}
       TRY(UC_JOINING_GROUP_NONE,                     "No_Joining_Group")
       TRY(UC_JOINING_GROUP_AIN,                      "AIN")
@@ -4189,6 +4530,8 @@ fill_arabicshaping (const char *arabicshaping_filename)
       TRY(UC_JOINING_GROUP_HANIFI_ROHINGYA_KINNA_YA, "HANIFI ROHINGYA KINNA YA")
       TRY(UC_JOINING_GROUP_THIN_YEH,                 "THIN YEH")
       TRY(UC_JOINING_GROUP_VERTICAL_TAIL,            "VERTICAL TAIL")
+      TRY(UC_JOINING_GROUP_KASHMIRI_YEH,             "KASHMIRI YEH")
+      TRY(UC_JOINING_GROUP_THIN_NOON,                "THIN NOON")
 #undef TRY
       else
         {
@@ -4226,11 +4569,7 @@ joining_type_as_c_identifier (int joining_type)
 static void
 output_joining_type_test (const char *filename, const char *version)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -4243,13 +4582,13 @@ output_joining_type_test (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = unicode_joining_type[ch];
 
@@ -4282,13 +4621,7 @@ output_joining_type_test (const char *filename, const char *version)
 static void
 output_joining_type (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct joining_type_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-  uint8_t *level3_packed;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -4301,16 +4634,17 @@ output_joining_type (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, true);
   fprintf (stream, "\n");
 
+  struct joining_type_table t;
   t.p = 7;
   t.q = 9;
   joining_type_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       uint8_t value = unicode_joining_type[ch];
 
@@ -4322,17 +4656,17 @@ output_joining_type (const char *filename, const char *version)
   joining_type_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define joining_type_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -4348,12 +4682,11 @@ output_joining_type (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -4368,12 +4701,11 @@ output_joining_type (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -4386,9 +4718,9 @@ output_joining_type (const char *filename, const char *version)
     fprintf (stream, "\n ");
   fprintf (stream, " },\n");
   /* Pack the level3 array.  Each entry needs 4 bits only.  */
-  level3_packed =
+  uint8_t *level3_packed =
     (uint8_t *) calloc ((t.level3_size << t.p) * 4 / 8, sizeof (uint8_t));
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned int j = (i * 4) / 8;
       unsigned int k = (i * 4) % 8;
@@ -4398,7 +4730,7 @@ output_joining_type (const char *filename, const char *version)
   fprintf (stream, "  {");
   if ((t.level3_size << t.p) * 4 / 8 > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < (t.level3_size << t.p) * 4 / 8; i++)
+  for (unsigned int i = 0; i < (t.level3_size << t.p) * 4 / 8; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -4528,6 +4860,8 @@ joining_group_as_c_identifier (int joining_group)
   TRY(UC_JOINING_GROUP_HANIFI_ROHINGYA_KINNA_YA)
   TRY(UC_JOINING_GROUP_THIN_YEH)
   TRY(UC_JOINING_GROUP_VERTICAL_TAIL)
+  TRY(UC_JOINING_GROUP_KASHMIRI_YEH)
+  TRY(UC_JOINING_GROUP_THIN_NOON)
 #undef TRY
   abort ();
 }
@@ -4535,11 +4869,7 @@ joining_group_as_c_identifier (int joining_group)
 static void
 output_joining_group_test (const char *filename, const char *version)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -4552,13 +4882,13 @@ output_joining_group_test (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = unicode_joining_group[ch];
 
@@ -4591,13 +4921,7 @@ output_joining_group_test (const char *filename, const char *version)
 static void
 output_joining_group (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct joining_group_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-  uint16_t *level3_packed;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -4610,16 +4934,17 @@ output_joining_group (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
+  struct joining_group_table t;
   t.p = 7;
   t.q = 9;
   joining_group_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       uint8_t value = unicode_joining_group[ch];
 
@@ -4631,17 +4956,17 @@ output_joining_group (const char *filename, const char *version)
   joining_group_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define joining_group_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -4657,12 +4982,11 @@ output_joining_group (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -4677,12 +5001,11 @@ output_joining_group (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -4696,10 +5019,10 @@ output_joining_group (const char *filename, const char *version)
   fprintf (stream, " },\n");
   /* Pack the level3 array.  Each entry needs 7 bits only.  Use 16-bit units,
      not 32-bit units, in order to make the lookup function easier.  */
-  level3_packed =
+  uint16_t *level3_packed =
     (uint16_t *)
     calloc ((t.level3_size << t.p) * 7 / 16 + 1, sizeof (uint16_t));
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned int j = (i * 7) / 16;
       unsigned int k = (i * 7) % 16;
@@ -4711,7 +5034,7 @@ output_joining_group (const char *filename, const char *version)
   fprintf (stream, "  {");
   if ((t.level3_size << t.p) * 7 / 16 + 1 > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < (t.level3_size << t.p) * 7 / 16 + 1; i++)
+  for (unsigned int i = 0; i < (t.level3_size << t.p) * 7 / 16 + 1; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -4744,10 +5067,7 @@ static uint8_t unicode_scripts[0x110000];
 static void
 fill_scripts (const char *scripts_filename)
 {
-  FILE *stream;
-  unsigned int i;
-
-  stream = fopen (scripts_filename, "r");
+  FILE *stream = fopen (scripts_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", scripts_filename);
@@ -4756,23 +5076,21 @@ fill_scripts (const char *scripts_filename)
 
   numscripts = 0;
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     unicode_scripts[i] = (uint8_t)~(uint8_t)0;
 
   for (;;)
     {
       char buf[200+1];
-      unsigned int i1, i2;
-      char padding[200+1];
-      char scriptname[200+1];
-      int script;
-
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      unsigned int i1, i2;
+      char padding[200+1];
+      char scriptname[200+1];
       if (sscanf (buf, "%X..%X%[ ;]%[^ ]", &i1, &i2, padding, scriptname) != 4)
         {
           if (sscanf (buf, "%X%[ ;]%[^ ]", &i1, padding, scriptname) != 3)
@@ -4785,8 +5103,9 @@ fill_scripts (const char *scripts_filename)
       assert (i2 >= i1);
       assert (i2 < 0x110000);
 
+      int script;
       for (script = numscripts - 1; script >= 0; script--)
-        if (strcmp (scripts[script], scriptname) == 0)
+        if (streq (scripts[script], scriptname))
           break;
       if (script < 0)
         {
@@ -4796,7 +5115,7 @@ fill_scripts (const char *scripts_filename)
           assert (numscripts != 256);
         }
 
-      for (i = i1; i <= i2; i++)
+      for (unsigned int i = i1; i <= i2; i++)
         {
           if (unicode_scripts[i] != (uint8_t)~(uint8_t)0)
             fprintf (stderr, "0x%04X belongs to multiple scripts\n", i);
@@ -4823,10 +5142,6 @@ static void
 output_scripts (const char *version)
 {
   const char *filename = "unictype/scripts.h";
-  FILE *stream;
-  unsigned int ch, s, i;
-  struct script_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
 
   typedef struct
   {
@@ -4835,7 +5150,7 @@ output_scripts (const char *version)
   scriptinfo_t;
   scriptinfo_t scriptinfo[256];
 
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -4848,39 +5163,35 @@ output_scripts (const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, true);
   fprintf (stream, "\n");
 
-  for (s = 0; s < numscripts; s++)
+  for (unsigned int s = 0; s < numscripts; s++)
     {
       char *lcp = strdup (scripts[s]);
-      char *cp;
 
-      for (cp = lcp; *cp != '\0'; cp++)
+      for (char *cp = lcp; *cp != '\0'; cp++)
         if (*cp >= 'A' && *cp <= 'Z')
           *cp += 'a' - 'A';
 
       scriptinfo[s].lowercase_name = lcp;
     }
 
-  for (s = 0; s < numscripts; s++)
+  for (unsigned int s = 0; s < numscripts; s++)
     {
       fprintf (stream, "static const uc_interval_t script_%s_intervals[] =\n",
                scriptinfo[s].lowercase_name);
       fprintf (stream, "{\n");
-      i = 0;
-      for (ch = 0; ch < 0x110000; ch++)
+      unsigned int i = 0;
+      for (unsigned int ch = 0; ch < 0x110000; ch++)
         if (unicode_scripts[ch] == s)
           {
-            unsigned int start;
-            unsigned int end;
-
-            start = ch;
+            unsigned int start = ch;
             while (ch + 1 < 0x110000 && unicode_scripts[ch + 1] == s)
               ch++;
-            end = ch;
+            unsigned int end = ch;
 
             if (i > 0)
               fprintf (stream, ",\n");
@@ -4897,7 +5208,7 @@ output_scripts (const char *version)
 
   fprintf (stream, "static const uc_script_t scripts[%d] =\n", numscripts);
   fprintf (stream, "{\n");
-  for (s = 0; s < numscripts; s++)
+  for (unsigned int s = 0; s < numscripts; s++)
     {
       fprintf (stream, "  {\n");
       fprintf (stream, "    sizeof (script_%s_intervals) / sizeof (uc_interval_t),\n",
@@ -4912,11 +5223,12 @@ output_scripts (const char *version)
     }
   fprintf (stream, "};\n");
 
+  struct script_table t;
   t.p = 7;
   t.q = 9;
   script_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       unsigned int s = unicode_scripts[ch];
       if (s != (uint8_t)~(uint8_t)0)
@@ -4926,24 +5238,24 @@ output_scripts (const char *version)
   script_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define script_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
   fprintf (stream, "struct\n");
   fprintf (stream, "  {\n");
   fprintf (stream, "    int level1[%zu];\n", t.level1_size);
-  fprintf (stream, "    short level2[%zu << %d];\n", t.level2_size, t.q);
+  fprintf (stream, "    unsigned short level2[%zu << %d];\n", t.level2_size, t.q);
   fprintf (stream, "    unsigned char level3[%zu << %d];\n", t.level3_size, t.p);
   fprintf (stream, "  }\n");
   fprintf (stream, "u_script =\n");
@@ -4951,12 +5263,11 @@ output_scripts (const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -4971,17 +5282,18 @@ output_scripts (const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
+      /* To make the level2 values fit in 16 bits, we use 'unsigned short'
+         instead of 'short' and add 1 to each value.  */
       if (offset == 0)
-        fprintf (stream, " %5d", -1);
+        fprintf (stream, " %5d", -1 + 1);
       else
         fprintf (stream, " %5zu",
-                 (offset - level3_offset) / sizeof (uint8_t));
+                 (offset - level3_offset) / sizeof (uint8_t) + 1);
       if (i+1 < t.level2_size << t.q)
         fprintf (stream, ",");
     }
@@ -4991,7 +5303,7 @@ output_scripts (const char *version)
   fprintf (stream, "  {");
   if (t.level3_size << t.p > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -5015,10 +5327,8 @@ static void
 output_scripts_byname (const char *version)
 {
   const char *filename = "unictype/scripts_byname.gperf";
-  FILE *stream;
-  unsigned int s;
 
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -5031,7 +5341,7 @@ output_scripts_byname (const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, true);
   fprintf (stream, "\n");
@@ -5047,7 +5357,7 @@ output_scripts_byname (const char *version)
   fprintf (stream, "%%pic\n");
   fprintf (stream, "%%define string-pool-name script_stringpool\n");
   fprintf (stream, "%%%%\n");
-  for (s = 0; s < numscripts; s++)
+  for (unsigned int s = 0; s < numscripts; s++)
     fprintf (stream, "%s, %u\n", scripts[s], s);
 
   if (ferror (stream) || fclose (stream))
@@ -5069,9 +5379,7 @@ static unsigned int numblocks;
 static void
 fill_blocks (const char *blocks_filename)
 {
-  FILE *stream;
-
-  stream = fopen (blocks_filename, "r");
+  FILE *stream = fopen (blocks_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", blocks_filename);
@@ -5081,16 +5389,15 @@ fill_blocks (const char *blocks_filename)
   for (;;)
     {
       char buf[200+1];
-      unsigned int i1, i2;
-      char padding[200+1];
-      char blockname[200+1];
-
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      unsigned int i1, i2;
+      char padding[200+1];
+      char blockname[200+1];
       if (sscanf (buf, "%X..%X%[ ;]%[^\r]", &i1, &i2, padding, blockname) != 4)
         {
           fprintf (stderr, "parse error in '%s'\n", blocks_filename);
@@ -5102,7 +5409,7 @@ fill_blocks (const char *blocks_filename)
       /* It must be sorted.  */
       assert (numblocks == 0 || blocks[numblocks-1].end < blocks[numblocks].start);
       numblocks++;
-      assert (numblocks != SIZEOF (blocks));
+      assert (numblocks != countof (blocks));
     }
 
   if (ferror (stream) || fclose (stream))
@@ -5161,11 +5468,8 @@ output_blocks (const char *version)
   const char *filename = "unictype/blocks.h";
   const unsigned int shift = 8; /* bits to shift away for array access */
   const unsigned int threshold = 0x28000; /* cut-off table here to save space */
-  FILE *stream;
-  unsigned int i;
-  unsigned int i1;
 
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -5178,14 +5482,14 @@ output_blocks (const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
   fprintf (stream, "static const uc_block_t blocks[] =\n");
   fprintf (stream, "{\n");
-  for (i = 0; i < numblocks; i++)
+  for (unsigned int i = 0; i < numblocks; i++)
     {
       fprintf (stream, "  { 0x%04X, 0x%04X, \"%s\" }", blocks[i].start,
                blocks[i].end, blocks[i].name);
@@ -5199,7 +5503,7 @@ output_blocks (const char *version)
   fprintf (stream, "static const uint16_t blocks_level1[%d * 2] =\n",
            threshold >> shift);
   fprintf (stream, "{\n");
-  for (i1 = 0; i1 < (threshold >> shift); i1++)
+  for (unsigned int i1 = 0; i1 < (threshold >> shift); i1++)
     {
       unsigned int first_index = block_first_index (i1 << shift);
       unsigned int last_index = block_last_index (((i1 + 1) << shift) - 1);
@@ -5583,12 +5887,7 @@ java_ident_category (unsigned int ch)
 static void
 output_ident_category (const char *filename, int (*predicate) (unsigned int), const char *name, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct identsyntax_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -5601,16 +5900,17 @@ output_ident_category (const char *filename, int (*predicate) (unsigned int), co
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
+  struct identsyntax_table t;
   t.p = 7; /* or 8 */
   t.q = 5; /* or 4 */
   identsyntax_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int syntaxcode = predicate (ch);
 
@@ -5623,17 +5923,17 @@ output_ident_category (const char *filename, int (*predicate) (unsigned int), co
   identsyntax_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define identsyntax_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -5649,12 +5949,11 @@ output_ident_category (const char *filename, int (*predicate) (unsigned int), co
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -5669,12 +5968,11 @@ output_ident_category (const char *filename, int (*predicate) (unsigned int), co
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -5690,7 +5988,7 @@ output_ident_category (const char *filename, int (*predicate) (unsigned int), co
   fprintf (stream, "  {");
   if ((t.level3_size << t.p) * 2 / 16 > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < (t.level3_size << t.p) * 2 / 16; i++)
+  for (unsigned int i = 0; i < (t.level3_size << t.p) * 2 / 16; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -5736,8 +6034,8 @@ output_ident_properties (const char *version)
 /* ========================================================================= */
 
 /* Like ISO C <ctype.h> and <wctype.h>.  Compatible to glibc's
-   glibc/localedata/locales/i18n file, generated by
-   glibc/localedata/gen-unicode-ctype.c.  */
+   glibc/localedata/locales/i18n_ctype file, generated by
+   glibc/localedata/unicode-gen/gen_unicode_ctype.py.  */
 
 /* Character mappings.  */
 
@@ -5882,7 +6180,7 @@ static bool
 is_cntrl (unsigned int ch)
 {
   return (unicode_attributes[ch].name != NULL
-          && (strcmp (unicode_attributes[ch].name, "<control>") == 0
+          && (streq (unicode_attributes[ch].name, "<control>")
               /* Categories Zl and Zp */
               || (unicode_attributes[ch].category[0] == 'Z'
                   && (unicode_attributes[ch].category[1] == 'l'
@@ -5915,7 +6213,7 @@ static bool
 is_graph (unsigned int ch)
 {
   return (unicode_attributes[ch].name != NULL
-          && strcmp (unicode_attributes[ch].name, "<control>")
+          && !streq (unicode_attributes[ch].name, "<control>")
           && !is_space (ch));
 }
 
@@ -5923,7 +6221,7 @@ static bool
 is_print (unsigned int ch)
 {
   return (unicode_attributes[ch].name != NULL
-          && strcmp (unicode_attributes[ch].name, "<control>")
+          && !streq (unicode_attributes[ch].name, "<control>")
           /* Categories Zl and Zp */
           && !(unicode_attributes[ch].name != NULL
                && unicode_attributes[ch].category[0] == 'Z'
@@ -6021,32 +6319,27 @@ output_charclass (FILE *stream, const char *classname,
                   bool (*func) (unsigned int))
 {
   char table[0x110000];
-  unsigned int i;
-  bool need_semicolon;
-  const int max_column = 75;
-  int column;
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     table[i] = (int) func (i);
 
   fprintf (stream, "%s ", classname);
-  need_semicolon = false;
-  column = 1000;
-  for (i = 0; i < 0x110000; )
+  const int max_column = 75;
+  bool need_semicolon = false;
+  int column = 1000;
+  for (unsigned int i = 0; i < 0x110000; )
     {
       if (!table[i])
         i++;
       else
         {
-          unsigned int low, high;
-          char buf[25];
-
-          low = i;
+          unsigned int low = i;
           do
             i++;
           while (i < 0x110000 && table[i]);
-          high = i - 1;
+          unsigned int high = i - 1;
 
+          char buf[25];
           if (low == high)
             strcpy (buf, ucs_symbol (low));
           else
@@ -6079,18 +6372,15 @@ output_charmap (FILE *stream, const char *mapname,
                 unsigned int (*func) (unsigned int))
 {
   char table[0x110000];
-  unsigned int i;
-  bool need_semicolon;
-  const int max_column = 75;
-  int column;
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     table[i] = (func (i) != i);
 
   fprintf (stream, "%s ", mapname);
-  need_semicolon = false;
-  column = 1000;
-  for (i = 0; i < 0x110000; i++)
+  const int max_column = 75;
+  bool need_semicolon = false;
+  int column = 1000;
+  for (unsigned int i = 0; i < 0x110000; i++)
     if (table[i])
       {
         char buf[25+1];
@@ -6132,10 +6422,7 @@ output_widthmap (FILE *stream)
 static void
 output_tables (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -6161,9 +6448,8 @@ output_tables (const char *filename, const char *version)
   fprintf (stream, "territory \"Earth\"\n");
   fprintf (stream, "revision  \"%s\"\n", version);
   {
-    time_t now;
+    time_t now = time (NULL);
     char date[11];
-    now = time (NULL);
     strftime (date, sizeof (date), "%Y-%m-%d", gmtime (&now));
     fprintf (stream, "date      \"%s\"\n", date);
   }
@@ -6172,7 +6458,7 @@ output_tables (const char *filename, const char *version)
   fprintf (stream, "\n");
 
   /* Verification. */
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       /* toupper restriction: "Only characters specified for the keywords
          lower and upper shall be specified.  */
@@ -6297,40 +6583,38 @@ const char * unicode_width[0x110000];
 static void
 fill_width (const char *width_filename)
 {
-  unsigned int i, j;
-  FILE *stream;
-  char field0[FIELDLEN];
-  char field1[FIELDLEN];
-  char field2[FIELDLEN];
-  int lineno = 0;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     unicode_width[i] = (unicode_attributes[i].name != NULL ? "N" : NULL);
 
-  stream = fopen (width_filename, "r");
+  FILE *stream = fopen (width_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", width_filename);
       exit (1);
     }
 
+  char field0[FIELDLEN];
+  char field1[FIELDLEN];
+  char field2[FIELDLEN];
+  int lineno = 0;
   for (;;)
     {
-      int n;
-      int c;
-
       lineno++;
-      c = getc (stream);
+      int c = getc (stream);
       if (c == EOF)
         break;
+      if (c == '\n')
+        continue;
       if (c == '#')
         {
           do c = getc (stream); while (c != EOF && c != '\n');
           continue;
         }
       ungetc (c, stream);
-      n = getfield (stream, field0, ';');
-      n += getfield (stream, field1, ' ');
+      int n = getfield (stream, field0, ';');
+      do c = getc (stream); while (c == ' ');
+      ungetc (c, stream);
+      n += getfield (stream, field1, '#');
       n += getfield (stream, field2, '\n');
       if (n == 0)
         break;
@@ -6339,11 +6623,17 @@ fill_width (const char *width_filename)
           fprintf (stderr, "short line in '%s':%d\n", width_filename, lineno);
           exit (1);
         }
-      i = strtoul (field0, NULL, 16);
+      /* Remove trailing spaces from field0.  */
+      while (strlen (field0) > 0 && field0[strlen (field0) - 1] == ' ')
+        field0[strlen (field0) - 1] = '\0';
+      /* Remove trailing spaces from field1.  */
+      while (strlen (field1) > 0 && field1[strlen (field1) - 1] == ' ')
+        field1[strlen (field1) - 1] = '\0';
+      unsigned int i = strtoul (field0, NULL, 16);
       if (strstr (field0, "..") != NULL)
         {
           /* Deal with a range.  */
-          j = strtoul (strstr (field0, "..") + 2, NULL, 16);
+          unsigned int j = strtoul (strstr (field0, "..") + 2, NULL, 16);
           for (; i <= j; i++)
             unicode_width[i] = strdup (field1);
         }
@@ -6368,8 +6658,13 @@ fill_width (const char *width_filename)
 /* The non-spacing attribute table consists of:
    * Non-spacing characters; generated from PropList.txt or
      "grep '^[^;]*;[^;]*;[^;]*;[^;]*;NSM;' UnicodeData.txt"
-   * Format control characters; generated from
-     "grep '^[^;]*;[^;]*;Cf;' UnicodeData.txt"
+   * Format control characters, except for characters with property
+     Prepended_Concatenation_Mark; generated from
+     "grep '^[^;]*;[^;]*;Cf;' UnicodeData.txt" and from
+     "grep Prepended_Concatenation_Mark PropList.txt".
+     Rationale for the Prepended_Concatenation_Mark exception:
+     The Unicode standard says "Unlike most other format characters,
+     however, they should be rendered with a visible glyph".
    * Zero width characters; generated from
      "grep '^[^;]*;ZERO WIDTH ' UnicodeData.txt"
    * Hangul Jamo characters that have conjoining behaviour:
@@ -6385,8 +6680,8 @@ fill_width (const char *width_filename)
      in the U+3130..U+318F block, and these characters are mapped to legacy
      character sets, and traditional Japanese layout matters for them.
      2) glibc does the same thing, see
-     <https://sourceware.org/bugzilla/show_bug.cgi?id=21750>
-     <https://sourceware.org/bugzilla/show_bug.cgi?id=26120>
+     <https://sourceware.org/PR21750>
+     <https://sourceware.org/PR26120>
  */
 
 static bool
@@ -6394,8 +6689,10 @@ is_nonspacing (unsigned int ch)
 {
   return (unicode_attributes[ch].name != NULL
           && (get_bidi_category (ch) == UC_BIDI_NSM
-              || is_category_Cc (ch) || is_category_Cf (ch)
-              || strncmp (unicode_attributes[ch].name, "ZERO WIDTH ", 11) == 0
+              || is_category_Cc (ch)
+              || (is_category_Cf (ch)
+                  && !is_property_prepended_concatenation_mark (ch))
+              || str_startswith (unicode_attributes[ch].name, "ZERO WIDTH ")
               || (ch >= 0x1160 && ch <= 0x11A7) || (ch >= 0xD7B0 && ch <= 0xD7C6) /* jungseong */
               || (ch >= 0x11A8 && ch <= 0x11FF) || (ch >= 0xD7CB && ch <= 0xD7FB) /* jongseong */
          )   );
@@ -6404,13 +6701,7 @@ is_nonspacing (unsigned int ch)
 static void
 output_nonspacing_property (const char *filename, const char *version)
 {
-  FILE *stream;
-  int ind[0x110000 / 0x200];
-  unsigned int i;
-  unsigned int i_max;
-  int next_ind;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -6423,19 +6714,19 @@ output_nonspacing_property (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, true);
   fprintf (stream, "\n");
 
-  next_ind = 0;
-  for (i = 0; i < 0x110000 / 0x200; i++)
+  int ind[0x110000 / 0x200];
+  int next_ind = 0;
+  for (unsigned int i = 0; i < 0x110000 / 0x200; i++)
     {
       bool nontrivial = false;
-      unsigned int ch;
 
       if (i != 0xe0000 / 0x200) /* The 0xe0000 block is handled by code.  */
-        for (ch = i * 0x200; ch < (i + 1) * 0x200; ch++)
+        for (unsigned int ch = i * 0x200; ch < (i + 1) * 0x200; ch++)
           if (is_nonspacing (ch))
             {
               nontrivial = true;
@@ -6449,27 +6740,22 @@ output_nonspacing_property (const char *filename, const char *version)
 
   fprintf (stream, "static const unsigned char nonspacing_table_data[%d*64] = {\n",
            next_ind);
-  i_max = 0;
-  for (i = 0; i < 0x110000 / 0x200; i++)
+  unsigned int i_max = 0;
+  for (unsigned int i = 0; i < 0x110000 / 0x200; i++)
     {
       bool nontrivial = (ind[i] >= 0);
 
       if (nontrivial)
         {
-          unsigned int j;
-
           fprintf (stream, "  /* 0x%04x-0x%04x */\n", i * 0x200, (i + 1) * 0x200 - 1);
-          for (j = 0; j < 8; j++)
+          for (unsigned int j = 0; j < 8; j++)
             {
-              unsigned int k;
-
               fprintf (stream, " ");
-              for (k = 0; k < 8; k++)
+              for (unsigned int k = 0; k < 8; k++)
                 {
-                  unsigned int l;
                   unsigned char bits = 0;
 
-                  for (l = 0; l < 8; l++)
+                  for (unsigned int l = 0; l < 8; l++)
                     {
                       unsigned int ch = i * 0x200 + j * 0x40 + k * 8 + l;
 
@@ -6490,24 +6776,18 @@ output_nonspacing_property (const char *filename, const char *version)
   i_max = ((i_max + 8 - 1) / 8) * 8;
   fprintf (stream, "static const signed char nonspacing_table_ind[%u] = {\n",
            i_max);
-  {
-    unsigned int j;
-
-    for (j = 0; j < i_max / 8; j++)
-      {
-        unsigned int k;
-
-        fprintf (stream, " ");
-        for (k = 0; k < 8; k++)
-          {
-            i = j * 8 + k;
-            fprintf (stream, " %2d%c", ind[i],
-                     j == i_max / 8 - 1 && k == 8 - 1 ? ' ' : ',');
-          }
-        fprintf (stream, " /* 0x%04x-0x%04x */\n",
-                 j * 8 * 0x200, (j + 1) * 8 * 0x200 - 1);
-      }
-  }
+  for (unsigned int j = 0; j < i_max / 8; j++)
+    {
+      fprintf (stream, " ");
+      for (unsigned int k = 0; k < 8; k++)
+        {
+          unsigned int i = j * 8 + k;
+          fprintf (stream, " %2d%c", ind[i],
+                   j == i_max / 8 - 1 && k == 8 - 1 ? ' ' : ',');
+        }
+      fprintf (stream, " /* 0x%04x-0x%04x */\n",
+               j * 8 * 0x200, (j + 1) * 8 * 0x200 - 1);
+    }
   fprintf (stream, "};\n");
 
   if (ferror (stream) || fclose (stream))
@@ -6663,12 +6943,12 @@ symbolic_width (unsigned int ch)
         return '0';
       /* Test for double-width character.  */
       if (unicode_width[ch] != NULL
-          && (strcmp (unicode_width[ch], "W") == 0
-              || strcmp (unicode_width[ch], "F") == 0))
+          && (streq (unicode_width[ch], "W")
+              || streq (unicode_width[ch], "F")))
         return '2';
       /* Test for half-width character.  */
       if (unicode_width[ch] != NULL
-          && strcmp (unicode_width[ch], "H") == 0)
+          && streq (unicode_width[ch], "H"))
         return '1';
     }
   /* In ancient CJK encodings, Cyrillic and most other characters are
@@ -6681,20 +6961,17 @@ symbolic_width (unsigned int ch)
 static void
 output_width_property_test (const char *filename)
 {
-  FILE *stream;
-  unsigned int interval_start, interval_end, ch;
-  char interval_value;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
       exit (1);
     }
 
-  interval_value = 0;
+  unsigned int interval_start, interval_end;
+  char interval_value = 0;
   interval_start = interval_end = 0; /* avoid GCC warning */
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       char value = symbolic_width (ch);
       if (value != 0) /* skip Cc control characters and unassigned characters */
@@ -6737,63 +7014,85 @@ output_width_property_test (const char *filename)
 /* ========================================================================= */
 
 /* Line breaking classification.
-   Updated for Unicode TR #14 revision 26.  */
+   Updated for Unicode TR #14 revision 53.  */
 
 enum
 {
-  /* Values >= 33 are resolved at run time. */
+  /* Values >= 43 are resolved at run time. */
   /* Values >= 100 are shorthands for several values. */
-  LBP_BK  = 33, /* mandatory break */
-  LBP_CR  = 34, /* carriage return */
-  LBP_LF  = 35, /* line feed */
-  LBP_CM  = 36, /* attached characters and combining marks */
+  LBP_BK  = 43, /* mandatory break */
+  LBP_CR  = 44, /* carriage return */
+  LBP_LF  = 45, /* line feed */
+  LBP_CM  = 46, /* attached characters and combining marks */
 /*LBP_NL,          next line - not used here because it's equivalent to LBP_BK */
 /*LBP_SG,          surrogates - not used here because they are not characters */
   LBP_WJ  =  0, /* word joiner */
-  LBP_ZW  = 37, /* zero width space */
+  LBP_ZW  = 47, /* zero width space */
   LBP_GL  =  1, /* non-breaking (glue) */
-  LBP_SP  = 38, /* space */
+  LBP_SP  = 48, /* space */
   LBP_B2  =  2, /* break opportunity before and after */
   LBP_BA  =  3, /* break opportunity after */
   LBP_BB  =  4, /* break opportunity before */
-  LBP_HY  =  5, /* hyphen */
-  LBP_CB  = 39, /* contingent break opportunity */
-  LBP_CL  =  6, /* closing punctuation */
-  LBP_CP1 =  7, /* closing parenthesis, non-EastAsian character */
-  LBP_CP2 =  8, /* closing parenthesis, EastAsian character */
-  LBP_EX  =  9, /* exclamation/interrogation */
-  LBP_IN  = 10, /* inseparable */
-  LBP_NS  = 11, /* non starter */
-  LBP_OP1 = 12, /* opening punctuation, non-EastAsian character */
-  LBP_OP2 = 13, /* opening punctuation, EastAsian character */
-  LBP_QU  = 14, /* ambiguous quotation */
-  LBP_IS  = 15, /* infix separator (numeric) */
-  LBP_NU  = 16, /* numeric */
-  LBP_PO  = 17, /* postfix (numeric) */
-  LBP_PR  = 18, /* prefix (numeric) */
-  LBP_SY  = 19, /* symbols allowing breaks */
-  LBP_AI  = 40, /* ambiguous (alphabetic or ideograph) */
-  LBP_AL  = 20, /* ordinary alphabetic and symbol characters */
+  LBP_HH  =  5, /* unambiguous hyphen */
+  LBP_HY  =  6, /* hyphen */
+  LBP_CB  = 49, /* contingent break opportunity */
+  LBP_CL  =  7, /* closing punctuation */
+  LBP_CP1 =  8, /* closing parenthesis, non-EastAsian character */
+  LBP_CP2 =  9, /* closing parenthesis, EastAsian character */
+  LBP_EX  = 10, /* exclamation/interrogation */
+  LBP_IN  = 11, /* inseparable */
+  LBP_NS  = 12, /* non starter */
+  LBP_OP1 = 13, /* opening punctuation, non-EastAsian character */
+  LBP_OP2 = 14, /* opening punctuation, EastAsian character */
+  LBP_QU1 = 15, /* ambiguous quotation, neither initial nor final punctuation */
+  LBP_QU2 = 16, /* ambiguous quotation, initial punctuation */
+  LBP_QU3 = 17, /* ambiguous quotation, final punctuation */
+  LBP_IS  = 18, /* infix separator (numeric) */
+  LBP_NU  = 19, /* numeric */
+  LBP_PO  = 20, /* postfix (numeric) */
+  LBP_PR  = 21, /* prefix (numeric) */
+  LBP_SY  = 22, /* symbols allowing breaks */
+  LBP_AI  = 50, /* ambiguous (alphabetic or ideograph) */
+  LBP_AL1 = 23, /* ordinary alphabetic and symbol characters, != U+25CC */
+  LBP_AL2 = 24, /* ordinary alphabetic and symbol characters, == U+25CC */
 /*LBP_CJ,          conditional Japanese starter, resolved to NS */
-  LBP_H2  = 21, /* Hangul LV syllable */
-  LBP_H3  = 22, /* Hangul LVT syllable */
-  LBP_HL  = 28, /* Hebrew letter */
-  LBP_ID1 = 23, /* ideographic */
-  LBP_ID2 = 24, /* ideographic and potential future emoji */
-  LBP_JL  = 25, /* Hangul L Jamo */
-  LBP_JV  = 26, /* Hangul V Jamo */
-  LBP_JT  = 27, /* Hangul T Jamo */
-  LBP_RI  = 29, /* regional indicator */
-  LBP_SA  = 41, /* complex context (South East Asian) */
-  LBP_ZWJ = 30, /* zero width joiner */
-  LBP_EB  = 31, /* emoji base */
-  LBP_EM  = 32, /* emoji modifier */
-  LBP_XX  = 42, /* unknown */
+  LBP_H2  = 25, /* Hangul LV syllable */
+  LBP_H3  = 26, /* Hangul LVT syllable */
+  LBP_HL  = 32, /* Hebrew letter */
+  LBP_ID  = 27, /* ideographic */
+  LBP_EBF = 28, /* future emoji base */
+  LBP_JL  = 29, /* Hangul L Jamo */
+  LBP_JV  = 30, /* Hangul V Jamo */
+  LBP_JT  = 31, /* Hangul T Jamo */
+  LBP_AP  = 33, /* Brahmic scripts: pre-base repha */
+  LBP_AK  = 34, /* Brahmic scripts: consonants */
+  LBP_AS  = 35, /* Brahmic scripts: independent vowels */
+  LBP_VI  = 36, /* Brahmic scripts: conjoining viramas */
+  LBP_VF  = 37, /* Brahmic scripts: viramas for final consonants */
+  LBP_RI  = 38, /* regional indicator */
+  LBP_SA1 = 51, /* complex context (South East Asian), not combining mark */
+  LBP_SA2 = 39, /* complex context (South East Asian), combining mark */
+  LBP_ZWJ = 40, /* zero width joiner */
+  LBP_EB  = 41, /* emoji base */
+  LBP_EM  = 42, /* emoji modifier */
+  LBP_XX  = 52, /* unknown */
   /* Artificial values that exist only in this file, not in the tables. */
-  LBP_OP  = 100, /* LBP_OP1 or LBP_OP2 */
-  LBP_CP  = 101, /* LBP_CP1 or LBP_CP2 */
-  LBP_ID  = 102  /* LBP_ID1 or LBP_ID2 */
+  LBP_CP  = 100, /* LBP_CP1 or LBP_CP2 */
+  LBP_OP  = 101, /* LBP_OP1 or LBP_OP2 */
+  LBP_QU  = 102, /* LBP_QU1 or LBP_QU2 or LBP_QU3 */
+  LBP_AL  = 103, /* LBP_AL1 or LBP_AL2 */
+  LBP_SA  = 104  /* LBP_SA1 or LBP_SA2 */
 };
+
+/* Returns the line breaking EastAsian property for ch, as a bit.  */
+static int
+get_lbea (unsigned int ch)
+{
+  return (unicode_width[ch] != NULL
+          && (streq (unicode_width[ch], "W")
+              || streq (unicode_width[ch], "F")
+              || streq (unicode_width[ch], "H")));
+}
 
 /* Returns the line breaking classification for ch, as a bit mask.  */
 static int64_t
@@ -6813,8 +7112,8 @@ get_lbp (unsigned int ch)
       if (ch == 0x000D)
         attr |= (int64_t) 1 << LBP_CR;
       if (ch == 0x0085 /* newline */
-          || ch == 0x000C /* form feed */
-          || ch == 0x000B /* line tabulation */
+          || ch == 0x000B /* LINE TABULATION */
+          || ch == 0x000C /* FORM FEED */
           || ch == 0x2028 /* LINE SEPARATOR */
           || ch == 0x2029 /* PARAGRAPH SEPARATOR */)
         attr |= (int64_t) 1 << LBP_BK;
@@ -6832,46 +7131,7 @@ get_lbp (unsigned int ch)
         attr |= (int64_t) 1 << LBP_ZWJ;
 
       /* emoji base */
-      if (ch == 0x261D /* WHITE UP POINTING INDEX */
-          || ch == 0x26F9 /* PERSON WITH BALL */
-          || (ch >= 0x270A && ch <= 0x270D) /* RAISED FIST..WRITING HAND */
-          || ch == 0x1F385 /* FATHER CHRISTMAS */
-          || (ch >= 0x1F3C2 && ch <= 0x1F3C4) /* SNOWBOARDER..SURFER */
-          || ch == 0x1F3C7 /* HORSE RACING */
-          || (ch >= 0x1F3CA && ch <= 0x1F3CC) /* SWIMMER..GOLFER */
-          || (ch >= 0x1F442 && ch <= 0x1F443) /* EAR..NOSE */
-          || (ch >= 0x1F446 && ch <= 0x1F450) /* WHITE UP POINTING BACKHAND INDEX..OPEN HANDS SIGN */
-          || (ch >= 0x1F466 && ch <= 0x1F478) /* BOY..PRINCESS */
-          || ch == 0x1F47C /* BABY ANGEL */
-          || (ch >= 0x1F481 && ch <= 0x1F483) /* INFORMATION DESK PERSON..DANCER */
-          || (ch >= 0x1F485 && ch <= 0x1F487) /* NAIL POLISH..HAIRCUT */
-          || ch == 0x1F48F /* KISS */
-          || ch == 0x1F491 /* COUPLE WITH HEART */
-          || ch == 0x1F4AA /* FLEXED BICEPS */
-          || (ch >= 0x1F574 && ch <= 0x1F575) /* MAN IN BUSINESS SUIT LEVITATING..SLEUTH OR SPY */
-          || ch == 0x1F57A /* MAN DANCING */
-          || ch == 0x1F590 /* RAISED HAND WITH FINGERS SPLAYED */
-          || (ch >= 0x1F595 && ch <= 0x1F596) /* REVERSED HAND WITH MIDDLE FINGER EXTENDED..RAISED HAND WITH PART BETWEEN MIDDLE AND RING FINGERS */
-          || (ch >= 0x1F645 && ch <= 0x1F647) /* FACE WITH NO GOOD GESTURE..PERSON BOWING DEEPLY */
-          || (ch >= 0x1F64B && ch <= 0x1F64F) /* HAPPY PERSON RAISING ONE HAND..PERSON WITH FOLDED HANDS */
-          || ch == 0x1F6A3 /* ROWBOAT */
-          || (ch >= 0x1F6B4 && ch <= 0x1F6B6) /* BICYCLIST..PEDESTRIAN */
-          || ch == 0x1F6C0 /* BATH */
-          || ch == 0x1F6CC /* SLEEPING ACCOMMODATION */
-          || ch == 0x1F90C /* PINCHED FINGERS */
-          || ch == 0x1F90F /* PINCHING HAND */
-          || (ch >= 0x1F918 && ch <= 0x1F91F) /* SIGN OF THE HORNS..I LOVE YOU HAND SIGN */
-          || ch == 0x1F926 /* FACE PALM */
-          || (ch >= 0x1F930 && ch <= 0x1F939) /* PREGNANT WOMAN..JUGGLING */
-          || (ch >= 0x1F93C && ch <= 0x1F93E) /* WRESTLERS..HANDBALL */
-          || ch == 0x1F977 /* NINJA */
-          || (ch >= 0x1F9B5 && ch <= 0x1F9B6) /* LEG..FOOT */
-          || (ch >= 0x1F9B8 && ch <= 0x1F9B9) /* SUPERHERO..SUPERVILLAIN */
-          || ch == 0x1F9BB /* EAR WITH HEARING AID */
-          || (ch >= 0x1F9CD && ch <= 0x1F9CF) /* STANDING PERSON..DEAF PERSON */
-          || (ch >= 0x1F9D1 && ch <= 0x1F9DD) /* ADULT..ELF */
-          || (ch >= 0x1FAC3 && ch <= 0x1FAC5) /* PREGNANT MAN..PERSON WITH CROWN */
-          || (ch >= 0x1FAF0 && ch <= 0x1FAF8) /* HAND WITH INDEX FINGER AND THUMB CROSSED..RIGHTWARDS PUSHING HAND */)
+      if (((unicode_properties[ch] >> PROP_EMOJI_MODIFIER_BASE) & 1) != 0) /* EMOJI MODIFIER BASE */
         attr |= (int64_t) 1 << LBP_EB;
 
       if (((unicode_properties[ch] >> PROP_EMOJI_MODIFIER) & 1) != 0) /* EMOJI MODIFIER */
@@ -6881,21 +7141,31 @@ get_lbp (unsigned int ch)
       if (ch == 0x00A0 /* NO-BREAK SPACE */
           || ch == 0x202F /* NARROW NO-BREAK SPACE */
           || ch == 0x180E /* MONGOLIAN VOWEL SEPARATOR */
-          || ch == 0x034F /* COMBINING GRAPHEME JOINER */
+          || ch == 0x1107F /* BRAHMI NUMBER JOINER */
+          || (ch >= 0x13430 && ch <= 0x13436) /* EGYPTIAN HIEROGLYPH VERTICAL JOINER..EGYPTIAN HIEROGLYPH OVERLAY MIDDLE */
+          || (ch >= 0x13439 && ch <= 0x1343B) /* EGYPTIAN HIEROGLYPH INSERT AT MIDDLE..EGYPTIAN HIEROGLYPH INSERT AT BOTTOM */
+          || ch == 0x16FE4 /* KHITAN SMALL SCRIPT FILLER */
           || ch == 0x2007 /* FIGURE SPACE */
           || ch == 0x2011 /* NON-BREAKING HYPHEN */
           || ch == 0x0F08 /* TIBETAN MARK SBRUL SHAD */
           || ch == 0x0F0C /* TIBETAN MARK DELIMITER TSHEG BSTAR */
           || ch == 0x0F12 /* TIBETAN MARK RGYA GRAM SHAD */
           || (ch >= 0x035C && ch <= 0x0362) /* COMBINING DOUBLE ... */
+          || ch == 0xFE20 /* COMBINING LIGATURE LEFT HALF */
+          || ch == 0xFE22 /* COMBINING DOUBLE TILDE LEFT HALF */
+          || ch == 0xFE24 /* COMBINING MACRON LEFT HALF */
+          || ch == 0xFE27 /* COMBINING LIGATURE LEFT HALF BELOW */
+          || ch == 0xFE29 /* COMBINING TILDE LEFT HALF BELOW */
+          || ch == 0xFE2B /* COMBINING MACRON LEFT HALF BELOW */
+          || ch == 0xFE2E /* COMBINING CYRILLIC TITLO LEFT HALF */
+          || ch == 0xFE26 /* COMBINING CONJOINING MACRON */
+          || ch == 0xFE2D /* COMBINING CONJOINING MACRON BELOW */
           /* Extra characters for compatibility with Unicode LineBreak.txt.  */
           || ch == 0x0FD9 /* TIBETAN MARK LEADING MCHAN RTAGS */
           || ch == 0x0FDA /* TIBETAN MARK TRAILING MCHAN RTAGS */
+          || ch == 0x1AEB /* COMBINING DOUBLE RIGHTWARDS ARROW ABOVE */
           || ch == 0x1DCD /* COMBINING DOUBLE CIRCUMFLEX ABOVE */
-          || ch == 0x1DFC /* COMBINING DOUBLE INVERTED BREVE BELOW */
-          || (ch >= 0x13430 && ch <= 0x13436) /* EGYPTIAN HIEROGLYPH VERTICAL JOINER..EGYPTIAN HIEROGLYPH OVERLAY MIDDLE */
-          || (ch >= 0x13439 && ch <= 0x1343B) /* EGYPTIAN HIEROGLYPH INSERT AT MIDDLE..EGYPTIAN HIEROGLYPH INSERT AT BOTTOM */
-          || ch == 0x16FE4 /* KHITAN SMALL SCRIPT FILLER */)
+          || ch == 0x1DFC /* COMBINING DOUBLE INVERTED BREVE BELOW */)
         attr |= (int64_t) 1 << LBP_GL;
 
       /* space */
@@ -6904,6 +7174,7 @@ get_lbp (unsigned int ch)
 
       /* break opportunity before and after */
       if (ch == 0x2014 /* EM DASH */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
           || ch == 0x2E3A /* TWO-EM DASH */
           || ch == 0x2E3B /* THREE-EM DASH */)
         attr |= (int64_t) 1 << LBP_B2;
@@ -6927,14 +7198,7 @@ get_lbp (unsigned int ch)
           || ch == 0x0009 /* tab */
           /* Conditional Hyphens */
           || ch == 0x00AD /* SOFT HYPHEN */
-          /* Breaking Hyphens */
-          || ch == 0x058A /* ARMENIAN HYPHEN */
-          || ch == 0x1400 /* CANADIAN SYLLABICS HYPHEN */
-          || ch == 0x2010 /* HYPHEN */
-          || ch == 0x2012 /* FIGURE DASH */
-          || ch == 0x2013 /* EN DASH */
           /* Visible Word Dividers */
-          || ch == 0x05BE /* HEBREW PUNCTUATION MAQAF */
           || ch == 0x0F0B /* TIBETAN MARK INTERSYLLABIC TSHEG */
           || ch == 0x1361 /* ETHIOPIC WORDSPACE */
           || ch == 0x17D8 /* KHMER SIGN BEYYAL */
@@ -6958,9 +7222,6 @@ get_lbp (unsigned int ch)
           || ch == 0x2E2C /* SQUARED FOUR DOT PUNCTUATION */
           || ch == 0x2E2D /* FIVE DOT PUNCTUATION */
           || ch == 0x2E30 /* RING POINT */
-          || ch == 0x2E31 /* WORD SEPARATOR MIDDLE DOT */
-          || ch == 0x2E33 /* RAISED DOT */
-          || ch == 0x2E34 /* RAISED COMMA */
           || ch == 0x10100 /* AEGEAN WORD SEPARATOR LINE */
           || ch == 0x10101 /* AEGEAN WORD SEPARATOR DOT */
           || ch == 0x10102 /* AEGEAN CHECK MARK */
@@ -7014,11 +7275,38 @@ get_lbp (unsigned int ch)
           || ch == 0x2CFC /* COPTIC OLD NUBIAN VERSE DIVIDER */
           || ch == 0x2CFF /* COPTIC MORPHOLOGICAL DIVIDER */
           || (ch >= 0x2E0E && ch <= 0x2E15) /* EDITORIAL CORONIS .. UPWARDS ANCORA */
-          || ch == 0x2E17 /* DOUBLE OBLIQUE HYPHEN */
+          || ch == 0xA60D /* VAI COMMA */
+          || ch == 0xA60F /* VAI QUESTION MARK */
+          || ch == 0xA92E /* KAYAH LI SIGN CWI */
+          || ch == 0xA92F /* KAYAH LI SIGN SHYA */
+          || ch == 0x10A50 /* KHAROSHTHI PUNCTUATION DOT */
+          || ch == 0x10A51 /* KHAROSHTHI PUNCTUATION SMALL CIRCLE */
+          || ch == 0x10A52 /* KHAROSHTHI PUNCTUATION CIRCLE */
+          || ch == 0x10A53 /* KHAROSHTHI PUNCTUATION CRESCENT BAR */
+          || ch == 0x10A54 /* KHAROSHTHI PUNCTUATION MANGALAM */
+          || ch == 0x10A55 /* KHAROSHTHI PUNCTUATION LOTUS */
+          || (ch >= 0x11EF7 && ch <= 0x11EF8) /* MAKASAR PASSIMBANG..MAKASAR END OF SECTION */
+          /* Letters attached to orthographic syllables */
+          || ch == 0xA9CF /* JAVANESE PANGRANGKEP */
+          || (ch >= 0xAA40 && ch <= 0xAA42) /* CHAM LETTER FINAL K..CHAM LETTER FINAL NG */
+          || (ch >= 0xAA44 && ch <= 0xAA4B) /* CHAM LETTER FINAL CH..CHAM LETTER FINAL SS */
+          || ch == 0x1133D /* GRANTHA SIGN AVAGRAHA */
+          || ch == 0x1135D /* GRANTHA SIGN PLUTA */
+          || ch == 0x11EF2 /* MAKASAR ANGKA */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x1B4E /* BALINESE INVERTED CARIK SIKI */
+          || ch == 0x1B4F /* BALINESE INVERTED CARIK PAREREN */
+          || ch == 0x1B7D /* BALINESE PANTI LANTANG */
+          || ch == 0x1B7E /* BALINESE PAMADA LANTANG */
+          || ch == 0x1B7F /* BALINESE PANTI BAWAK */
+          || ch == 0x2800 /* BRAILLE PATTERN BLANK */
+          || ch == 0x2D70 /* TIFINAGH SEPARATOR MARK */
+          || ch == 0x2E31 /* WORD SEPARATOR MIDDLE DOT */
+          || ch == 0x2E33 /* RAISED DOT */
+          || ch == 0x2E34 /* RAISED COMMA */
           || ch == 0x2E3C /* STENOGRAPHIC FULL STOP */
           || ch == 0x2E3D /* VERTICAL SIX DOTS */
           || ch == 0x2E3E /* WIGGLY VERTICAL LINE */
-          || ch == 0x2E40 /* DOUBLE HYPHEN */
           || ch == 0x2E41 /* REVERSED COMMA */
           || ch == 0x2E43 /* DASH WITH LEFT UPTURN */
           || ch == 0x2E44 /* DOUBLE SUSPENSION MARK */
@@ -7031,21 +7319,6 @@ get_lbp (unsigned int ch)
           || ch == 0x2E4C /* MEDIEVAL COMMA */
           || ch == 0x2E4E /* PUNCTUS ELEVATUS MARK */
           || ch == 0x2E4F /* CORNISH VERSE DIVIDER */
-          || ch == 0xA60D /* VAI COMMA */
-          || ch == 0xA60F /* VAI QUESTION MARK */
-          || ch == 0xA92E /* KAYAH LI SIGN CWI */
-          || ch == 0xA92F /* KAYAH LI SIGN SHYA */
-          || ch == 0x10A50 /* KHAROSHTHI PUNCTUATION DOT */
-          || ch == 0x10A51 /* KHAROSHTHI PUNCTUATION SMALL CIRCLE */
-          || ch == 0x10A52 /* KHAROSHTHI PUNCTUATION CIRCLE */
-          || ch == 0x10A53 /* KHAROSHTHI PUNCTUATION CRESCENT BAR */
-          || ch == 0x10A54 /* KHAROSHTHI PUNCTUATION MANGALAM */
-          || ch == 0x10A55 /* KHAROSHTHI PUNCTUATION LOTUS */
-          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
-          || ch == 0x1B7D /* BALINESE PANTI LANTANG */
-          || ch == 0x1B7E /* BALINESE PAMADA LANTANG */
-          || ch == 0x2D70 /* TIFINAGH SEPARATOR MARK */
-          || ch == 0x2E5D /* OBLIQUE HYPHEN */
           || ch == 0xA4FE /* LISU PUNCTUATION COMMA */
           || ch == 0xA4FF /* LISU PUNCTUATION FULL STOP */
           || ch == 0xA6F3 /* BAMUM FULL STOP */
@@ -7068,7 +7341,7 @@ get_lbp (unsigned int ch)
           || ch == 0x10B3D /* LARGE ONE DOT OVER TWO DOTS PUNCTUATION */
           || ch == 0x10B3E /* LARGE TWO RINGS OVER ONE RING PUNCTUATION */
           || ch == 0x10B3F /* LARGE ONE RING OVER TWO RINGS PUNCTUATION */
-          || ch == 0x10EAD /* YEZIDI HYPHENATION MARK */
+          || ch == 0x10ED0 /* ARABIC BIBLICAL END OF VERSE */
           || ch == 0x11047 /* BRAHMI DANDA */
           || ch == 0x11048 /* BRAHMI DOUBLE DANDA */
           || ch == 0x110BE /* KAITHI SECTION MARK */
@@ -7122,6 +7395,8 @@ get_lbp (unsigned int ch)
           || ch == 0x16B38 /* PAHAWH HMONG SIGN VOS TSHAB CEEB */
           || ch == 0x16B39 /* PAHAWH HMONG SIGN CIM CHEEM */
           || ch == 0x16B44 /* PAHAWH HMONG SIGN XAUS */
+          || ch == 0x16D6E /* KIRAT RAI DANDA */
+          || ch == 0x16D6F /* KIRAT RAI DOUBLE DANDA */
           || ch == 0x16E97 /* MEDEFAIDRIN COMMA */
           || ch == 0x16E98 /* MEDEFAIDRIN FULL STOP */
           || ch == 0x1BC9F /* DUPLOYAN PUNCTUATION CHINOOK FULL STOP */
@@ -7129,13 +7404,13 @@ get_lbp (unsigned int ch)
         attr |= (int64_t) 1 << LBP_BA;
 
       /* break opportunity before */
-      if (ch == 0x00B4 /* ACUTE ACCENT */
+      if (/* Dictionary Use */
+          ch == 0x00B4 /* ACUTE ACCENT */
           || ch == 0x1FFD /* GREEK OXIA */
           || ch == 0x02DF /* MODIFIER LETTER CROSS ACCENT */
           || ch == 0x02C8 /* MODIFIER LETTER VERTICAL LINE */
           || ch == 0x02CC /* MODIFIER LETTER LOW VERTICAL LINE */
-          || ch == 0x0C77 /* TELUGU SIGN SIDDHAM */
-          || ch == 0x0C84 /* KANNADA SIGN SIDDHAM */
+          /* Tibetan and Phags-Pa Head Letters */
           || ch == 0x0F01 /* TIBETAN MARK GTER YIG MGO TRUNCATED A */
           || ch == 0x0F02 /* TIBETAN MARK GTER YIG MGO -UM RNAM BCAD MA */
           || ch == 0x0F03 /* TIBETAN MARK GTER YIG MGO -UM GTER TSHEG MA */
@@ -7149,8 +7424,12 @@ get_lbp (unsigned int ch)
           || ch == 0x0FD3 /* TIBETAN MARK INITIAL BRDA RNYING YIG MGO MDUN MA */
           || ch == 0xA874 /* PHAGS-PA SINGLE HEAD MARK */
           || ch == 0xA875 /* PHAGS-PA DOUBLE HEAD MARK */
-          || ch == 0xA8FC /* DEVANAGARI SIGN SIDDHAM */
+          /* Mongolian */
           || ch == 0x1806 /* MONGOLIAN TODO SOFT HYPHEN */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x0C77 /* TELUGU SIGN SIDDHAM */
+          || ch == 0x0C84 /* KANNADA SIGN SIDDHAM */
+          || ch == 0xA8FC /* DEVANAGARI SIGN SIDDHAM */
           || ch == 0x11175 /* MAHAJANI SECTION MARK */
           || ch == 0x111DB /* SHARADA SIGN SIDDHAM */
           || ch == 0x115C1 /* SIDDHAM SIGN SIDDHAM */
@@ -7165,6 +7444,20 @@ get_lbp (unsigned int ch)
           || ch == 0x11C70 /* MARCHEN HEAD MARK */)
         attr |= (int64_t) 1 << LBP_BB;
 
+      /* unambiguous hyphen */
+      if (ch == 0x058A /* ARMENIAN HYPHEN */
+          || ch == 0x05BE /* HEBREW PUNCTUATION MAQAF */
+          || ch == 0x1400 /* CANADIAN SYLLABICS HYPHEN */
+          || ch == 0x2010 /* HYPHEN */
+          || ch == 0x2012 /* FIGURE DASH */
+          || ch == 0x2013 /* EN DASH */
+          || ch == 0x2E17 /* DOUBLE OBLIQUE HYPHEN */
+          || ch == 0x2E40 /* DOUBLE HYPHEN */
+          || ch == 0x2E5D /* OBLIQUE HYPHEN */
+          || ch == 0x10D6E /* GARAY HYPHEN */
+          || ch == 0x10EAD /* YEZIDI HYPHENATION MARK */)
+        attr |= (int64_t) 1 << LBP_HH;
+
       /* hyphen */
       if (ch == 0x002D /* HYPHEN-MINUS */)
         attr |= (int64_t) 1 << LBP_HY;
@@ -7175,12 +7468,13 @@ get_lbp (unsigned int ch)
 
       /* closing parenthesis */
       if (ch == 0x0029 /* RIGHT PARENTHESIS */
-          || ch == 0x005D /* RIGHT SQUARE BRACKET */)
+          || ch == 0x005D /* RIGHT SQUARE BRACKET */
+          || ch == 0x2E56 /* RIGHT SQUARE BRACKET WITH STROKE */
+          || ch == 0x2E58 /* RIGHT SQUARE BRACKET WITH DOUBLE STROKE */
+          || ch == 0x2E5A /* TOP HALF RIGHT PARENTHESIS */
+          || ch == 0x2E5C /* BOTTOM HALF RIGHT PARENTHESIS */)
         {
-          if (unicode_width[ch] != NULL
-              && (strcmp (unicode_width[ch], "W") == 0
-                  || strcmp (unicode_width[ch], "F") == 0
-                  || strcmp (unicode_width[ch], "H") == 0))
+          if (get_lbea (ch))
             attr |= (int64_t) 1 << LBP_CP2;
           else
             attr |= (int64_t) 1 << LBP_CP1;
@@ -7192,6 +7486,7 @@ get_lbp (unsigned int ch)
            && !(attr & (((int64_t) 1 << LBP_CP1) | ((int64_t) 1 << LBP_CP2))))
           || ch == 0x3001 /* IDEOGRAPHIC COMMA */
           || ch == 0x3002 /* IDEOGRAPHIC FULL STOP */
+          || ch == 0xFE10 /* PRESENTATION FORM FOR VERTICAL COMMA */
           || ch == 0xFE11 /* PRESENTATION FORM FOR VERTICAL IDEOGRAPHIC COMMA */
           || ch == 0xFE12 /* PRESENTATION FORM FOR VERTICAL IDEOGRAPHIC FULL STOP */
           || ch == 0xFE50 /* SMALL COMMA */
@@ -7220,12 +7515,15 @@ get_lbp (unsigned int ch)
           || ch == 0x003F /* QUESTION MARK */
           || ch == 0x05C6 /* HEBREW PUNCTUATION NUN HAFUKHA */
           || ch == 0x061B /* ARABIC SEMICOLON */
-          || ch == 0x061D /* ARABIC END OF TEXT MARK */
           || ch == 0x061E /* ARABIC TRIPLE DOT PUNCTUATION MARK */
           || ch == 0x061F /* ARABIC QUESTION MARK */
           || ch == 0x06D4 /* ARABIC FULL STOP */
           || ch == 0x07F9 /* NKO EXCLAMATION MARK */
           || ch == 0x0F0D /* TIBETAN MARK SHAD */
+          || ch == 0xFF01 /* FULLWIDTH EXCLAMATION MARK */
+          || ch == 0xFF1F /* FULLWIDTH QUESTION MARK */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x061D /* ARABIC END OF TEXT MARK */
           || ch == 0x0F0E /* TIBETAN MARK NYIS SHAD */
           || ch == 0x0F0F /* TIBETAN MARK TSHEG SHAD */
           || ch == 0x0F10 /* TIBETAN MARK NYIS TSHEG SHAD */
@@ -7251,8 +7549,6 @@ get_lbp (unsigned int ch)
           || ch == 0xFE16 /* PRESENTATION FORM FOR VERTICAL QUESTION MARK */
           || ch == 0xFE56 /* SMALL QUESTION MARK */
           || ch == 0xFE57 /* SMALL EXCLAMATION MARK */
-          || ch == 0xFF01 /* FULLWIDTH EXCLAMATION MARK */
-          || ch == 0xFF1F /* FULLWIDTH QUESTION MARK */
           || ch == 0x115C4 /* SIDDHAM SEPARATOR DOT */
           || ch == 0x115C5 /* SIDDHAM SEPARATOR BAR */
           || ch == 0x11C71 /* MARCHEN MARK SHAD */)
@@ -7262,8 +7558,9 @@ get_lbp (unsigned int ch)
       if (ch == 0x2024 /* ONE DOT LEADER */
           || ch == 0x2025 /* TWO DOT LEADER */
           || ch == 0x2026 /* HORIZONTAL ELLIPSIS */
-          || ch == 0x22EF /* MIDLINE HORIZONTAL ELLIPSIS */
           || ch == 0xFE19 /* PRESENTATION FORM FOR VERTICAL HORIZONTAL ELLIPSIS */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x22EF /* MIDLINE HORIZONTAL ELLIPSIS */
           || ch == 0x10AF6 /* MANICHAEAN PUNCTUATION LINE FILLER */)
         attr |= (int64_t) 1 << LBP_IN;
 
@@ -7284,27 +7581,32 @@ get_lbp (unsigned int ch)
           || ch == 0x309E /* HIRAGANA VOICED ITERATION MARK */
           || ch == 0x30A0 /* KATAKANA-HIRAGANA DOUBLE HYPHEN */
           || ch == 0x30FB /* KATAKANA MIDDLE DOT */
-          || ch == 0x30FC /* KATAKANA-HIRAGANA PROLONGED SOUND MARK */
           || ch == 0x30FD /* KATAKANA ITERATION MARK */
           || ch == 0x30FE /* KATAKANA VOICED ITERATION MARK */
-          || ch == 0xA015 /* YI SYLLABLE WU */
+          || ch == 0xFE13 /* PRESENTATION FORM FOR VERTICAL COLON */
+          || ch == 0xFE14 /* PRESENTATION FORM FOR VERTICAL SEMICOLON */
           || ch == 0xFE54 /* SMALL SEMICOLON */
           || ch == 0xFE55 /* SMALL COLON */
           || ch == 0xFF1A /* FULLWIDTH COLON */
           || ch == 0xFF1B /* FULLWIDTH SEMICOLON */
           || ch == 0xFF65 /* HALFWIDTH KATAKANA MIDDLE DOT */
-          || ch == 0xFF70 /* HALFWIDTH KATAKANA-HIRAGANA PROLONGED SOUND MARK */
           || ch == 0xFF9E /* HALFWIDTH KATAKANA VOICED SOUND MARK */
           || ch == 0xFF9F /* HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || strstr (unicode_attributes[ch].name, "HIRAGANA LETTER SMALL ") != NULL
+          || strstr (unicode_attributes[ch].name, "KATAKANA LETTER SMALL ") != NULL
+          || ch == 0x30FC /* KATAKANA-HIRAGANA PROLONGED SOUND MARK */
+          || ch == 0xA015 /* YI SYLLABLE WU */
+          || ch == 0xFF70 /* HALFWIDTH KATAKANA-HIRAGANA PROLONGED SOUND MARK */
           || ch == 0x16FE0 /* TANGUT ITERATION MARK */
           || ch == 0x16FE1 /* NUSHU ITERATION MARK */
           || ch == 0x16FE2 /* OLD CHINESE HOOK MARK */
           || ch == 0x16FE3 /* OLD CHINESE ITERATION MARK */
+          || ch == 0x16FF2 /* CHINESE SMALL SIMPLIFIED ER */
+          || ch == 0x16FF3 /* CHINESE SMALL TRADITIONAL ER */
           || ch == 0x1F679 /* HEAVY INTERROBANG ORNAMENT */
           || ch == 0x1F67A /* SANS-SERIF INTERROBANG ORNAMENT */
-          || ch == 0x1F67B /* HEAVY SANS-SERIF INTERROBANG ORNAMENT */
-          || strstr (unicode_attributes[ch].name, "HIRAGANA LETTER SMALL ") != NULL
-          || strstr (unicode_attributes[ch].name, "KATAKANA LETTER SMALL ") != NULL)
+          || ch == 0x1F67B /* HEAVY SANS-SERIF INTERROBANG ORNAMENT */)
         attr |= (int64_t) 1 << LBP_NS;
 
       /* opening punctuation */
@@ -7320,16 +7622,14 @@ get_lbp (unsigned int ch)
           || ch == 0x13286 /* EGYPTIAN HIEROGLYPH O036A */
           || ch == 0x13288 /* EGYPTIAN HIEROGLYPH O036C */
           || ch == 0x13379 /* EGYPTIAN HIEROGLYPH V011A */
+          || ch == 0x1342F /* EGYPTIAN HIEROGLYPH V011D */
           || ch == 0x13437 /* EGYPTIAN HIEROGLYPH BEGIN SEGMENT */
           || ch == 0x1343C /* EGYPTIAN HIEROGLYPH BEGIN ENCLOSURE */
           || ch == 0x1343E /* EGYPTIAN HIEROGLYPH BEGIN WALLED ENCLOSURE */
           || ch == 0x145CE /* ANATOLIAN HIEROGLYPH A410 BEGIN LOGOGRAM MARK */
           || (ch >= 0x1E95E && ch <= 0x1E95F) /* ADLAM INITIAL EXCLAMATION MARK..ADLAM INITIAL QUESTION MARK */)
         {
-          if (unicode_width[ch] != NULL
-              && (strcmp (unicode_width[ch], "W") == 0
-                  || strcmp (unicode_width[ch], "F") == 0
-                  || strcmp (unicode_width[ch], "H") == 0))
+          if (get_lbea (ch))
             attr |= (int64_t) 1 << LBP_OP2;
           else
             attr |= (int64_t) 1 << LBP_OP1;
@@ -7345,18 +7645,28 @@ get_lbp (unsigned int ch)
           || ch == 0x275C /* HEAVY SINGLE COMMA QUOTATION MARK ORNAMENT */
           || ch == 0x275D /* HEAVY DOUBLE TURNED COMMA QUOTATION MARK ORNAMENT */
           || ch == 0x275E /* HEAVY DOUBLE COMMA QUOTATION MARK ORNAMENT */
-          || ch == 0x275F /* HEAVY LOW SINGLE COMMA QUOTATION MARK ORNAMENT */
-          || ch == 0x2760 /* HEAVY LOW DOUBLE COMMA QUOTATION MARK ORNAMENT */
           || ch == 0x2E00 /* RIGHT ANGLE SUBSTITUTION MARKER */
           || ch == 0x2E01 /* RIGHT ANGLE DOTTED SUBSTITUTION MARKER */
           || ch == 0x2E06 /* RAISED INTERPOLATION MARKER */
           || ch == 0x2E07 /* RAISED DOTTED INTERPOLATION MARKER */
           || ch == 0x2E08 /* DOTTED TRANSPOSITION MARKER */
           || ch == 0x2E0B /* RAISED SQUARE */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x275F /* HEAVY LOW SINGLE COMMA QUOTATION MARK ORNAMENT */
+          || ch == 0x2760 /* HEAVY LOW DOUBLE COMMA QUOTATION MARK ORNAMENT */
           || ch == 0x1F676 /* SANS-SERIF HEAVY DOUBLE TURNED COMMA QUOTATION MARK ORNAMENT  */
           || ch == 0x1F677 /* SANS-SERIF HEAVY DOUBLE COMMA QUOTATION MARK ORNAMENT */
           || ch == 0x1F678 /* SANS-SERIF HEAVY LOW DOUBLE COMMA QUOTATION MARK ORNAMENT */)
-        attr |= (int64_t) 1 << LBP_QU;
+        {
+          if (unicode_attributes[ch].category[0] == 'P'
+              && unicode_attributes[ch].category[1] == 'i')
+            attr |= (int64_t) 1 << LBP_QU2;
+          else if (unicode_attributes[ch].category[0] == 'P'
+                   && unicode_attributes[ch].category[1] == 'f')
+            attr |= (int64_t) 1 << LBP_QU3;
+          else
+            attr |= (int64_t) 1 << LBP_QU1;
+        }
 
       /* infix separator (numeric) */
       if (ch == 0x002C /* COMMA */
@@ -7368,21 +7678,39 @@ get_lbp (unsigned int ch)
           || ch == 0x060C /* ARABIC COMMA */
           || ch == 0x060D /* ARABIC DATE SEPARATOR */
           || ch == 0x07F8 /* NKO COMMA */
-          || ch == 0x2044 /* FRACTION SLASH */
-          || ch == 0xFE10 /* PRESENTATION FORM FOR VERTICAL COMMA */
-          || ch == 0xFE13 /* PRESENTATION FORM FOR VERTICAL COLON */
-          || ch == 0xFE14 /* PRESENTATION FORM FOR VERTICAL SEMICOLON */)
+          || ch == 0x2044 /* FRACTION SLASH */)
         attr |= (int64_t) 1 << LBP_IS;
 
       /* numeric */
       if ((unicode_attributes[ch].category[0] == 'N'
            && unicode_attributes[ch].category[1] == 'd'
-           && strstr (unicode_attributes[ch].name, "FULLWIDTH") == NULL)
+           && strstr (unicode_attributes[ch].name, "FULLWIDTH") == NULL
+           && !(ch >= 0x1B50 && ch <= 0x1B59) /* BALINESE DIGIT ZERO..NINE */
+           && !(ch >= 0xA9D0 && ch <= 0xA9D9) /* JAVANESE DIGIT ZERO..NINE */
+           && !(ch >= 0xAA50 && ch <= 0xAA59) /* CHAM DIGIT ZERO..NINE */
+           && !(ch >= 0x11066 && ch <= 0x1106F) /* BRAHMI DIGIT ZERO..NINE */
+           && !(ch >= 0x11950 && ch <= 0x11959) /* DIVES AKURU DIGIT ZERO..NINE */
+           && !(ch >= 0x11F50 && ch <= 0x11F59) /* KAWI DIGIT ZERO..NINE */
+           && !(ch >= 0x16130 && ch <= 0x16139)) /* GURUNG KHEMA DIGIT ZERO..NINE */
           || ch == 0x066B /* ARABIC DECIMAL SEPARATOR */
-          || ch == 0x066C /* ARABIC THOUSANDS SEPARATOR */)
+          || ch == 0x066C /* ARABIC THOUSANDS SEPARATOR */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x0600 /* ARABIC NUMBER SIGN */
+          || ch == 0x0601 /* ARABIC SIGN SANAH */
+          || ch == 0x0602 /* ARABIC FOOTNOTE MARKER */
+          || ch == 0x0603 /* ARABIC SIGN SAFHA */
+          || ch == 0x0604 /* ARABIC SIGN SAMVAT */
+          || ch == 0x0605 /* ARABIC NUMBER MARK ABOVE */
+          || ch == 0x06DD /* ARABIC END OF AYAH */
+          || ch == 0x0890 /* ARABIC POUND MARK ABOVE */
+          || ch == 0x0891 /* ARABIC PIASTRE MARK ABOVE */
+          || ch == 0x08E2 /* ARABIC DISPUTED END OF AYAH */
+          || ch == 0x19DA /* NEW TAI LUE THAM DIGIT ONE */
+          || ch == 0x110BD /* KAITHI NUMBER SIGN */
+          || ch == 0x110CD /* KAITHI NUMBER SIGN ABOVE */)
         attr |= (int64_t) 1 << LBP_NU;
 
-      /* postfix (numeric) */
+      /* postfix numeric */
       if (ch == 0x0025 /* PERCENT SIGN */
           || ch == 0x00A2 /* CENT SIGN */
           || ch == 0x00B0 /* DEGREE SIGN */
@@ -7397,7 +7725,6 @@ get_lbp (unsigned int ch)
           || ch == 0x2036 /* REVERSED DOUBLE PRIME */
           || ch == 0x2037 /* REVERSED TRIPLE PRIME */
           || ch == 0x20A7 /* PESETA SIGN */
-          || ch == 0x20BB /* NORDIC MARK SIGN */
           || ch == 0x2103 /* DEGREE CELSIUS */
           || ch == 0x2109 /* DEGREE FAHRENHEIT */
           || ch == 0xFDFC /* RIAL SIGN */
@@ -7413,6 +7740,7 @@ get_lbp (unsigned int ch)
           || ch == 0x0D79 /* MALAYALAM DATE MARK */
           || ch == 0x2057 /* QUADRUPLE PRIME */
           || ch == 0x20B6 /* LIVRE TOURNOIS SIGN */
+          || ch == 0x20BB /* NORDIC MARK SIGN */
           || ch == 0x20BE /* LARI SIGN */
           || ch == 0x20C0 /* SOM SIGN */
           || ch == 0xA838 /* NORTH INDIC RUPEE MARK */
@@ -7421,7 +7749,7 @@ get_lbp (unsigned int ch)
           || ch == 0x1ECB0 /* INDIC SIYAQ RUPEE MARK */)
         attr |= (int64_t) 1 << LBP_PO;
 
-      /* prefix (numeric) */
+      /* prefix numeric */
       if ((unicode_attributes[ch].category[0] == 'S'
            && unicode_attributes[ch].category[1] == 'c')
           || ch == 0x002B /* PLUS SIGN */
@@ -7456,6 +7784,77 @@ get_lbp (unsigned int ch)
       if ((ch >= 0x11A8 && ch <= 0x11FF) || (ch >= 0xD7CB && ch <= 0xD7FB))
         attr |= (int64_t) 1 << LBP_JT;
 
+      /* Brahmic scripts: pre-base repha */
+      if ((ch >= 0x11003 && ch <= 0x11004)
+          || ch == 0x11F02
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x113D1
+          || ch == 0x1193F
+          || ch == 0x11941)
+        attr |= (int64_t) 1 << LBP_AP;
+
+      /* Brahmic scripts: consonants */
+      if ((ch >= 0x1B05 && ch <= 0x1B33)
+          || (ch >= 0x1B45 && ch <= 0x1B4C)
+          || (ch >= 0xA984 && ch <= 0xA9B2)
+          || (ch >= 0x11005 && ch <= 0x11037)
+          || (ch >= 0x11071 && ch <= 0x11072)
+          || ch == 0x11075
+          || (ch >= 0x11305 && ch <= 0x1130C)
+          || (ch >= 0x1130F && ch <= 0x11310)
+          || (ch >= 0x11313 && ch <= 0x11328)
+          || (ch >= 0x1132A && ch <= 0x11330)
+          || (ch >= 0x11332 && ch <= 0x11333)
+          || (ch >= 0x11335 && ch <= 0x11339)
+          || (ch >= 0x11360 && ch <= 0x11361)
+          || (ch >= 0x11F04 && ch <= 0x11F10)
+          || (ch >= 0x11F12 && ch <= 0x11F33)
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || (ch >= 0x11392 && ch <= 0x113B5)
+          || (ch >= 0x11900 && ch <= 0x11906)
+          || ch == 0x11909
+          || (ch >= 0x1190C && ch <= 0x11913)
+          || (ch >= 0x11915 && ch <= 0x11916)
+          || (ch >= 0x11918 && ch <= 0x1192F))
+        attr |= (int64_t) 1 << LBP_AK;
+
+      /* Brahmic scripts: independent vowels */
+      if ((ch >= 0x1B50 && ch <= 0x1B59) /* BALINESE DIGIT ZERO..NINE */
+          || (ch >= 0x1BC0 && ch <= 0x1BE5)
+          || (ch >= 0xA9D0 && ch <= 0xA9D9) /* JAVANESE DIGIT ZERO..NINE */
+          || (ch >= 0xAA00 && ch <= 0xAA28)
+          || (ch >= 0xAA50 && ch <= 0xAA59) /* CHAM DIGIT ZERO..NINE */
+          || (ch >= 0x11066 && ch <= 0x1106F)
+          || ch == 0x11350
+          || (ch >= 0x1135E && ch <= 0x1135F)
+          || (ch >= 0x11950 && ch <= 0x11959) /* DIVES AKURU DIGIT ZERO..NINE */
+          || (ch >= 0x11EE0 && ch <= 0x11EF1)
+          || (ch >= 0x11F50 && ch <= 0x11F59)
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || (ch >= 0x11380 && ch <= 0x11389)
+          || ch == 0x1138B
+          || ch == 0x1138E
+          || ch == 0x11390
+          || ch == 0x11391
+          || (ch >= 0x16100 && ch <= 0x1611D)
+          || (ch >= 0x16130 && ch <= 0x16139) /* GURUNG KHEMA DIGIT ZERO..NINE */)
+        attr |= (int64_t) 1 << LBP_AS;
+
+      /* Brahmic scripts: conjoining viramas */
+      if (ch == 0x1B44
+          || ch == 0xA9C0
+          || ch == 0x11046
+          || ch == 0x1134D
+          || ch == 0x11F42
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || ch == 0x113D0
+          || ch == 0x1193E)
+        attr |= (int64_t) 1 << LBP_VI;
+
+      /* Brahmic scripts: viramas for final consonants */
+      if (ch == 0x1BF2 || ch == 0x1BF3)
+        attr |= (int64_t) 1 << LBP_VF;
+
       if (is_property_regional_indicator (ch))
         attr |= (int64_t) 1 << LBP_RI;
 
@@ -7472,7 +7871,6 @@ get_lbp (unsigned int ch)
            /* Extra characters for compatibility with Unicode LineBreak.txt.  */
            || ch == 0x109E /* MYANMAR SYMBOL SHAN ONE */
            || ch == 0x109F /* MYANMAR SYMBOL SHAN EXCLAMATION */
-           || ch == 0x19DA /* NEW TAI LUE THAM DIGIT ONE */
            || ch == 0x19DE /* NEW TAI LUE SIGN LAE */
            || ch == 0x19DF /* NEW TAI LUE SIGN LAEV */
            || (ch >= 0x1AA0 && ch <= 0x1AAD) /* TAI THAM SIGN */
@@ -7494,16 +7892,34 @@ get_lbp (unsigned int ch)
               || (ch >= 0x1171D && ch <= 0x1172B) /* Ahom */
               || (ch >= 0x1173A && ch <= 0x1173B) /* Ahom */
               || (ch >= 0x1173F && ch <= 0x11746) /* Ahom */))
-        attr |= (int64_t) 1 << LBP_SA;
+        {
+          if (unicode_attributes[ch].category[0] == 'M'
+              && (unicode_attributes[ch].category[1] == 'c'
+                  || unicode_attributes[ch].category[1] == 'e'
+                  || unicode_attributes[ch].category[1] == 'n'))
+            attr |= (int64_t) 1 << LBP_SA2;
+          else
+            attr |= (int64_t) 1 << LBP_SA1;
+        }
 
       /* attached characters and combining marks */
       if ((unicode_attributes[ch].category[0] == 'M'
            && (unicode_attributes[ch].category[1] == 'c'
                || unicode_attributes[ch].category[1] == 'e'
-               || unicode_attributes[ch].category[1] == 'n'))
+               || unicode_attributes[ch].category[1] == 'n')
+           && ch != 0x1AEB /* COMBINING DOUBLE RIGHTWARDS ARROW ABOVE */
+           && ch != 0x1BF2 /* BATAK PANGOLAT */
+           && ch != 0x1BF3 /* BATAK PANONGONAN */)
           || (unicode_attributes[ch].category[0] == 'C'
               && (unicode_attributes[ch].category[1] == 'c'
                   || unicode_attributes[ch].category[1] == 'f')
+              && ch != 0x0600 /* ARABIC NUMBER SIGN */
+              && ch != 0x0601 /* ARABIC SIGN SANAH */
+              && ch != 0x0602 /* ARABIC FOOTNOTE MARKER */
+              && ch != 0x0603 /* ARABIC SIGN SAFHA */
+              && ch != 0x0604 /* ARABIC SIGN SAMVAT */
+              && ch != 0x0605 /* ARABIC NUMBER MARK ABOVE */
+              && ch != 0x06DD /* ARABIC END OF AYAH */
               && ch != 0x0890 /* ARABIC POUND MARK ABOVE */
               && ch != 0x0891 /* ARABIC PIASTRE MARK ABOVE */
               && ch != 0x08E2 /* ARABIC DISPUTED END OF AYAH */
@@ -7516,11 +7932,22 @@ get_lbp (unsigned int ch)
               && ch != 0x1343E /* EGYPTIAN HIEROGLYPH BEGIN WALLED ENCLOSURE */
               && ch != 0x1343F /* EGYPTIAN HIEROGLYPH END WALLED ENCLOSURE */)
           || ch == 0x3035 /* VERTICAL KANA REPEAT MARK LOWER HALF */)
-        if (!(attr & (((int64_t) 1 << LBP_BK) | ((int64_t) 1 << LBP_CR) | ((int64_t) 1 << LBP_LF) | ((int64_t) 1 << LBP_BA) | ((int64_t) 1 << LBP_GL) | ((int64_t) 1 << LBP_SA) | ((int64_t) 1 << LBP_WJ) | ((int64_t) 1 << LBP_ZW) | ((int64_t) 1 << LBP_ZWJ))))
+        if (!(attr & (((int64_t) 1 << LBP_BK) | ((int64_t) 1 << LBP_CR) | ((int64_t) 1 << LBP_LF) | ((int64_t) 1 << LBP_BA) | ((int64_t) 1 << LBP_GL) | ((int64_t) 1 << LBP_VI) | ((int64_t) 1 << LBP_SA1) | ((int64_t) 1 << LBP_SA2) | ((int64_t) 1 << LBP_WJ) | ((int64_t) 1 << LBP_ZW) | ((int64_t) 1 << LBP_ZWJ))))
           attr |= (int64_t) 1 << LBP_CM;
 
       /* ideographic */
-      if (ch == 0x231A /* WATCH */
+      if ((ch >= 0x2E80 && ch <= 0x2FFF) /* CJK RADICAL, KANGXI RADICAL, IDEOGRAPHIC DESCRIPTION */
+          || (ch >= 0x3040 && ch <= 0x309F) /* HIRAGANA */
+          || (ch >= 0x30A0 && ch <= 0x30FF) /* KATAKANA */
+          || (ch >= 0x3400 && ch <= 0x4DBF) /* CJK Ideograph Extension A */
+          || (ch >= 0x4E00 && ch <= 0x9FFF) /* CJK Ideograph */
+          || (ch >= 0xF900 && ch <= 0xFAD9) /* CJK COMPATIBILITY IDEOGRAPH */
+          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || strstr (unicode_attributes[ch].name, "FULLWIDTH LATIN ") != NULL
+          || ch == 0x1B5C /* BALINESE WINDU */
+          || (ch >= 0x1B61 && ch <= 0x1B6A) /* BALINESE MUSICAL SYMBOL DONG..BALINESE MUSICAL SYMBOL DANG GEDE */
+          || (ch >= 0x1B74 && ch <= 0x1B7C) /* BALINESE MUSICAL SYMBOL RIGHT-HAND OPEN DUG..BALINESE MUSICAL SYMBOL LEFT-HAND OPEN PING */
+          || ch == 0x231A /* WATCH */
           || ch == 0x231B /* HOURGLASS */
           || ch == 0x23F0 /* ALARM CLOCK */
           || ch == 0x23F1 /* STOPWATCH */
@@ -7593,26 +8020,15 @@ get_lbp (unsigned int ch)
           || ch == 0x270C /* VICTORY HAND */
           || ch == 0x270D /* WRITING HAND */
           || ch == 0x2764 /* HEAVY BLACK HEART */
-          || (ch >= 0x2E80 && ch <= 0x2FFF) /* CJK RADICAL, KANGXI RADICAL, IDEOGRAPHIC DESCRIPTION */
-          || (ch >= 0x3040 && ch <= 0x309F) /* HIRAGANA */
-          || (ch >= 0x30A0 && ch <= 0x30FF) /* KATAKANA */
-          || (ch >= 0x3400 && ch <= 0x4DBF) /* CJK Ideograph Extension A */
-          || (ch >= 0x4E00 && ch <= 0x9FFF) /* CJK Ideograph */
-          || (ch >= 0xF900 && ch <= 0xFAD9) /* CJK COMPATIBILITY IDEOGRAPH */
-          || (ch >= 0xA000 && ch <= 0xA48F) /* YI SYLLABLE */
-          || (ch >= 0xA490 && ch <= 0xA4CF) /* YI RADICAL */
-          || ch == 0xFE62 /* SMALL PLUS SIGN */
-          || ch == 0xFE63 /* SMALL HYPHEN-MINUS */
-          || ch == 0xFE64 /* SMALL LESS-THAN SIGN */
-          || ch == 0xFE65 /* SMALL GREATER-THAN SIGN */
-          || ch == 0xFE66 /* SMALL EQUALS SIGN */
-          || (ch >= 0xFF10 && ch <= 0xFF19) /* FULLWIDTH DIGIT */
-          || (ch >= 0x20000 && ch <= 0x2A6D6) /* CJK Ideograph Extension B */
-          || (ch >= 0x2F800 && ch <= 0x2FA1D) /* CJK COMPATIBILITY IDEOGRAPH */
-          || strstr (unicode_attributes[ch].name, "FULLWIDTH LATIN ") != NULL
           || (ch >= 0x3000 && ch <= 0x33FF
               && !(attr & (((int64_t) 1 << LBP_BA) | ((int64_t) 1 << LBP_CM) | ((int64_t) 1 << LBP_NS) | ((int64_t) 1 << LBP_OP1) | ((int64_t) 1 << LBP_OP2) | ((int64_t) 1 << LBP_CL) | ((int64_t) 1 << LBP_CP1) | ((int64_t) 1 << LBP_CP2))))
-          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+          || (ch >= 0xA000 && ch <= 0xA48F) /* YI SYLLABLE */
+          || (ch >= 0xA490 && ch <= 0xA4CF) /* YI RADICAL */
+          || (ch >= 0xA9C1 && ch <= 0xA9C6) /* JAVANESE LEFT RERENGGAN..JAVANESE PADA WINDU */
+          || (ch >= 0xA9CA && ch <= 0xA9CD) /* JAVANESE PADA ADEG..JAVANESE TURNED PADA PISELEH */
+          || ch == 0xA9DE /* JAVANESE PADA TIRTA TUMETES */
+          || ch == 0xA9DF /* JAVANESE PADA ISEN-ISEN */
+          || ch == 0xAA5C /* CHAM PUNCTUATION SPIRAL */
           || ch == 0xFE30 /* PRESENTATION FORM FOR VERTICAL TWO DOT LEADER */
           || ch == 0xFE31 /* PRESENTATION FORM FOR VERTICAL EM DASH */
           || ch == 0xFE32 /* PRESENTATION FORM FOR VERTICAL EN DASH */
@@ -7632,6 +8048,11 @@ get_lbp (unsigned int ch)
           || ch == 0xFE5F /* SMALL NUMBER SIGN */
           || ch == 0xFE60 /* SMALL AMPERSAND */
           || ch == 0xFE61 /* SMALL ASTERISK */
+          || ch == 0xFE62 /* SMALL PLUS SIGN */
+          || ch == 0xFE63 /* SMALL HYPHEN-MINUS */
+          || ch == 0xFE64 /* SMALL LESS-THAN SIGN */
+          || ch == 0xFE65 /* SMALL GREATER-THAN SIGN */
+          || ch == 0xFE66 /* SMALL EQUALS SIGN */
           || ch == 0xFE68 /* SMALL REVERSE SOLIDUS */
           || ch == 0xFE6B /* SMALL COMMERCIAL AT */
           || ch == 0xFF02 /* FULLWIDTH QUOTATION MARK */
@@ -7642,6 +8063,7 @@ get_lbp (unsigned int ch)
           || ch == 0xFF0B /* FULLWIDTH PLUS SIGN */
           || ch == 0xFF0D /* FULLWIDTH HYPHEN-MINUS */
           || ch == 0xFF0F /* FULLWIDTH SOLIDUS */
+          || (ch >= 0xFF10 && ch <= 0xFF19) /* FULLWIDTH DIGIT */
           || ch == 0xFF1C /* FULLWIDTH LESS-THAN SIGN */
           || ch == 0xFF1D /* FULLWIDTH EQUALS SIGN */
           || ch == 0xFF1E /* FULLWIDTH GREATER-THAN SIGN */
@@ -7652,10 +8074,6 @@ get_lbp (unsigned int ch)
           || ch == 0xFF40 /* FULLWIDTH GRAVE ACCENT */
           || ch == 0xFF5C /* FULLWIDTH VERTICAL LINE */
           || ch == 0xFF5E /* FULLWIDTH TILDE */
-          || ch == 0xFFE2 /* FULLWIDTH NOT SIGN */
-          || ch == 0xFFE3 /* FULLWIDTH MACRON */
-          || ch == 0xFFE4 /* FULLWIDTH BROKEN BAR */
-          /* Extra characters for compatibility with Unicode LineBreak.txt.  */
           || ch == 0xFF66 /* Halfwidth Katakana */
           || (ch >= 0xFF71 && ch <= 0xFF9D) /* Halfwidth Katakana */
           || (ch >= 0xFFA0 && ch <= 0xFFBE) /* Halfwidth Hangul */
@@ -7663,19 +8081,27 @@ get_lbp (unsigned int ch)
           || (ch >= 0xFFCA && ch <= 0xFFCF) /* Halfwidth Hangul */
           || (ch >= 0xFFD2 && ch <= 0xFFD7) /* Halfwidth Hangul */
           || (ch >= 0xFFDA && ch <= 0xFFDC) /* Halfwidth Hangul */
+          || ch == 0xFFE2 /* FULLWIDTH NOT SIGN */
+          || ch == 0xFFE3 /* FULLWIDTH MACRON */
+          || ch == 0xFFE4 /* FULLWIDTH BROKEN BAR */
+          || (ch >= 0x11049 && ch <= 0x1104D) /* BRAHMI PUNCTUATION DOT..BRAHMI PUNCTUATION LOTUS */
+          || (ch >= 0x11052 && ch <= 0x11065) /* BRAHMI NUMBER ONE..BRAHMI NUMBER ONE THOUSAND */
+          || ch == 0x113B7 /* TULU-TIGALARI SIGN AVAGRAHA */
+          || ch == 0x113D3 /* TULU-TIGALARI SIGN PLUTA */
+          || ch == 0x113D4 /* TULU-TIGALARI DANDA */
+          || ch == 0x113D5 /* TULU-TIGALARI DOUBLE DANDA */
+          || ch == 0x113D7 /* TULU-TIGALARI SIGN OM PUSHPIKA */
+          || ch == 0x113D8 /* TULU-TIGALARI SIGN SHRII PUSHPIKA */
           || (ch >= 0x11F45 && ch <= 0x11F4F) /* Kawi Punctuation */
-          || (ch >= 0x17000 && ch <= 0x187F7) /* Tangut Ideograph */
-          || (ch >= 0x18800 && ch <= 0x18AFF) /* Tangut Ideograph */
-          || (ch >= 0x18D00 && ch <= 0x18D08) /* Tangut Ideograph Supplement */
+          || (ch >= 0x16FF4 && ch <= 0x16FF6) /* Yangqin Sign */
+          || (ch >= 0x17000 && ch <= 0x18AFF) /* Tangut Ideograph */
+          || (ch >= 0x18D00 && ch <= 0x18DF2) /* Tangut Ideograph Supplement */
           || (ch >= 0x1B000 && ch <= 0x1B001) /* Kana Supplement */
           || (ch >= 0x1B002 && ch <= 0x1B122) /* Hentaigana, archaic Hiragana/Katakana */
           || (ch >= 0x1B170 && ch <= 0x1B2FB) /* Nushu */
           || (ch >= 0x1F000 && ch <= 0x1F02B) /* Mahjong Tiles */
           || (ch >= 0x1F030 && ch <= 0x1F093) /* Domino Tiles */
           || (ch >= 0x1F0A0 && ch <= 0x1F0F5) /* Playing Cards */
-          || (ch >= 0x1F10D && ch <= 0x1F10F) /* Circled Symbols */
-          || (ch >= 0x1F16D && ch <= 0x1F16F) /* Circled Symbols */
-          || ch == 0x1F1AD /* MASK WORK SYMBOL */
           || (ch >= 0x1F200 && ch <= 0x1F248) /* Enclosed Ideographic Supplement */
           || (ch >= 0x1F250 && ch <= 0x1F251) /* Enclosed Ideographic Supplement */
           || (ch >= 0x1F260 && ch <= 0x1F265) /* Rounded Symbols */
@@ -7706,25 +8132,31 @@ get_lbp (unsigned int ch)
           || ch == 0x1F7D9 /* NINE POINTED WHITE STAR */
           || (ch >= 0x1F7E0 && ch <= 0x1F7EB) /* Large circles */
           || ch == 0x1F7F0 /* Heavy equals sign */
-          || (ch >= 0x1F8B0 && ch <= 0x1F8B1) /* Curved arrows */
           || (ch >= 0x1F90C && ch <= 0x1F9FF) /* Supplemental Symbols and Pictographs */
           || (ch >= 0x1FA60 && ch <= 0x1FA6D) /* Xiangqi pieces */
           || (ch >= 0x1FA70 && ch <= 0x1FA74) /* Emoticons */
           || (ch >= 0x1FA75 && ch <= 0x1FA77) /* Colored heart symbols */
           || (ch >= 0x1FA78 && ch <= 0x1FA7C) /* Medical pictographs */
-          || (ch >= 0x1FA80 && ch <= 0x1FA88) /* Pictographs */
-          || (ch >= 0x1FA90 && ch <= 0x1FABD) /* Pictographs */
-          || (ch >= 0x1FABF && ch <= 0x1FAC2) /* Pictographs */
-          || (ch >= 0x1FACE && ch <= 0x1FADB) /* Pictographs */
-          || (ch >= 0x1FAE0 && ch <= 0x1FAE8) /* Pictographs */
+          || (ch >= 0x1FA80 && ch <= 0x1FA8A) /* Pictographs */
+          || (ch >= 0x1FA8E && ch <= 0x1FABD) /* Pictographs */
+          || (ch >= 0x1FABE && ch <= 0x1FAC2) /* Pictographs */
+          || ch == 0x1FAC6 /* Pictographs */
+          || ch == 0x1FAC8 /* Pictographs */
+          || (ch >= 0x1FACD && ch <= 0x1FADC) /* Pictographs */
+          || (ch >= 0x1FADF && ch <= 0x1FAEA) /* Pictographs */
+          || ch == 0x1FAEF /* Pictographs */
           || (ch >= 0x1FAF7 && ch <= 0x1FAF8) /* Pictographs */
+          || (ch >= 0x20000 && ch <= 0x2A6D6) /* CJK Ideograph Extension B */
           || (ch >= 0x2A6D7 && ch <= 0x2A6DF) /* CJK Ideograph Extension B */
-          || (ch >= 0x2A700 && ch <= 0x2B739) /* CJK Ideograph Extension C */
+          || (ch >= 0x2A700 && ch <= 0x2B73F) /* CJK Ideograph Extension C */
           || (ch >= 0x2B740 && ch <= 0x2B81D) /* CJK Ideograph Extension D */
           || (ch >= 0x2B820 && ch <= 0x2CEAF) /* CJK Ideograph Extension E */
           || (ch >= 0x2CEB0 && ch <= 0x2EBE0) /* CJK Ideograph Extension F */
+          || (ch >= 0x2EBF0 && ch <= 0x2EE5D) /* CJK Ideograph Extension I */
+          || (ch >= 0x2F800 && ch <= 0x2FA1D) /* CJK COMPATIBILITY IDEOGRAPH */
           || (ch >= 0x30000 && ch <= 0x3134A) /* CJK Ideograph Extension G */
-          || (ch >= 0x31350 && ch <= 0x323AF) /* CJK Ideograph Extension H */)
+          || (ch >= 0x31350 && ch <= 0x323AF) /* CJK Ideograph Extension H */
+          || (ch >= 0x323B0 && ch <= 0x33479) /* CJK Ideograph Extension J */)
         if (!(attr & (((int64_t) 1 << LBP_NS) | ((int64_t) 1 << LBP_CM) | ((int64_t) 1 << LBP_EB))))
           {
             /* ambiguous (ideograph) ? */
@@ -7756,10 +8188,11 @@ get_lbp (unsigned int ch)
                  && !(ch >= 0x26F7 && ch <= 0x26FA)
                  && !(ch >= 0x26FD && ch <= 0x26FF))
                 || ch == 0x24EA /* CIRCLED DIGIT ZERO */
-                || (ch >= 0x2780 && ch <= 0x2793) /* DINGBAT ... CIRCLED DIGIT ... */)
+                || (ch >= 0x2780 && ch <= 0x2793) /* DINGBAT ... CIRCLED DIGIT ... */
+                || (ch >= 0x3248 && ch <= 0x324F) /* CIRCLED NUMBER TEN ON BLACK SQUARE..CIRCLED NUMBER EIGHTY ON BLACK SQUARE */)
               attr |= (int64_t) 1 << LBP_AI;
             else
-              attr |= (int64_t) 1 << LBP_ID1;
+              attr |= (int64_t) 1 << LBP_ID;
           }
 
       /* ordinary alphabetic and symbol characters */
@@ -7780,26 +8213,16 @@ get_lbp (unsigned int ch)
               && (unicode_attributes[ch].category[1] == 'c'
                   || unicode_attributes[ch].category[1] == 'd'
                   || unicode_attributes[ch].category[1] == 'o'))
-          || ch == 0x0600 /* ARABIC NUMBER SIGN */
-          || ch == 0x0601 /* ARABIC SIGN SANAH */
-          || ch == 0x0602 /* ARABIC FOOTNOTE MARKER */
-          || ch == 0x0603 /* ARABIC SIGN SAFHA */
-          || ch == 0x0604 /* ARABIC SIGN SAMVAT */
-          || ch == 0x0605 /* ARABIC NUMBER MARK ABOVE */
-          || ch == 0x06DD /* ARABIC END OF AYAH */
           || ch == 0x070F /* SYRIAC ABBREVIATION MARK */
-          || ch == 0x08E2 /* ARABIC DISPUTED END OF AYAH */
           || ch == 0x2061 /* FUNCTION APPLICATION */
           || ch == 0x2062 /* INVISIBLE TIMES */
           || ch == 0x2063 /* INVISIBLE SEPARATOR */
           || ch == 0x2064 /* INVISIBLE PLUS */
           /* Extra characters for compatibility with Unicode LineBreak.txt.  */
-          || ch == 0x0890 /* ARABIC POUND MARK ABOVE */
-          || ch == 0x0891 /* ARABIC PIASTRE MARK ABOVE */
-          || ch == 0x110BD /* KAITHI NUMBER SIGN */
-          || ch == 0x110CD /* KAITHI NUMBER SIGN ABOVE */)
-        if (!(attr & (((int64_t) 1 << LBP_GL) | ((int64_t) 1 << LBP_B2) | ((int64_t) 1 << LBP_BA) | ((int64_t) 1 << LBP_BB) | ((int64_t) 1 << LBP_HY) | ((int64_t) 1 << LBP_CB) | ((int64_t) 1 << LBP_CL) | ((int64_t) 1 << LBP_CP1) | ((int64_t) 1 << LBP_CP2) | ((int64_t) 1 << LBP_EX) | ((int64_t) 1 << LBP_IN) | ((int64_t) 1 << LBP_NS) | ((int64_t) 1 << LBP_OP1) | ((int64_t) 1 << LBP_OP2) | ((int64_t) 1 << LBP_QU) | ((int64_t) 1 << LBP_IS) | ((int64_t) 1 << LBP_NU) | ((int64_t) 1 << LBP_PO) | ((int64_t) 1 << LBP_PR) | ((int64_t) 1 << LBP_SY) | ((int64_t) 1 << LBP_H2) | ((int64_t) 1 << LBP_H3) | ((int64_t) 1 << LBP_HL) | ((int64_t) 1 << LBP_JL) | ((int64_t) 1 << LBP_JV) | ((int64_t) 1 << LBP_JT) | ((int64_t) 1 << LBP_RI) | ((int64_t) 1 << LBP_SA) | ((int64_t) 1 << LBP_ID1) | ((int64_t) 1 << LBP_ID2) | ((int64_t) 1 << LBP_EB) | ((int64_t) 1 << LBP_EM)))
-            && ch != 0x3035 /* VERTICAL KANA REPEAT MARK LOWER HALF */)
+          || ch == 0x08E2 /* ARABIC DISPUTED END OF AYAH */)
+        if (!(attr & (((int64_t) 1 << LBP_GL) | ((int64_t) 1 << LBP_B2) | ((int64_t) 1 << LBP_BA) | ((int64_t) 1 << LBP_BB) | ((int64_t) 1 << LBP_HH) | ((int64_t) 1 << LBP_HY) | ((int64_t) 1 << LBP_CB) | ((int64_t) 1 << LBP_CL) | ((int64_t) 1 << LBP_CP1) | ((int64_t) 1 << LBP_CP2) | ((int64_t) 1 << LBP_EX) | ((int64_t) 1 << LBP_IN) | ((int64_t) 1 << LBP_NS) | ((int64_t) 1 << LBP_OP1) | ((int64_t) 1 << LBP_OP2) | ((int64_t) 1 << LBP_QU1) | ((int64_t) 1 << LBP_QU2) | ((int64_t) 1 << LBP_QU3) | ((int64_t) 1 << LBP_IS) | ((int64_t) 1 << LBP_NU) | ((int64_t) 1 << LBP_PO) | ((int64_t) 1 << LBP_PR) | ((int64_t) 1 << LBP_SY) | ((int64_t) 1 << LBP_H2) | ((int64_t) 1 << LBP_H3) | ((int64_t) 1 << LBP_HL) | ((int64_t) 1 << LBP_JL) | ((int64_t) 1 << LBP_JV) | ((int64_t) 1 << LBP_JT) | ((int64_t) 1 << LBP_AP) | ((int64_t) 1 << LBP_AK) | ((int64_t) 1 << LBP_AS) | ((int64_t) 1 << LBP_VI) | ((int64_t) 1 << LBP_VF) | ((int64_t) 1 << LBP_RI) | ((int64_t) 1 << LBP_SA1) | ((int64_t) 1 << LBP_SA2) | ((int64_t) 1 << LBP_ID) | ((int64_t) 1 << LBP_EB) | ((int64_t) 1 << LBP_EM)))
+            && ch != 0x3035 /* VERTICAL KANA REPEAT MARK LOWER HALF */
+            && !(ch >= 0x3248 && ch <= 0x324F) /* CIRCLED NUMBER TEN ON BLACK SQUARE..CIRCLED NUMBER EIGHTY ON BLACK SQUARE */)
           {
             /* ambiguous (alphabetic) ? */
             if ((unicode_width[ch] != NULL
@@ -7809,9 +8232,6 @@ get_lbp (unsigned int ch)
                  && ch != 0x2022 /* BULLET */
                  && ch != 0x203E /* OVERLINE */
                  && ch != 0x2126 /* OHM SIGN */
-                 && ch != 0x2153 /* VULGAR FRACTION ONE THIRD */
-                 && ch != 0x215C /* VULGAR FRACTION THREE EIGHTHS */
-                 && ch != 0x215D /* VULGAR FRACTION FIVE EIGHTHS */
                  && ch != 0x21B8 /* NORTH WEST ARROW TO LONG BAR */
                  && ch != 0x21B9 /* LEFTWARDS ARROW TO BAR OVER RIGHTWARDS ARROW TO BAR */
                  && ch != 0x21E7 /* UPWARDS WHITE ARROW */
@@ -7846,74 +8266,216 @@ get_lbp (unsigned int ch)
                 || ch == 0x24EA /* CIRCLED DIGIT ZERO */
                 || (ch >= 0x2780 && ch <= 0x2793) /* DINGBAT ... CIRCLED DIGIT ... */
                 /* Extra characters for compatibility with Unicode LineBreak.txt.  */
+                || ch == 0x2015 /* HORIZONTAL BAR */
+                || ch == 0x2016 /* DOUBLE VERTICAL LINE */
+                || ch == 0x2020 /* DAGGER */
+                || ch == 0x2021 /* DOUBLE DAGGER */
+                || ch == 0x203B /* REFERENCE MARK */
+                || ch == 0x2074 /* SUPERSCRIPT FOUR */
+                || ch == 0x207F /* SUPERSCRIPT LATIN SMALL LETTER N */
+                || (ch >= 0x2081 && ch <= 0x2084) /* SUBSCRIPT ONE..FOUR */
+                || ch == 0x2105 /* CARE OF */
+                || ch == 0x2113 /* SCRIPT SMALL L */
+                || ch == 0x2121 /* TELEPHONE SIGN */
+                || ch == 0x2122 /* TRADE MARK SIGN */
+                || ch == 0x212B /* ANGSTROM SIGN */
+                || ch == 0x2150 /* VULGAR FRACTION ONE SEVENTH */
+                || ch == 0x2151 /* VULGAR FRACTION ONE NINTH */
+                || ch == 0x2152 /* VULGAR FRACTION ONE TENTH */
+                || ch == 0x2153 /* VULGAR FRACTION ONE THIRD */
+                || ch == 0x2154 /* VULGAR FRACTION TWO THIRDS */
                 || ch == 0x2155 /* VULGAR FRACTION ONE FIFTH */
-                || ch == 0x2574 /* BOX DRAWINGS LIGHT LEFT */
+                || ch == 0x2156 /* VULGAR FRACTION TWO FIFTHS */
+                || ch == 0x2157 /* VULGAR FRACTION THREE FIFTHS */
+                || ch == 0x2158 /* VULGAR FRACTION FOUR FIFTHS */
+                || ch == 0x2159 /* VULGAR FRACTION ONE SIXTH */
+                || ch == 0x215A /* VULGAR FRACTION FIVE SIXTHS */
+                || ch == 0x215B /* VULGAR FRACTION ONE EIGHTH */
+                || ch == 0x215C /* VULGAR FRACTION THREE EIGHTHS */
+                || ch == 0x215D /* VULGAR FRACTION SEVEN EIGHTHS */
+                || ch == 0x215E /* VULGAR FRACTION SEVEN EIGHTHS */
+                || (ch >= 0x2160 && ch <= 0x216B) /* ROMAN NUMERAL ONE..TWELVE */
+                || (ch >= 0x2170 && ch <= 0x2179) /* SMALL ROMAN NUMERAL ONE..TEN */
+                || ch == 0x2189 /* VULGAR FRACTION ZERO THIRDS */
+                || (ch >= 0x2190 && ch <= 0x2199) /* LEFTWARDS ARROW..SOUTH WEST ARROW */
+                || ch == 0x21D2 /* RIGHTWARDS DOUBLE ARROW */
+                || ch == 0x21D4 /* LEFT RIGHT DOUBLE ARROW */
+                || ch == 0x2200 /* FOR ALL */
+                || ch == 0x2202 /* PARTIAL DIFFERENTIAL */
+                || ch == 0x2203 /* THERE EXISTS */
+                || ch == 0x2207 /* NABLA */
+                || ch == 0x2208 /* ELEMENT OF */
+                || ch == 0x220B /* CONTAINS AS MEMBER */
+                || ch == 0x220F /* N-ARY PRODUCT */
+                || ch == 0x2211 /* N-ARY SUMMATION */
+                || ch == 0x2215 /* DIVISION SLASH */
+                || ch == 0x221A /* SQUARE ROOT */
+                || ch == 0x221D /* PROPORTIONAL TO */
+                || ch == 0x221E /* INFINITY */
+                || ch == 0x221F /* RIGHT ANGLE */
+                || ch == 0x2220 /* ANGLE */
+                || ch == 0x2223 /* DIVIDES */
+                || ch == 0x2225 /* PARALLEL TO */
+                || ch == 0x2227 /* LOGICAL AND */
+                || ch == 0x2228 /* LOGICAL OR */
+                || ch == 0x2229 /* INTERSECTION */
+                || ch == 0x222A /* UNION */
+                || ch == 0x222B /* INTEGRAL */
+                || ch == 0x222C /* DOUBLE INTEGRAL */
+                || ch == 0x222E /* CONTOUR INTEGRAL */
+                || ch == 0x2234 /* THEREFORE */
+                || ch == 0x2235 /* BECAUSE */
+                || ch == 0x2236 /* RATIO */
+                || ch == 0x2237 /* PROPORTION */
+                || ch == 0x223C /* TILDE OPERATOR */
+                || ch == 0x223D /* REVERSED TILDE */
+                || ch == 0x2248 /* ALMOST EQUAL TO */
+                || ch == 0x224C /* ALL EQUAL TO */
+                || ch == 0x2252 /* APPROXIMATELY EQUAL TO OR THE IMAGE OF */
+                || ch == 0x2260 /* NOT EQUAL TO */
+                || ch == 0x2261 /* IDENTICAL TO */
+                || ch == 0x2264 /* LESS-THAN OR EQUAL TO */
+                || ch == 0x2265 /* GREATER-THAN OR EQUAL TO */
+                || ch == 0x2266 /* LESS-THAN OVER EQUAL TO */
+                || ch == 0x2267 /* GREATER-THAN OVER EQUAL TO */
+                || ch == 0x226A /* MUCH LESS-THAN */
+                || ch == 0x226B /* MUCH GREATER-THAN */
+                || ch == 0x226E /* NOT LESS-THAN */
+                || ch == 0x226F /* NOT GREATER-THAN */
+                || ch == 0x2282 /* SUBSET OF */
+                || ch == 0x2283 /* SUPERSET OF */
+                || ch == 0x2286 /* SUBSET OF OR EQUAL TO */
+                || ch == 0x2287 /* SUPERSET OF OR EQUAL TO */
+                || ch == 0x2295 /* CIRCLED PLUS */
+                || ch == 0x2299 /* CIRCLED DOT OPERATOR */
+                || ch == 0x22A5 /* UP TACK */
+                || ch == 0x22BF /* RIGHT TRIANGLE */
+                || ch == 0x2312 /* ARC */
+                || (ch >= 0x2460 && ch <= 0x24E9) /* CIRCLED DIGIT ONE..CIRCLED LATIN SMALL LETTER Z */
+                || (ch >= 0x24EB && ch <= 0x24FE) /* NEGATIVE CIRCLED NUMBER ELEVEN..NEGATIVE CIRCLED DIGIT ZERO */
+                || (ch >= 0x2500 && ch <= 0x254B) /* BOX DRAWINGS LIGHT HORIZONTAL..BOX DRAWINGS HEAVY VERTICAL AND HORIZONTAL */
+                || (ch >= 0x2550 && ch <= 0x2574) /* BOX DRAWINGS DOUBLE HORIZONTAL..BOX DRAWINGS LIGHT LEFT */
+                || (ch >= 0x2580 && ch <= 0x258F) /* UPPER HALF BLOCK..LEFT ONE EIGHTH BLOCK */
+                || (ch >= 0x2592 && ch <= 0x2595) /* MEDIUM SHADE..RIGHT ONE EIGHTH BLOCK */
+                || ch == 0x25A0 /* BLACK SQUARE */
+                || ch == 0x25A1 /* WHITE SQUARE */
+                || (ch >= 0x25A3 && ch <= 0x25A9) /* WHITE SQUARE CONTAINING BLACK SMALL SQUARE..SQUARE WITH DIAGONAL CROSSHATCH FILL */
+                || ch == 0x25B2 /* BLACK UP-POINTING TRIANGLE */
+                || ch == 0x25B3 /* WHITE UP-POINTING TRIANGLE */
+                || ch == 0x25B6 /* BLACK RIGHT-POINTING TRIANGLE */
+                || ch == 0x25B7 /* WHITE RIGHT-POINTING TRIANGLE */
+                || ch == 0x25BC /* BLACK DOWN-POINTING TRIANGLE */
+                || ch == 0x25BD /* WHITE DOWN-POINTING TRIANGLE */
+                || ch == 0x25C0 /* BLACK LEFT-POINTING TRIANGLE */
+                || ch == 0x25C1 /* WHITE LEFT-POINTING TRIANGLE */
+                || (ch >= 0x25C6 && ch <= 0x25C8) /* BLACK DIAMOND..WHITE DIAMOND CONTAINING BLACK SMALL DIAMOND */
+                || ch == 0x25CB /* WHITE CIRCLE */
+                || (ch >= 0x25CE && ch <= 0x25D1) /* BULLSEYE..CIRCLE WITH RIGHT HALF BLACK */
+                || (ch >= 0x25E2 && ch <= 0x25E5) /* BLACK LOWER RIGHT TRIANGLE..BLACK UPPER RIGHT TRIANGLE */
+                || ch == 0x25EF /* LARGE CIRCLE */
+                || ch == 0x2605 /* BLACK STAR */
+                || ch == 0x2606 /* WHITE STAR */
+                || ch == 0x2609 /* SUN */
+                || ch == 0x260E /* BLACK TELEPHONE */
+                || ch == 0x260F /* WHITE TELEPHONE */
                 || ch == 0x2616 /* WHITE SHOGI PIECE */
                 || ch == 0x2617 /* BLACK SHOGI PIECE */
+                || ch == 0x2640 /* FEMALE SIGN */
+                || ch == 0x2642 /* MALE SIGN */
+                || ch == 0x2660 /* BLACK SPADE SUIT */
+                || ch == 0x2661 /* WHITE HEART SUIT */
+                || (ch >= 0x2663 && ch <= 0x2665) /* BLACK CLUB SUIT..BLACK HEART SUIT */
+                || ch == 0x2667 /* WHITE CLUB SUIT */
+                || ch == 0x2669 /* QUARTER NOTE */
+                || ch == 0x266A /* EIGHTH NOTE */
+                || ch == 0x266C /* BEAMED SIXTEENTH NOTES */
+                || ch == 0x266D /* MUSIC FLAT SIGN */
+                || ch == 0x266F /* MUSIC SHARP SIGN */
+                || ch == 0x269E /* THREE LINES CONVERGING RIGHT */
+                || ch == 0x269F /* THREE LINES CONVERGING LEFT */
+                || (ch >= 0x26C9 && ch <= 0x26CC) /* TURNED WHITE SHOGI PIECE..CROSSING LANES */
+                || ch == 0x26D2 /* CIRCLED CROSSING LANES */
+                || (ch >= 0x26D5 && ch <= 0x26D7) /* ALTERNATE ONE-WAY LEFT WAY TRAFFIC..WHITE TWO-WAY LEFT WAY TRAFFIC */
+                || ch == 0x26DA /* DRIVE SLOW SIGN */
+                || ch == 0x26DB /* HEAVY WHITE DOWN-POINTING TRIANGLE */
+                || ch == 0x26DD /* SQUARED SALTIRE */
+                || ch == 0x26DE /* FALLING DIAGONAL IN WHITE CIRCLE IN BLACK SQUARE */
+                || ch == 0x26E3 /* HEAVY CIRCLE WITH STROKE AND TWO DOTS ABOVE */
+                || ch == 0x26E8 /* BLACK CROSS ON SHIELD */
+                || ch == 0x26E9 /* SHINTO SHRINE */
+                || (ch >= 0x26EB && ch <= 0x26F0) /* CASTLE..MOUNTAIN */
+                || ch == 0x26F6 /* SQUARE FOUR CORNERS */
+                || ch == 0x26FB /* JAPANESE BANK SYMBOL */
+                || ch == 0x26FC /* HEADSTONE GRAVEYARD SYMBOL */
                 || ch == 0x2757 /* HEAVY EXCLAMATION MARK SYMBOL */
-                || ch == 0x2B55 /* HEAVY LARGE CIRCLE */
-                || ch == 0x1F10B /* DINGBAT CIRCLED SANS-SERIF DIGIT ZERO */
-                || ch == 0x1F18E /* NEGATIVE SQUARED AB */
-                || (ch >= 0x1F191 && ch <= 0x1F19A) /* SQUARED CL..SQUARED VS */
-                || ch == 0x1F10C /* DINGBAT NEGATIVE CIRCLED SANS-SERIF DIGIT ZERO */)
+                || (ch >= 0x2776 && ch <= 0x277F) /* DINGBAT NEGATIVE CIRCLED DIGIT ONE..DINGBAT NEGATIVE CIRCLED NUMBER TEN */
+                || (ch >= 0x2B55 && ch <= 0x2B59) /* HEAVY LARGE CIRCLE..HEAVY CIRCLED SALTIRE */
+                || ch == 0xFFFD /* REPLACEMENT CHARACTER */
+                || (ch >= 0x1F100 && ch <= 0x1F10C) /* DIGIT ZERO FULL STOP..DINGBAT NEGATIVE CIRCLED SANS-SERIF DIGIT ZERO */
+                || (ch >= 0x1F110 && ch <= 0x1F12D) /* PARENTHESIZED LATIN CAPITAL LETTER A..CIRCLED CD */
+                || (ch >= 0x1F130 && ch <= 0x1F169) /* SQUARED LATIN CAPITAL LETTER A..NEGATIVE CIRCLED LATIN CAPITAL LETTER Z */
+                || (ch >= 0x1F170 && ch <= 0x1F1AC) /* NEGATIVE SQUARED LATIN CAPITAL LETTER A..SQUARED VOD */)
               attr |= (int64_t) 1 << LBP_AI;
             else
-              attr |= (int64_t) 1 << LBP_AL;
+              {
+                if (ch == 0x25CC)
+                  attr |= (int64_t) 1 << LBP_AL2;
+                else
+                  attr |= (int64_t) 1 << LBP_AL1;
+              }
             attr &= ~((int64_t) 1 << LBP_CM);
           }
     }
   else
     {
       /* Unassigned character.  */
-      if ((ch >= 0x3400 && ch <= 0x4DBF) /* CJK Unified Ideographs Extension A */
-          || (ch >= 0x4E00 && ch <= 0x9FFF) /* CJK Unified Ideographs */
-          || (ch >= 0xF900 && ch <= 0xFAFF) /* CJK Compatibility Ideographs */
-          || (ch >= 0x1F02C && ch <= 0x1F02F) /* reserved */
-          || (ch >= 0x1F094 && ch <= 0x1F09F) /* reserved */
-          || (ch >= 0x1F0AF && ch <= 0x1F0B0) /* reserved */
-          || ch == 0x1F0C0 /* reserved */
-          || ch == 0x1F0D0 /* reserved */
-          || (ch >= 0x1F0F6 && ch <= 0x1F0FF) /* reserved */
-          || (ch >= 0x1F10D && ch <= 0x1F10F) /* reserved */
-          || ch == 0x1F12F /* reserved */
-          || (ch >= 0x1F16C && ch <= 0x1F16F) /* reserved */
-          || (ch >= 0x1F1AD && ch <= 0x1F1E5) /* reserved */
-          || (ch >= 0x1F203 && ch <= 0x1F20F) /* reserved */
-          || (ch >= 0x1F23C && ch <= 0x1F23F) /* reserved */
-          || (ch >= 0x1F249 && ch <= 0x1F24F) /* reserved */
-          || (ch >= 0x1F252 && ch <= 0x1F2FF) /* reserved */
-          || (ch >= 0x1F6D3 && ch <= 0x1F6DF) /* reserved */
-          || (ch >= 0x1F6ED && ch <= 0x1F6EF) /* reserved */
-          || (ch >= 0x1F6F7 && ch <= 0x1F6FF) /* reserved */
-          || (ch >= 0x1F774 && ch <= 0x1F77F) /* reserved */
-          || (ch >= 0x1F7D5 && ch <= 0x1F7FF) /* reserved */
-          || (ch >= 0x1F80C && ch <= 0x1F80F) /* reserved */
-          || (ch >= 0x1F848 && ch <= 0x1F84F) /* reserved */
-          || (ch >= 0x1F85A && ch <= 0x1F85F) /* reserved */
-          || (ch >= 0x1F888 && ch <= 0x1F88F) /* reserved */
-          || (ch >= 0x1F8AE && ch <= 0x1F90F) /* reserved */
-          || ch == 0x1F91F /* reserved */
-          || ch == 0x1F93F /* reserved */
-          || (ch >= 0x1F928 && ch <= 0x1F92F) /* reserved */
-          || (ch >= 0x1F931 && ch <= 0x1F932) /* reserved */
-          || (ch >= 0x1F94C && ch <= 0x1F94F) /* reserved */
-          || (ch >= 0x1F95F && ch <= 0x1F97F) /* reserved */
-          || (ch >= 0x1F992 && ch <= 0x1F9BF) /* reserved */
-          || (ch >= 0x1F9C1 && ch <= 0x1FB92) /* reserved */
-          || (ch >= 0x1FB94 && ch <= 0x1FBCA) /* reserved */
-          || (ch >= 0x1FBF0 && ch <= 0x1FBF9) /* reserved */
-          || (ch >= 0x1FC00 && ch <= 0x1FFFD) /* reserved */
-          || (ch >= 0x20000 && ch <= 0x2A6FF) /* CJK Unified Ideographs Extension B */
-          || (ch >= 0x2A700 && ch <= 0x2F7FF) /* CJK Unified Ideographs Extension C,
-                                                 Supplementary Ideographic Plane (Plane 2) outside of blocks */
-          || (ch >= 0x2F800 && ch <= 0x2FFFD) /* CJK Compatibility Ideographs Supplement,
-                                                 Supplementary Ideographic Plane (Plane 2) outside of blocks */
-          || (ch >= 0x30000 && ch <= 0x3FFFD) /* Tertiary Ideographic Plane (Plane 3) outside of blocks */)
+      if (is_property_extended_pictographic (ch))
+        attr |= (int64_t) 1 << LBP_EBF;
+      else
         {
-          if (is_property_extended_pictographic (ch))
-            attr |= (int64_t) 1 << LBP_ID2;
-          else
-            attr |= (int64_t) 1 << LBP_ID1;
+          if ((ch >= 0x3400 && ch <= 0x4DBF) /* CJK Unified Ideographs Extension A */
+              || (ch >= 0x4E00 && ch <= 0x9FFF) /* CJK Unified Ideographs */
+              || (ch >= 0xF900 && ch <= 0xFAFF) /* CJK Compatibility Ideographs */
+              || (ch >= 0x1F02C && ch <= 0x1F02F) /* reserved */
+              || (ch >= 0x1F094 && ch <= 0x1F09F) /* reserved */
+              || (ch >= 0x1F0AF && ch <= 0x1F0B0) /* reserved */
+              || ch == 0x1F0C0 /* reserved */
+              || ch == 0x1F0D0 /* reserved */
+              || (ch >= 0x1F0F6 && ch <= 0x1F0FF) /* reserved */
+              || (ch >= 0x1F10D && ch <= 0x1F10F) /* reserved */
+              || ch == 0x1F12F /* reserved */
+              || (ch >= 0x1F16C && ch <= 0x1F16F) /* reserved */
+              || (ch >= 0x1F1AD && ch <= 0x1F1E5) /* reserved */
+              || (ch >= 0x1F203 && ch <= 0x1F20F) /* reserved */
+              || (ch >= 0x1F23C && ch <= 0x1F23F) /* reserved */
+              || (ch >= 0x1F249 && ch <= 0x1F24F) /* reserved */
+              || (ch >= 0x1F252 && ch <= 0x1F2FF) /* reserved */
+              || (ch >= 0x1F6D3 && ch <= 0x1F6DF) /* reserved */
+              || (ch >= 0x1F6ED && ch <= 0x1F6EF) /* reserved */
+              || (ch >= 0x1F6F7 && ch <= 0x1F6FF) /* reserved */
+              || (ch >= 0x1F774 && ch <= 0x1F77F) /* reserved */
+              || (ch >= 0x1F7D5 && ch <= 0x1F7FF) /* reserved */
+              || (ch >= 0x1F8B0 && ch <= 0x1F8BB) /* reserved */
+              || (ch >= 0x1F8C0 && ch <= 0x1F8C1) /* reserved */
+              || (ch >= 0x1F900 && ch <= 0x1F90F) /* reserved */
+              || ch == 0x1F91F /* reserved */
+              || ch == 0x1F93F /* reserved */
+              || (ch >= 0x1F928 && ch <= 0x1F92F) /* reserved */
+              || (ch >= 0x1F931 && ch <= 0x1F932) /* reserved */
+              || (ch >= 0x1F94C && ch <= 0x1F94F) /* reserved */
+              || (ch >= 0x1F95F && ch <= 0x1F97F) /* reserved */
+              || (ch >= 0x1F992 && ch <= 0x1F9BF) /* reserved */
+              || (ch >= 0x1F9C1 && ch <= 0x1FB92) /* reserved */
+              || (ch >= 0x1FB94 && ch <= 0x1FBCA) /* reserved */
+              || (ch >= 0x1FBF0 && ch <= 0x1FBF9) /* reserved */
+              || (ch >= 0x1FC00 && ch <= 0x1FFFD) /* reserved */
+              || (ch >= 0x20000 && ch <= 0x2A6FF) /* CJK Unified Ideographs Extension B */
+              || (ch >= 0x2A700 && ch <= 0x2F7FF) /* CJK Unified Ideographs Extension C,
+                                                     Supplementary Ideographic Plane (Plane 2) outside of blocks */
+              || (ch >= 0x2F800 && ch <= 0x2FFFD) /* CJK Compatibility Ideographs Supplement,
+                                                     Supplementary Ideographic Plane (Plane 2) outside of blocks */
+              || (ch >= 0x30000 && ch <= 0x3FFFD) /* Tertiary Ideographic Plane (Plane 3) outside of blocks */)
+            attr |= (int64_t) 1 << LBP_ID;
         }
     }
 
@@ -7924,13 +8486,18 @@ get_lbp (unsigned int ch)
   return attr;
 }
 
+/* Combining prop and ea to a table entry.  */
+#define PROP_EA(prop,ea) (((prop) << 1) | (ea))
+
+/* Splitting a table entry into prop and ea.  */
+#define PROP(entry) ((entry) >> 1)
+#define EA(entry) ((entry) & 1)
+
 /* Output the line breaking properties in a human readable format.  */
 static void
 debug_output_lbp (FILE *stream)
 {
-  unsigned int i;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     {
       int64_t attr = get_lbp (i);
       if (attr != (int64_t) 1 << LBP_XX)
@@ -7951,6 +8518,7 @@ debug_output_lbp (FILE *stream)
           PRINT_BIT(attr,LBP_B2);
           PRINT_BIT(attr,LBP_BA);
           PRINT_BIT(attr,LBP_BB);
+          PRINT_BIT(attr,LBP_HH);
           PRINT_BIT(attr,LBP_HY);
           PRINT_BIT(attr,LBP_CB);
           PRINT_BIT(attr,LBP_CL);
@@ -7961,24 +8529,33 @@ debug_output_lbp (FILE *stream)
           PRINT_BIT(attr,LBP_NS);
           PRINT_BIT_ALT(attr,LBP_OP1,LBP_OP);
           PRINT_BIT_ALT(attr,LBP_OP2,LBP_OP);
-          PRINT_BIT(attr,LBP_QU);
+          PRINT_BIT_ALT(attr,LBP_QU1,LBP_QU);
+          PRINT_BIT_ALT(attr,LBP_QU2,LBP_QU);
+          PRINT_BIT_ALT(attr,LBP_QU3,LBP_QU);
           PRINT_BIT(attr,LBP_IS);
           PRINT_BIT(attr,LBP_NU);
           PRINT_BIT(attr,LBP_PO);
           PRINT_BIT(attr,LBP_PR);
           PRINT_BIT(attr,LBP_SY);
           PRINT_BIT(attr,LBP_AI);
-          PRINT_BIT(attr,LBP_AL);
+          PRINT_BIT_ALT(attr,LBP_AL1,LBP_AL);
+          PRINT_BIT_ALT(attr,LBP_AL2,LBP_AL);
           PRINT_BIT(attr,LBP_H2);
           PRINT_BIT(attr,LBP_H3);
           PRINT_BIT(attr,LBP_HL);
-          PRINT_BIT_ALT(attr,LBP_ID1,LBP_ID);
-          PRINT_BIT_ALT(attr,LBP_ID2,LBP_ID);
+          PRINT_BIT(attr,LBP_ID);
+          PRINT_BIT(attr,LBP_EBF);
           PRINT_BIT(attr,LBP_JL);
           PRINT_BIT(attr,LBP_JV);
           PRINT_BIT(attr,LBP_JT);
+          PRINT_BIT(attr,LBP_AP);
+          PRINT_BIT(attr,LBP_AK);
+          PRINT_BIT(attr,LBP_AS);
+          PRINT_BIT(attr,LBP_VI);
+          PRINT_BIT(attr,LBP_VF);
           PRINT_BIT(attr,LBP_RI);
-          PRINT_BIT(attr,LBP_SA);
+          PRINT_BIT_ALT(attr,LBP_SA1,LBP_SA);
+          PRINT_BIT_ALT(attr,LBP_SA2,LBP_SA);
           PRINT_BIT(attr,LBP_ZWJ);
           PRINT_BIT(attr,LBP_EB);
           PRINT_BIT(attr,LBP_EM);
@@ -7993,9 +8570,7 @@ debug_output_lbp (FILE *stream)
 static void
 debug_output_lbrk_tables (const char *filename)
 {
-  FILE *stream;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -8019,41 +8594,50 @@ int unicode_org_lbp[0x110000];
 static void
 fill_org_lbp (const char *linebreak_filename)
 {
-  unsigned int i, j;
-  FILE *stream;
-  char field0[FIELDLEN];
-  char field1[FIELDLEN];
-  char field2[FIELDLEN];
-  int lineno = 0;
+  /* For unassigned characters (General Category "Cn") that have property
+     Extended_Pictographic, the LineBreak.txt files is inconsistent:
+     For some of them, such as U+1F02C, it specifies LBP_ID, which then triggers
+     e.g. rule (LB23a).  For others, such as U+1F8FF, it specifies nothing,
+     which implies LBP_XX, which by rule (LB1) maps to LBP_AL, which then
+     triggers e.g. rule (LB28) "Do not break between alphabetics".  This is
+     nonsense; it should better behave like LBP_EB.
+     To fix this, in view of rule (LB30b), we map all unassigned
+     Extended_Pictographic characters to LBP_EBF, and ensure that they
+     behave like LBP_EB.  */
 
-  for (i = 0; i < 0x110000; i++)
-    unicode_org_lbp[i] = LBP_XX;
+  for (unsigned int i = 0; i < 0x110000; i++)
+    unicode_org_lbp[i] =
+      (is_property_extended_pictographic (i) ? LBP_EBF : LBP_XX);
 
-  stream = fopen (linebreak_filename, "r");
+  FILE *stream = fopen (linebreak_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", linebreak_filename);
       exit (1);
     }
 
+  char field0[FIELDLEN];
+  char field1[FIELDLEN];
+  char field2[FIELDLEN];
+  int lineno = 0;
   for (;;)
     {
-      int n;
-      int c;
-      int value;
-
       lineno++;
-      c = getc (stream);
+      int c = getc (stream);
       if (c == EOF)
         break;
+      if (c == '\n')
+        continue;
       if (c == '#')
         {
           do c = getc (stream); while (c != EOF && c != '\n');
           continue;
         }
       ungetc (c, stream);
-      n = getfield (stream, field0, ';');
-      n += getfield (stream, field1, ' ');
+      int n = getfield (stream, field0, ';');
+      do c = getc (stream); while (c == ' ');
+      ungetc (c, stream);
+      n += getfield (stream, field1, '#');
       n += getfield (stream, field2, '\n');
       if (n == 0)
         break;
@@ -8063,7 +8647,14 @@ fill_org_lbp (const char *linebreak_filename)
                    lineno);
           exit (1);
         }
-#define TRY(bit) else if (strcmp (field1, #bit + 4) == 0) value = bit;
+      /* Remove trailing spaces from field0.  */
+      while (strlen (field0) > 0 && field0[strlen (field0) - 1] == ' ')
+        field0[strlen (field0) - 1] = '\0';
+      /* Remove trailing spaces from field1.  */
+      while (strlen (field1) > 0 && field1[strlen (field1) - 1] == ' ')
+        field1[strlen (field1) - 1] = '\0';
+      int value;
+#define TRY(bit) else if (streq (field1, #bit + 4)) value = bit;
       if (false) {}
       TRY(LBP_BK)
       TRY(LBP_CR)
@@ -8076,6 +8667,7 @@ fill_org_lbp (const char *linebreak_filename)
       TRY(LBP_B2)
       TRY(LBP_BA)
       TRY(LBP_BB)
+      TRY(LBP_HH)
       TRY(LBP_HY)
       TRY(LBP_CB)
       TRY(LBP_CL)
@@ -8099,6 +8691,11 @@ fill_org_lbp (const char *linebreak_filename)
       TRY(LBP_JL)
       TRY(LBP_JV)
       TRY(LBP_JT)
+      TRY(LBP_AP)
+      TRY(LBP_AK)
+      TRY(LBP_AS)
+      TRY(LBP_VI)
+      TRY(LBP_VF)
       TRY(LBP_RI)
       TRY(LBP_SA)
       TRY(LBP_ZWJ)
@@ -8106,27 +8703,37 @@ fill_org_lbp (const char *linebreak_filename)
       TRY(LBP_EM)
       TRY(LBP_XX)
 #undef TRY
-      else if (strcmp (field1, "NL") == 0) value = LBP_BK;
-      else if (strcmp (field1, "SG") == 0) value = LBP_XX;
-      else if (strcmp (field1, "CJ") == 0) value = LBP_NS;
+      else if (streq (field1, "NL")) value = LBP_BK;
+      else if (streq (field1, "SG")) value = LBP_XX;
+      else if (streq (field1, "CJ")) value = LBP_NS;
       else
         {
           fprintf (stderr, "unknown property value \"%s\" in '%s':%d\n",
                    field1, linebreak_filename, lineno);
           exit (1);
         }
-      i = strtoul (field0, NULL, 16);
+      bool unassigned1 = (strncmp (field2, " Cn", 3) == 0);
+      bool unassigned2 = (strstr (field2, "<reserved-") != NULL);
+      if (unassigned1 != unassigned2)
+        {
+          fprintf (stderr, "contradictory comment \"%s\" in '%s':%d\n",
+                   field2, linebreak_filename, lineno);
+          exit (1);
+        }
+      unsigned int i = strtoul (field0, NULL, 16);
       if (strstr (field0, "..") != NULL)
         {
           /* Deal with a range.  */
-          j = strtoul (strstr (field0, "..") + 2, NULL, 16);
+          unsigned int j = strtoul (strstr (field0, "..") + 2, NULL, 16);
           for (; i <= j; i++)
-            unicode_org_lbp[i] = value;
+            unicode_org_lbp[i] =
+              (unassigned1 && is_property_extended_pictographic (i) ? LBP_EBF : value);
         }
       else
         {
           /* Single character line.  */
-          unicode_org_lbp[i] = value;
+          unicode_org_lbp[i] =
+            (unassigned1 && is_property_extended_pictographic (i) ? LBP_EBF : value);
         }
     }
 
@@ -8141,9 +8748,7 @@ fill_org_lbp (const char *linebreak_filename)
 static void
 debug_output_org_lbp (FILE *stream)
 {
-  unsigned int i;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     {
       int attr = unicode_org_lbp[i];
       if (attr != LBP_XX)
@@ -8162,6 +8767,7 @@ debug_output_org_lbp (FILE *stream)
           PRINT_BIT(attr,LBP_B2);
           PRINT_BIT(attr,LBP_BA);
           PRINT_BIT(attr,LBP_BB);
+          PRINT_BIT(attr,LBP_HH);
           PRINT_BIT(attr,LBP_HY);
           PRINT_BIT(attr,LBP_CB);
           PRINT_BIT(attr,LBP_CL);
@@ -8182,9 +8788,15 @@ debug_output_org_lbp (FILE *stream)
           PRINT_BIT(attr,LBP_H3);
           PRINT_BIT(attr,LBP_HL);
           PRINT_BIT(attr,LBP_ID);
+          PRINT_BIT(attr,LBP_EBF);
           PRINT_BIT(attr,LBP_JL);
           PRINT_BIT(attr,LBP_JV);
           PRINT_BIT(attr,LBP_JT);
+          PRINT_BIT(attr,LBP_AP);
+          PRINT_BIT(attr,LBP_AK);
+          PRINT_BIT(attr,LBP_AS);
+          PRINT_BIT(attr,LBP_VI);
+          PRINT_BIT(attr,LBP_VF);
           PRINT_BIT(attr,LBP_RI);
           PRINT_BIT(attr,LBP_SA);
           PRINT_BIT(attr,LBP_ZWJ);
@@ -8200,9 +8812,7 @@ debug_output_org_lbp (FILE *stream)
 static void
 debug_output_org_lbrk_tables (const char *filename)
 {
-  FILE *stream;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -8237,6 +8847,7 @@ lbp_value_to_string (unsigned int value)
       CASE(LBP_B2);
       CASE(LBP_BA);
       CASE(LBP_BB);
+      CASE(LBP_HH);
       CASE(LBP_HY);
       CASE(LBP_CB);
       CASE(LBP_CL);
@@ -8247,24 +8858,33 @@ lbp_value_to_string (unsigned int value)
       CASE(LBP_NS);
       CASE(LBP_OP1);
       CASE(LBP_OP2);
-      CASE(LBP_QU);
+      CASE(LBP_QU1);
+      CASE(LBP_QU2);
+      CASE(LBP_QU3);
       CASE(LBP_IS);
       CASE(LBP_NU);
       CASE(LBP_PO);
       CASE(LBP_PR);
       CASE(LBP_SY);
       CASE(LBP_AI);
-      CASE(LBP_AL);
+      CASE(LBP_AL1);
+      CASE(LBP_AL2);
       CASE(LBP_H2);
       CASE(LBP_H3);
       CASE(LBP_HL);
-      CASE(LBP_ID1);
-      CASE(LBP_ID2);
+      CASE(LBP_ID);
+      CASE(LBP_EBF);
       CASE(LBP_JL);
       CASE(LBP_JV);
       CASE(LBP_JT);
+      CASE(LBP_AP);
+      CASE(LBP_AK);
+      CASE(LBP_AS);
+      CASE(LBP_VI);
+      CASE(LBP_VF);
       CASE(LBP_RI);
-      CASE(LBP_SA);
+      CASE(LBP_SA1);
+      CASE(LBP_SA2);
       CASE(LBP_ZWJ);
       CASE(LBP_EB);
       CASE(LBP_EM);
@@ -8277,27 +8897,25 @@ lbp_value_to_string (unsigned int value)
 }
 
 /* Construction of sparse 3-level tables.  */
-#define TABLE lbp_table
+#define TABLE lbpea_table
 #define ELEMENT unsigned char
-#define DEFAULT LBP_XX
+#define DEFAULT PROP_EA (LBP_XX, 0)
 #define xmalloc malloc
 #define xrealloc realloc
 #include "3level.h"
 
 static void
-output_lbp (FILE *stream1, FILE *stream2)
+output_lbpea (FILE *stream1, FILE *stream2)
 {
-  unsigned int i;
-  struct lbp_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
+  struct lbpea_table t;
   t.p = 7;
   t.q = 9;
-  lbp_table_init (&t);
+  lbpea_table_init (&t);
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     {
       int64_t attr = get_lbp (i);
+      int ea = get_lbea (i);
 
       /* Now attr should contain exactly one bit.  */
       assert (attr != 0 && (attr & (attr - 1)) == 0);
@@ -8307,23 +8925,23 @@ output_lbp (FILE *stream1, FILE *stream2)
           unsigned int log2_attr;
           for (log2_attr = 0; attr > 1; attr >>= 1, log2_attr++);
 
-          lbp_table_add (&t, i, log2_attr);
+          lbpea_table_add (&t, i, PROP_EA (log2_attr, ea));
         }
     }
 
-  lbp_table_finalize (&t);
+  lbpea_table_finalize (&t);
 
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream1, "#define lbrkprop_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream1, "\n");
@@ -8341,12 +8959,11 @@ output_lbp (FILE *stream1, FILE *stream2)
   fprintf (stream2, "  {");
   if (t.level1_size > 8)
     fprintf (stream2, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream2, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream2, " %5d", -1);
       else
@@ -8361,12 +8978,11 @@ output_lbp (FILE *stream1, FILE *stream2)
   fprintf (stream2, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream2, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream2, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream2, " %5d", -1);
       else
@@ -8381,12 +8997,13 @@ output_lbp (FILE *stream1, FILE *stream2)
   fprintf (stream2, "  {");
   if (t.level3_size << t.p > 8)
     fprintf (stream2, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned char value = ((unsigned char *) (t.result + level3_offset))[i];
-      if (i > 0 && (i % 8) == 0)
+      if (i > 0 && (i % 4) == 0)
         fprintf (stream2, "\n   ");
-      fprintf (stream2, " %s%s", lbp_value_to_string (value),
+      fprintf (stream2, " (%s<<1)|%d%s",
+               lbp_value_to_string (PROP (value)), EA (value),
                (i+1 < t.level3_size << t.p ? "," : ""));
     }
   if (t.level3_size << t.p > 8)
@@ -8399,13 +9016,11 @@ static void
 output_lbrk_tables (const char *filename1, const char *filename2, const char *version)
 {
   const char *filenames[2];
-  FILE *streams[2];
-  size_t i;
-
   filenames[0] = filename1;
   filenames[1] = filename2;
 
-  for (i = 0; i < 2; i++)
+  FILE *streams[2];
+  for (size_t i = 0; i < 2; i++)
     {
       streams[i] = fopen (filenames[i], "w");
       if (streams[i] == NULL)
@@ -8415,7 +9030,7 @@ output_lbrk_tables (const char *filename1, const char *filename2, const char *ve
         }
     }
 
-  for (i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++)
     {
       FILE *stream = streams[i];
 
@@ -8425,15 +9040,15 @@ output_lbrk_tables (const char *filename1, const char *filename2, const char *ve
                version);
       fprintf (stream, "\n");
 
-      fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+      fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
       fprintf (stream, "\n");
       output_library_license (stream, false);
       fprintf (stream, "\n");
     }
 
-  output_lbp (streams[0], streams[1]);
+  output_lbpea (streams[0], streams[1]);
 
-  for (i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++)
     {
       if (ferror (streams[i]) || fclose (streams[i]))
         {
@@ -8446,9 +9061,7 @@ output_lbrk_tables (const char *filename1, const char *filename2, const char *ve
 static void
 output_lbrk_rules_as_tables (const char *filename, const char *version)
 {
-  FILE *stream;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -8461,7 +9074,7 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2001-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2001-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
@@ -8475,8 +9088,8 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
   fprintf (stream, "#include \"unilbrk/lbrkprop2.h\"\n");
   fprintf (stream, "\n");
 
-  /* LBP_* table indices are in the range 0 .. NLBP-1.  */
-  const unsigned int NLBP = 33;
+  /* LBP_* values that are entered in the table are in the range 0 .. NLBP-1.  */
+  const unsigned int NLBP = 43;
 
   unsigned int before;
   unsigned int after;
@@ -8493,12 +9106,14 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
   #define set_table_cell(field,value)  \
     (before == LBP_CP ? (set_table_cell_1 (LBP_CP1, field, value), set_table_cell_1 (LBP_CP2, field, value)) : \
      before == LBP_OP ? (set_table_cell_1 (LBP_OP1, field, value), set_table_cell_1 (LBP_OP2, field, value)) : \
-     before == LBP_ID ? (set_table_cell_1 (LBP_ID1, field, value), set_table_cell_1 (LBP_ID2, field, value)) : \
+     before == LBP_QU ? (set_table_cell_1 (LBP_QU1, field, value), set_table_cell_1 (LBP_QU2, field, value), set_table_cell_1 (LBP_QU3, field, value)) : \
+     before == LBP_AL ? (set_table_cell_1 (LBP_AL1, field, value), set_table_cell_1 (LBP_AL2, field, value)) : \
      set_table_cell_1 (before, field, value))
   #define set_table_cell_1(row,field,value) \
     (after == LBP_CP ? (set_table_cell_2 (row, LBP_CP1, field, value), set_table_cell_2 (row, LBP_CP2, field, value)) : \
      after == LBP_OP ? (set_table_cell_2 (row, LBP_OP1, field, value), set_table_cell_2 (row, LBP_OP2, field, value)) : \
-     after == LBP_ID ? (set_table_cell_2 (row, LBP_ID1, field, value), set_table_cell_2 (row, LBP_ID2, field, value)) : \
+     after == LBP_QU ? (set_table_cell_2 (row, LBP_QU1, field, value), set_table_cell_2 (row, LBP_QU2, field, value), set_table_cell_2 (row, LBP_QU3, field, value)) : \
+     after == LBP_AL ? (set_table_cell_2 (row, LBP_AL1, field, value), set_table_cell_2 (row, LBP_AL2, field, value)) : \
      set_table_cell_2 (row, after, field, value))
   #define set_table_cell_2(row,column,field,value) \
     (table[row][column].field = (value))
@@ -8518,7 +9133,7 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
   /* (LB30b) Do not break between an emoji base (or potential emoji) and an
      emoji modifier.  */
   before = LBP_EB; after = LBP_EM; set_table_cell (prohibited_no_sp, true);
-  before = LBP_ID2; after = LBP_EM; set_table_cell (prohibited_no_sp, true);
+  before = LBP_EBF; after = LBP_EM; set_table_cell (prohibited_no_sp, true);
 
   /* (LB30) Do not break between letters, numbers, or ordinary symbols and
      opening or closing parentheses (except for East Asian parentheses).  */
@@ -8531,12 +9146,22 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
 
   /* (LB29) Do not break between numeric punctuation and alphabetics
      ("e.g.").  */
-  /* We don't implement this rule, because we find it desirable to break before
-     the HTML tag "</P>" in strings like "<P>Some sentence.</P>".  */
-#if 0
   before = LBP_IS; after = LBP_AL; set_table_cell (prohibited_no_sp, true);
   before = LBP_IS; after = LBP_HL; set_table_cell (prohibited_no_sp, true);
-#endif
+
+  /* (LB28a) Do not break inside the orthographic syllables of Brahmic
+     scripts.  */
+  /* (LB28a) line 1.  */
+  before = LBP_AP; after = LBP_AK; set_table_cell (prohibited_no_sp, true);
+  before = LBP_AP; after = LBP_AL2; set_table_cell (prohibited_no_sp, true);
+  before = LBP_AP; after = LBP_AS; set_table_cell (prohibited_no_sp, true);
+  /* (LB28a) line 2.  */
+  before = LBP_AK; after = LBP_VF; set_table_cell (prohibited_no_sp, true);
+  before = LBP_AK; after = LBP_VI; set_table_cell (prohibited_no_sp, true);
+  before = LBP_AL2; after = LBP_VF; set_table_cell (prohibited_no_sp, true);
+  before = LBP_AL2; after = LBP_VI; set_table_cell (prohibited_no_sp, true);
+  before = LBP_AS; after = LBP_VF; set_table_cell (prohibited_no_sp, true);
+  before = LBP_AS; after = LBP_VI; set_table_cell (prohibited_no_sp, true);
 
   /* (LB28) Do not break between alphabetics ("at").  */
   before = LBP_AL; after = LBP_AL; set_table_cell (prohibited_no_sp, true);
@@ -8570,20 +9195,10 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
 
   /* (LB25) Do not break between the following pairs of classes relevant to
      numbers.  */
-  before = LBP_CL; after = LBP_PO; set_table_cell (prohibited_no_sp, true);
-  before = LBP_CP; after = LBP_PO; set_table_cell (prohibited_no_sp, true);
-  before = LBP_CL; after = LBP_PR; set_table_cell (prohibited_no_sp, true);
-  before = LBP_CP; after = LBP_PR; set_table_cell (prohibited_no_sp, true);
-  before = LBP_NU; after = LBP_PO; set_table_cell (prohibited_no_sp, true);
-  before = LBP_NU; after = LBP_PR; set_table_cell (prohibited_no_sp, true);
-  before = LBP_PO; after = LBP_OP; set_table_cell (prohibited_no_sp, true);
   before = LBP_PO; after = LBP_NU; set_table_cell (prohibited_no_sp, true);
-  before = LBP_PR; after = LBP_OP; set_table_cell (prohibited_no_sp, true);
   before = LBP_PR; after = LBP_NU; set_table_cell (prohibited_no_sp, true);
   before = LBP_HY; after = LBP_NU; set_table_cell (prohibited_no_sp, true);
   before = LBP_IS; after = LBP_NU; set_table_cell (prohibited_no_sp, true);
-  before = LBP_NU; after = LBP_NU; set_table_cell (prohibited_no_sp, true);
-  before = LBP_SY; after = LBP_NU; set_table_cell (prohibited_no_sp, true);
 
   /* (LB24) Do not break between numeric prefix/postfix and letters, or between
      letters and prefix/postfix.  */
@@ -8600,9 +9215,11 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
      ideographs and numeric postfixes.  */
   before = LBP_PR; after = LBP_ID; set_table_cell (prohibited_no_sp, true);
   before = LBP_PR; after = LBP_EB; set_table_cell (prohibited_no_sp, true);
+  before = LBP_PR; after = LBP_EBF; set_table_cell (prohibited_no_sp, true);
   before = LBP_PR; after = LBP_EM; set_table_cell (prohibited_no_sp, true);
   before = LBP_ID; after = LBP_PO; set_table_cell (prohibited_no_sp, true);
   before = LBP_EB; after = LBP_PO; set_table_cell (prohibited_no_sp, true);
+  before = LBP_EBF; after = LBP_PO; set_table_cell (prohibited_no_sp, true);
   before = LBP_EM; after = LBP_PO; set_table_cell (prohibited_no_sp, true);
 
   /* (LB23) Do not break between digits and letters.  */
@@ -8625,6 +9242,7 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
   for (before = 0; before < NLBP; before++)
     {
       after = LBP_BA; set_table_cell (prohibited_no_sp, true);
+      after = LBP_HH; set_table_cell (prohibited_no_sp, true);
       after = LBP_HY; set_table_cell (prohibited_no_sp, true);
       after = LBP_NS; set_table_cell (prohibited_no_sp, true);
     }
@@ -8633,14 +9251,18 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
       before = LBP_BB; set_table_cell (prohibited_no_sp, true);
     }
 
-  /* (LB19) Do not break before or after quotation marks, such as '”'.  */
+  /* (LB19) Don't break before non-initial ambiguous quotation marks,
+     such as '”' or '"'.  Don't break after non-final ambiguous quotation
+     marks, such as '“' or '"'.  */
   for (before = 0; before < NLBP; before++)
     {
-      after = LBP_QU; set_table_cell (prohibited_no_sp, true);
+      after = LBP_QU1; set_table_cell (prohibited_no_sp, true);
+      after = LBP_QU3; set_table_cell (prohibited_no_sp, true);
     }
   for (after = 0; after < NLBP; after++)
     {
-      before = LBP_QU; set_table_cell (prohibited_no_sp, true);
+      before = LBP_QU1; set_table_cell (prohibited_no_sp, true);
+      before = LBP_QU2; set_table_cell (prohibited_no_sp, true);
     }
 
   /* (LB18) Break after spaces.  */
@@ -8656,12 +9278,31 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
      even with intervening spaces.  */
   before = LBP_CL; after = LBP_NS; set_table_cell (prohibited_no_sp, true);
                                    set_table_cell (prohibited_with_sp, true);
-  before = LBP_CL; after = LBP_CP; set_table_cell (prohibited_no_sp, true);
+  before = LBP_CP; after = LBP_NS; set_table_cell (prohibited_no_sp, true);
                                    set_table_cell (prohibited_with_sp, true);
 
-  /* (LB15) Do not break within '”[', even with intervening spaces.  */
-  before = LBP_QU; after = LBP_OP; set_table_cell (prohibited_no_sp, true);
-                                   set_table_cell (prohibited_with_sp, true);
+  /* (LB15d) Do not break before ';', ',', '.', even after spaces.  */
+  for (before = 0; before < NLBP; before++)
+    {
+      after = LBP_IS; set_table_cell (prohibited_no_sp, true);
+                      set_table_cell (prohibited_with_sp, true);
+    }
+
+  /* (LB15b) Do not break before an ambiguous quotation that is a final
+     punctuation, even after spaces.  */
+  for (before = 0; before < NLBP; before++)
+    {
+      after = LBP_QU3; set_table_cell (prohibited_no_sp, true);
+                       set_table_cell (prohibited_with_sp, true);
+    }
+
+  /* (LB15a) Do not break after an ambiguous quotation that is an initial
+     punctuation, even after spaces.  */
+  for (after = 0; after < NLBP; after++)
+    {
+      before = LBP_QU2; set_table_cell (prohibited_no_sp, true);
+                        set_table_cell (prohibited_with_sp, true);
+    }
 
   /* (LB14) Do not break after '[', even after spaces.  */
   for (after = 0; after < NLBP; after++)
@@ -8670,7 +9311,7 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
                        set_table_cell (prohibited_with_sp, true);
     }
 
-  /* (LB13) Do not break before ‘]’ or ‘!’ or ‘;’ or ‘/’, even after spaces.  */
+  /* (LB13) Do not break before ‘]’ or ‘!’ or ‘/’, even after spaces.  */
   for (before = 0; before < NLBP; before++)
     {
       after = LBP_CL; set_table_cell (prohibited_no_sp, true);
@@ -8679,8 +9320,6 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
                       set_table_cell (prohibited_with_sp, true);
       after = LBP_EX; set_table_cell (prohibited_no_sp, true);
                       set_table_cell (prohibited_with_sp, true);
-      after = LBP_IS; set_table_cell (prohibited_no_sp, true);
-                      set_table_cell (prohibited_with_sp, true);
       after = LBP_SY; set_table_cell (prohibited_no_sp, true);
                       set_table_cell (prohibited_with_sp, true);
     }
@@ -8688,7 +9327,7 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
   /* (LB12a) Do not break before NBSP and related characters, except after
      spaces and hyphens.  */
   for (before = 0; before < NLBP; before++)
-    if (before != LBP_BA && before != LBP_HY)
+    if (before != LBP_BA && before != LBP_HH && before != LBP_HY)
       {
         after = LBP_GL; set_table_cell (prohibited_no_sp, true);
       }
@@ -8713,27 +9352,41 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
   /* (LB10) Treat any remaining combining mark or ZWJ as AL.  */
   /* We resolve LBP_CM at runtime, before accessing the table.  */
   for (before = 0; before < NLBP; before++)
-    table[before][LBP_ZWJ] = table[before][LBP_AL];
+    table[before][LBP_ZWJ] = table[before][LBP_AL1];
   for (after = 0; after < NLBP; after++)
-    table[LBP_ZWJ][after] = table[LBP_AL][after];
-  table[LBP_ZWJ][LBP_ZWJ] = table[LBP_AL][LBP_AL];
+    table[LBP_ZWJ][after] = table[LBP_AL1][after];
+  table[LBP_ZWJ][LBP_ZWJ] = table[LBP_AL1][LBP_AL1];
 
   /* (LB8a) Do not break between a zero width joiner and an ideograph, emoji
      base or emoji modifier.  */
   before = LBP_ZWJ; after = LBP_ID; set_table_cell (prohibited_no_sp, true);
   before = LBP_ZWJ; after = LBP_EB; set_table_cell (prohibited_no_sp, true);
+  before = LBP_ZWJ; after = LBP_EBF; set_table_cell (prohibited_no_sp, true);
   before = LBP_ZWJ; after = LBP_EM; set_table_cell (prohibited_no_sp, true);
 
   /* Not reflected in the table:
   (LB30a) Break between two regional indicator symbols if and only if there are
           an even number of regional indicators preceding the position of the
           break.
-  (LB21a) Don't break after Hebrew + Hyphen.
+  (LB28a) Don't break inside orthographic syllables of Brahmic scripts, lines
+          3 and 4.
+  (LB25) Do not break between the following pairs of classes relevant to
+         numbers, lines with NU (SY|IS)* or OP NU or OP IS NU.
+  (LB21a) Don't break after Hebrew + Hyphen/Break-After, before non-Hebrew.
+  (LB20a) Don't break after a word-initial hyphen.
   (LB20) Break before and after unresolved CB.
          We resolve LBP_CB at runtime, before accessing the table.
+  (LB19a) Don't break on either side of ambiguous quotation marks, except next
+          to an EastAsian character.
+  (LB15c) Break before a decimal mark that follows a space.
+  Part of (LB15b) Do not break before an ambiguous quotation that is a final
+                  punctuation, even after spaces.
+  Part of (LB15a) Do not break before an ambiguous quotation that is an initial
+                  punctuation, even after spaces.
   (LB9) Do not break a combining character sequence; treat it as if it has the
         line breaking class of the base character in all of the following rules.
         Treat ZWJ as if it were CM.
+  Part of (LB8a) Don't break right after a zero-width joiner.
   (LB8) Break before any character following a zero-width space, even if one
         or more spaces intervene.
         We handle LBP_ZW at runtime, before accessing the table.
@@ -8792,6 +9445,10 @@ output_lbrk_rules_as_tables (const char *filename, const char *version)
     }
 }
 
+#undef EA
+#undef PROP
+#undef PROP_EA
+
 /* ========================================================================= */
 
 /* Word break property.
@@ -8843,29 +9500,35 @@ get_wbp (unsigned int ch)
       if (((unicode_properties[ch] >> PROP_GRAPHEME_EXTEND) & 1) != 0
           || ((unicode_properties[ch] >> PROP_OTHER_GRAPHEME_EXTEND) & 1) != 0
           || (unicode_attributes[ch].category != NULL
-              && strcmp (unicode_attributes[ch].category, "Mc") == 0)
+              && streq (unicode_attributes[ch].category, "Mc"))
           || ((unicode_properties[ch] >> PROP_EMOJI_MODIFIER) & 1) != 0 /* Emoji modifier */)
         attr |= 1 << WBP_EXTEND;
 
       if (unicode_attributes[ch].category != NULL
-          && strcmp (unicode_attributes[ch].category, "Cf") == 0
+          && streq (unicode_attributes[ch].category, "Cf")
+          && !(ch >= 0x0600 && ch <= 0x0605)
+          && ch != 0x06DD
+          && ch != 0x070F
+          && ch != 0x0890 && ch != 0x0891 && ch != 0x08E2
           && ch != 0x200B && ch != 0x200C && ch != 0x200D
+          && ch != 0x110BD && ch != 0x110CD
           && !(ch >= 0xe0020 && ch <= 0xe007f))
         attr |= 1 << WBP_FORMAT;
 
       if ((unicode_scripts[ch] < numscripts
-           && strcmp (scripts[unicode_scripts[ch]], "Katakana") == 0)
+           && streq (scripts[unicode_scripts[ch]], "Katakana"))
           || (ch >= 0x3031 && ch <= 0x3035)
           || ch == 0x309B || ch == 0x309C || ch == 0x30A0 || ch == 0x30FC
           || ch == 0xFF70)
         attr |= 1 << WBP_KATAKANA;
 
       if ((unicode_scripts[ch] < numscripts
-           && strcmp (scripts[unicode_scripts[ch]], "Hebrew") == 0)
-          && strcmp (unicode_attributes[ch].category, "Lo") == 0)
+           && streq (scripts[unicode_scripts[ch]], "Hebrew"))
+          && streq (unicode_attributes[ch].category, "Lo"))
         attr |= 1 << WBP_HL;
 
       if ((((unicode_properties[ch] >> PROP_ALPHABETIC) & 1) != 0
+           || ch == 0x00B8
            || (ch >= 0x02C2 && ch <= 0x02C5)
            || (ch >= 0x02D2 && ch <= 0x02D7)
            || (ch >= 0x02DE && ch <= 0x02DF)
@@ -8876,15 +9539,16 @@ get_wbp (unsigned int ch)
            || ch == 0x055E
            || ch == 0x058A
            || ch == 0x05F3
+           || ch == 0x070F
            || (ch >= 0xA708 && ch <= 0xA716)
            || (ch >= 0xA720 && ch <= 0xA721)
            || (ch >= 0xA789 && ch <= 0xA78A)
            || ch == 0xAB5B)
           && ((unicode_properties[ch] >> PROP_IDEOGRAPHIC) & 1) == 0
           && (attr & (1 << WBP_KATAKANA)) == 0
-          && ((get_lbp (ch) >> LBP_SA) & 1) == 0
+          && (get_lbp (ch) & (((int64_t) 1 << LBP_SA1) | ((int64_t) 1 << LBP_SA2))) == 0
           && !(unicode_scripts[ch] < numscripts
-               && strcmp (scripts[unicode_scripts[ch]], "Hiragana") == 0)
+               && streq (scripts[unicode_scripts[ch]], "Hiragana"))
           && (attr & (1 << WBP_EXTEND)) == 0
           && (attr & (1 << WBP_HL)) == 0)
         attr |= 1 << WBP_ALETTER;
@@ -8902,12 +9566,19 @@ get_wbp (unsigned int ch)
         attr |= 1 << WBP_MIDNUM;
 
       if ((((get_lbp (ch) >> LBP_NU) & 1) != 0
-            || (ch >= 0xFF10 && ch <= 0xFF19))
+            || (ch >= 0x1B50 && ch <= 0x1B59) /* BALINESE DIGIT ZERO..NINE */
+            || (ch >= 0xA9D0 && ch <= 0xA9D9) /* JAVANESE DIGIT ZERO..NINE */
+            || (ch >= 0xAA50 && ch <= 0xAA59) /* CHAM DIGIT ZERO..NINE */
+            || (ch >= 0xFF10 && ch <= 0xFF19) /* FULLWIDTH DIGIT ZERO..NINE */
+            || (ch >= 0x11066 && ch <= 0x1106F) /* BRAHMI DIGIT ZERO..NINE */
+            || (ch >= 0x11950 && ch <= 0x11959) /* DIVES AKURU DIGIT ZERO..NINE */
+            || (ch >= 0x11F50 && ch <= 0x11F59) /* KAWI DIGIT ZERO..NINE */
+            || (ch >= 0x16130 && ch <= 0x16139) /* GURUNG KHEMA DIGIT ZERO..NINE */)
           && ch != 0x066C)
         attr |= 1 << WBP_NUMERIC;
 
       if ((unicode_attributes[ch].category != NULL
-           && strcmp (unicode_attributes[ch].category, "Pc") == 0)
+           && streq (unicode_attributes[ch].category, "Pc"))
           || ch == 0x202F /* NARROW NO-BREAK SPACE */)
         attr |= 1 << WBP_EXTENDNUMLET;
 
@@ -8938,9 +9609,7 @@ get_wbp (unsigned int ch)
 static void
 debug_output_wbp (FILE *stream)
 {
-  unsigned int i;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     {
       int attr = get_wbp (i);
       if (attr != 1 << WBP_OTHER)
@@ -8990,9 +9659,7 @@ debug_output_wbp (FILE *stream)
 static void
 debug_output_wbrk_tables (const char *filename)
 {
-  FILE *stream;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -9016,13 +9683,10 @@ int unicode_org_wbp[0x110000];
 static void
 fill_org_wbp (const char *wordbreakproperty_filename)
 {
-  unsigned int i;
-  FILE *stream;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     unicode_org_wbp[i] = WBP_OTHER;
 
-  stream = fopen (wordbreakproperty_filename, "r");
+  FILE *stream = fopen (wordbreakproperty_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", wordbreakproperty_filename);
@@ -9032,17 +9696,15 @@ fill_org_wbp (const char *wordbreakproperty_filename)
   for (;;)
     {
       char buf[200+1];
-      unsigned int i1, i2;
-      char padding[200+1];
-      char propname[200+1];
-      int propvalue;
-
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      unsigned int i1, i2;
+      char padding[200+1];
+      char propname[200+1];
       if (sscanf (buf, "%X..%X%[ ;]%[^ ]", &i1, &i2, padding, propname) != 4)
         {
           if (sscanf (buf, "%X%[ ;]%[^ ]", &i1, padding, propname) != 3)
@@ -9053,8 +9715,9 @@ fill_org_wbp (const char *wordbreakproperty_filename)
             }
           i2 = i1;
         }
+      int propvalue;
 #define PROP(name,value) \
-      if (strcmp (propname, name) == 0) propvalue = value; else
+      if (streq (propname, name)) propvalue = value; else
       PROP ("CR", WBP_CR)
       PROP ("LF", WBP_LF)
       PROP ("Newline", WBP_NEWLINE)
@@ -9081,7 +9744,7 @@ fill_org_wbp (const char *wordbreakproperty_filename)
         }
       assert (i1 <= i2 && i2 < 0x110000);
 
-      for (i = i1; i <= i2; i++)
+      for (unsigned int i = i1; i <= i2; i++)
         unicode_org_wbp[i] = propvalue;
     }
 
@@ -9096,9 +9759,7 @@ fill_org_wbp (const char *wordbreakproperty_filename)
 static void
 debug_output_org_wbp (FILE *stream)
 {
-  unsigned int i;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     {
       int propvalue = unicode_org_wbp[i];
       if (propvalue != WBP_OTHER)
@@ -9134,9 +9795,7 @@ debug_output_org_wbp (FILE *stream)
 static void
 debug_output_org_wbrk_tables (const char *filename)
 {
-  FILE *stream;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -9163,15 +9822,12 @@ debug_output_org_wbrk_tables (const char *filename)
 static void
 output_wbp (FILE *stream)
 {
-  unsigned int i;
   struct wbp_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
   t.p = 7;
   t.q = 9;
   wbp_table_init (&t);
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     {
       int attr = get_wbp (i);
 
@@ -9189,17 +9845,17 @@ output_wbp (FILE *stream)
 
   wbp_table_finalize (&t);
 
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define wbrkprop_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "\n");
@@ -9215,12 +9871,11 @@ output_wbp (FILE *stream)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -9235,12 +9890,11 @@ output_wbp (FILE *stream)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -9255,7 +9909,7 @@ output_wbp (FILE *stream)
   fprintf (stream, "  {");
   if (t.level3_size << t.p > 4)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned char value = ((unsigned char *) (t.result + level3_offset))[i];
       const char *value_string;
@@ -9299,9 +9953,7 @@ output_wbp (FILE *stream)
 static void
 output_wbrk_tables (const char *filename, const char *version)
 {
-  FILE *stream;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -9314,7 +9966,7 @@ output_wbrk_tables (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
@@ -9371,11 +10023,7 @@ int unicode_org_gbp[0x110000];
 static void
 output_gbp_test (const char *filename)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -9384,20 +10032,20 @@ output_gbp_test (const char *filename)
 
   fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
   fprintf (stream, "/* Test the Unicode grapheme break property functions.\n");
-  fprintf (stream, "   Copyright (C) 2010-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "   Copyright (C) 2010-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int gbp = unicode_org_gbp[ch];
-      const char *gbp_string;
 
       while (ch + 1 < 0x110000 && unicode_org_gbp[ch + 1] == gbp)
         ch++;
 
+      const char *gbp_string;
       switch (gbp)
         {
 #define CASE(x) case x: gbp_string = #x; break;
@@ -9443,12 +10091,7 @@ output_gbp_test (const char *filename)
 static void
 output_gbp_table (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct gbp_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -9461,32 +10104,33 @@ output_gbp_table (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
 
+  struct gbp_table t;
   t.p = 7;
   t.q = 9;
   gbp_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     gbp_table_add (&t, ch, unicode_org_gbp[ch]);
 
   gbp_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define gbrkprop_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -9502,12 +10146,11 @@ output_gbp_table (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -9522,12 +10165,11 @@ output_gbp_table (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -9542,7 +10184,7 @@ output_gbp_table (const char *filename, const char *version)
   fprintf (stream, "  {");
   if (t.level3_size << t.p > 4)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       unsigned char value = ((unsigned char *) (t.result + level3_offset))[i];
       const char *value_string;
@@ -9593,14 +10235,10 @@ output_gbp_table (const char *filename, const char *version)
 static void
 fill_org_gbp (const char *graphemebreakproperty_filename)
 {
-  unsigned int i;
-  FILE *stream;
-  int lineno = 0;
-
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     unicode_org_gbp[i] = GBP_OTHER;
 
-  stream = fopen (graphemebreakproperty_filename, "r");
+  FILE *stream = fopen (graphemebreakproperty_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n",
@@ -9608,21 +10246,20 @@ fill_org_gbp (const char *graphemebreakproperty_filename)
       exit (1);
     }
 
+  int lineno = 0;
   for (;;)
     {
-      char buf[200+1];
-      unsigned int i1, i2;
-      char padding[200+1];
-      char propname[200+1];
-      int propvalue;
-
       lineno++;
+      char buf[200+1];
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      unsigned int i1, i2;
+      char padding[200+1];
+      char propname[200+1];
       if (sscanf (buf, "%X..%X%[ ;]%[^ ]", &i1, &i2, padding, propname) != 4)
         {
           if (sscanf (buf, "%X%[ ;]%[^ ]", &i1, padding, propname) != 3)
@@ -9633,8 +10270,9 @@ fill_org_gbp (const char *graphemebreakproperty_filename)
             }
           i2 = i1;
         }
+      int propvalue;
 #define PROP(name,value) \
-      if (strcmp (propname, name) == 0) propvalue = value; else
+      if (streq (propname, name)) propvalue = value; else
       PROP ("CR", GBP_CR)
       PROP ("LF", GBP_LF)
       PROP ("Control", GBP_CONTROL)
@@ -9660,7 +10298,7 @@ fill_org_gbp (const char *graphemebreakproperty_filename)
         }
       assert (i1 <= i2 && i2 < 0x110000);
 
-      for (i = i1; i <= i2; i++)
+      for (unsigned int i = i1; i <= i2; i++)
         unicode_org_gbp[i] = propvalue;
     }
 
@@ -9712,19 +10350,14 @@ get_decomposition (unsigned int ch,
   if (decomposition != NULL && decomposition[0] != '\0')
     {
       int type = UC_DECOMP_CANONICAL;
-      unsigned int length;
-      char *endptr;
 
       if (decomposition[0] == '<')
         {
-          const char *rangle;
-          size_t typelen;
-
-          rangle = strchr (decomposition + 1, '>');
+          const char *rangle = strchr (decomposition + 1, '>');
           assert (rangle != NULL);
-          typelen = rangle + 1 - decomposition;
+          size_t typelen = rangle + 1 - decomposition;
 #define TYPE(t1,t2) \
-          if (typelen == (sizeof (t1) - 1) && memcmp (decomposition, t1, typelen) == 0) \
+          if (typelen == (sizeof (t1) - 1) && memeq (decomposition, t1, typelen)) \
             type = t2; \
           else
           TYPE ("<font>", UC_DECOMP_FONT)
@@ -9752,8 +10385,10 @@ get_decomposition (unsigned int ch,
           if (decomposition[0] == ' ')
             decomposition++;
         }
+      unsigned int length;
       for (length = 0; length < MAX_DECOMP_LENGTH; length++)
         {
+          char *endptr;
           decomposed[length] = strtoul (decomposition, &endptr, 16);
           if (endptr == decomposition)
             break;
@@ -9784,11 +10419,6 @@ static void
 output_decomposition (FILE *stream1, FILE *stream2)
 {
   struct decomp_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-  unsigned int offset;
-  unsigned int ch;
-  unsigned int i;
-
   t.p = 5;
   t.q = 5;
   decomp_table_init (&t);
@@ -9796,56 +10426,57 @@ output_decomposition (FILE *stream1, FILE *stream2)
   fprintf (stream1, "extern const unsigned char gl_uninorm_decomp_chars_table[];\n");
   fprintf (stream1, "\n");
   fprintf (stream2, "const unsigned char gl_uninorm_decomp_chars_table[] =\n{");
-  offset = 0;
+  {
+    unsigned int offset = 0;
+    for (unsigned int ch = 0; ch < 0x110000; ch++)
+      {
+        unsigned int length;
+        unsigned int decomposed[MAX_DECOMP_LENGTH];
+        int type = get_decomposition (ch, &length, decomposed);
 
-  for (ch = 0; ch < 0x110000; ch++)
-    {
-      unsigned int length;
-      unsigned int decomposed[MAX_DECOMP_LENGTH];
-      int type = get_decomposition (ch, &length, decomposed);
+        if (type >= 0)
+          {
+            assert (offset < (1 << 15));
+            decomp_table_add (&t, ch, ((type == UC_DECOMP_CANONICAL ? 0 : 1) << 15) | offset);
 
-      if (type >= 0)
-        {
-          assert (offset < (1 << 15));
-          decomp_table_add (&t, ch, ((type == UC_DECOMP_CANONICAL ? 0 : 1) << 15) | offset);
-
-          /* Produce length 3-bytes entries.  */
-          /* We would need a special representation of zero-length entries.  */
-          assert (length != 0);
-          for (i = 0; i < length; i++)
-            {
-              if (offset > 0)
-                fprintf (stream2, ",");
-              if ((offset % 4) == 0)
-                fprintf (stream2, "\n ");
-              assert (decomposed[i] < (1 << 18));
-              fprintf (stream2, " 0x%02X, 0x%02X, 0x%02X",
-                       (((i+1 < length ? (1 << 23) : 0)
-                         | (i == 0 ? (type << 18) : 0)
-                         | decomposed[i]) >> 16) & 0xff,
-                       (decomposed[i] >> 8) & 0xff,
-                       decomposed[i] & 0xff);
-              offset++;
-            }
-        }
-    }
+            /* Produce length 3-bytes entries.  */
+            /* We would need a special representation of zero-length entries.  */
+            assert (length != 0);
+            for (unsigned int i = 0; i < length; i++)
+              {
+                if (offset > 0)
+                  fprintf (stream2, ",");
+                if ((offset % 4) == 0)
+                  fprintf (stream2, "\n ");
+                assert (decomposed[i] < (1 << 18));
+                fprintf (stream2, " 0x%02X, 0x%02X, 0x%02X",
+                         (((i+1 < length ? (1 << 23) : 0)
+                           | (i == 0 ? (type << 18) : 0)
+                           | decomposed[i]) >> 16) & 0xff,
+                         (decomposed[i] >> 8) & 0xff,
+                         decomposed[i] & 0xff);
+                offset++;
+              }
+          }
+      }
+  }
 
   fprintf (stream2, "\n};\n");
   fprintf (stream2, "\n");
 
   decomp_table_finalize (&t);
 
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream1, "#define decomp_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream1, "\n");
@@ -9862,12 +10493,11 @@ output_decomposition (FILE *stream1, FILE *stream2)
   fprintf (stream2, "  {");
   if (t.level1_size > 8)
     fprintf (stream2, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream2, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream2, " %5d", -1);
       else
@@ -9882,12 +10512,11 @@ output_decomposition (FILE *stream1, FILE *stream2)
   fprintf (stream2, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream2, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream2, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream2, " %5d", -1);
       else
@@ -9902,7 +10531,7 @@ output_decomposition (FILE *stream1, FILE *stream2)
   fprintf (stream2, "  {");
   if (t.level3_size << t.p > 8)
     fprintf (stream2, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       uint16_t value = ((uint16_t *) (t.result + level3_offset))[i];
       if (i > 0 && (i % 8) == 0)
@@ -9921,13 +10550,11 @@ static void
 output_decomposition_tables (const char *filename1, const char *filename2, const char *version)
 {
   const char *filenames[2];
-  FILE *streams[2];
-  size_t i;
-
   filenames[0] = filename1;
   filenames[1] = filename2;
 
-  for (i = 0; i < 2; i++)
+  FILE *streams[2];
+  for (size_t i = 0; i < 2; i++)
     {
       streams[i] = fopen (filenames[i], "w");
       if (streams[i] == NULL)
@@ -9937,7 +10564,7 @@ output_decomposition_tables (const char *filename1, const char *filename2, const
         }
     }
 
-  for (i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++)
     {
       FILE *stream = streams[i];
 
@@ -9947,7 +10574,7 @@ output_decomposition_tables (const char *filename1, const char *filename2, const
                version);
       fprintf (stream, "\n");
 
-      fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+      fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
       fprintf (stream, "\n");
       output_library_license (stream, true);
       fprintf (stream, "\n");
@@ -9955,7 +10582,7 @@ output_decomposition_tables (const char *filename1, const char *filename2, const
 
   output_decomposition (streams[0], streams[1]);
 
-  for (i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++)
     {
       if (ferror (streams[i]) || fclose (streams[i]))
         {
@@ -9971,30 +10598,26 @@ char unicode_composition_exclusions[0x110000];
 static void
 fill_composition_exclusions (const char *compositionexclusions_filename)
 {
-  FILE *stream;
-  unsigned int i;
-
-  stream = fopen (compositionexclusions_filename, "r");
+  FILE *stream = fopen (compositionexclusions_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", compositionexclusions_filename);
       exit (1);
     }
 
-  for (i = 0; i < 0x110000; i++)
+  for (unsigned int i = 0; i < 0x110000; i++)
     unicode_composition_exclusions[i] = 0;
 
   for (;;)
     {
       char buf[200+1];
-      unsigned int i;
-
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      unsigned int i;
       if (sscanf (buf, "%X", &i) != 1)
         {
           fprintf (stderr, "parse error in '%s'\n", compositionexclusions_filename);
@@ -10015,17 +10638,14 @@ fill_composition_exclusions (const char *compositionexclusions_filename)
 static void
 debug_output_composition_tables (const char *filename)
 {
-  FILE *stream;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
       exit (1);
     }
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       unsigned int length;
       unsigned int decomposed[MAX_DECOMP_LENGTH];
@@ -10042,13 +10662,13 @@ debug_output_composition_tables (const char *filename)
 
           /* Exclude decompositions where the first part is not a starter,
              i.e. is not of canonical combining class 0.  */
-          if (strcmp (unicode_attributes[code1].combining, "0") == 0
+          if (streq (unicode_attributes[code1].combining, "0")
               /* Exclude characters listed in CompositionExclusions.txt.  */
               && !unicode_composition_exclusions[combined])
             {
               /* The combined character must now also be a starter.
                  Verify this.  */
-              assert (strcmp (unicode_attributes[combined].combining, "0") == 0);
+              assert (streq (unicode_attributes[combined].combining, "0"));
 
               fprintf (stream, "0x%04X\t0x%04X\t0x%04X\t%s\n",
                        code1,
@@ -10067,98 +10687,140 @@ debug_output_composition_tables (const char *filename)
 }
 
 static void
-output_composition_tables (const char *filename, const char *version)
+output_composition_tables (const char *filename, const char *filename2,
+                           const char *version)
 {
-  FILE *stream;
-  unsigned int ch;
+  unsigned int max_code1;
+  unsigned int max_code2;
 
-  stream = fopen (filename, "w");
-  if (stream == NULL)
-    {
-      fprintf (stderr, "cannot open '%s' for writing\n", filename);
-      exit (1);
-    }
+  {
+    FILE *stream = fopen (filename, "w");
+    if (stream == NULL)
+      {
+        fprintf (stderr, "cannot open '%s' for writing\n", filename);
+        exit (1);
+      }
 
-  fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
-  fprintf (stream, "/* Canonical composition of Unicode characters.  */\n");
-  fprintf (stream, "/* Generated automatically by gen-uni-tables.c for Unicode %s.  */\n",
-           version);
-  fprintf (stream, "\n");
+    fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
+    fprintf (stream, "/* Canonical composition of Unicode characters.  */\n");
+    fprintf (stream, "/* Generated automatically by gen-uni-tables.c for Unicode %s.  */\n",
+             version);
+    fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2009-2022 Free Software Foundation, Inc.\n");
-  fprintf (stream, "\n");
-  output_library_license (stream, true);
-  fprintf (stream, "\n");
+    fprintf (stream, "/* Copyright (C) 2009-2026 Free Software Foundation, Inc.\n");
+    fprintf (stream, "\n");
+    output_library_license (stream, true);
+    fprintf (stream, "\n");
 
-  /* The composition table is a set of mappings (code1, code2) -> combined,
-     with 928 entries,
-     367 values for code1 (from 0x003C to 0x30FD),
-      54 values for code2 (from 0x0300 to 0x309A).
-     For a fixed code1, there are from 1 to 19 possible values for code2.
-     For a fixed code2, there are from 1 to 117 possible values for code1.
-     This is a very sparse matrix.
+    /* The composition table is a set of mappings (code1, code2) -> combined,
+       with 928 entries,
+       367 values for code1 (from 0x003C to 0x30FD),
+        54 values for code2 (from 0x0300 to 0x309A).
+       For a fixed code1, there are from 1 to 19 possible values for code2.
+       For a fixed code2, there are from 1 to 117 possible values for code1.
+       This is a very sparse matrix.
 
-     We want an O(1) hash lookup.
+       We want an O(1) hash lookup.
 
-     We could implement the hash lookup by mapping (code1, code2) to a linear
-     combination  mul1*code1 + mul2*code2, which is then used as an index into
-     a 3-level table.  But this leads to a table of size 37 KB.
+       We could implement the hash lookup by mapping (code1, code2) to a linear
+       combination  mul1*code1 + mul2*code2, which is then used as an index into
+       a 3-level table.  But this leads to a table of size 37 KB.
 
-     We use gperf to implement the hash lookup, giving it the 928 sets of
-     4 bytes (code1, code2) as input.  gperf generates a hash table of size
-     1527, which is quite good (60% filled).  It requires an auxiliary table
-     lookup in a table of size 0.5 KB.  The total tables size is 11 KB.  */
+       We use gperf to implement the hash lookup, giving it the 928 sets of
+       4 bytes (code1, code2) as input.  gperf generates a hash table of size
+       1527, which is quite good (60% filled).  It requires an auxiliary table
+       lookup in a table of size 0.5 KB.  The total tables size is 11 KB.  */
 
-  fprintf (stream, "struct composition_rule { char codes[6]; };\n");
-  fprintf (stream, "%%struct-type\n");
-  fprintf (stream, "%%language=ANSI-C\n");
-  fprintf (stream, "%%define slot-name codes\n");
-  fprintf (stream, "%%define hash-function-name gl_uninorm_compose_hash\n");
-  fprintf (stream, "%%define lookup-function-name gl_uninorm_compose_lookup\n");
-  fprintf (stream, "%%compare-lengths\n");
-  fprintf (stream, "%%compare-strncmp\n");
-  fprintf (stream, "%%readonly-tables\n");
-  fprintf (stream, "%%omit-struct-type\n");
-  fprintf (stream, "%%%%\n");
+    fprintf (stream, "struct composition_rule { char codes[6] _GL_ATTRIBUTE_NONSTRING; unsigned int combined; };\n");
+    fprintf (stream, "%%struct-type\n");
+    fprintf (stream, "%%language=ANSI-C\n");
+    fprintf (stream, "%%define slot-name codes\n");
+    fprintf (stream, "%%define hash-function-name gl_uninorm_compose_hash\n");
+    fprintf (stream, "%%define lookup-function-name gl_uninorm_compose_lookup\n");
+    fprintf (stream, "%%compare-lengths\n");
+    fprintf (stream, "%%compare-strncmp\n");
+    fprintf (stream, "%%readonly-tables\n");
+    fprintf (stream, "%%omit-struct-type\n");
+    fprintf (stream, "%%%%\n");
 
-  for (ch = 0; ch < 0x110000; ch++)
-    {
-      unsigned int length;
-      unsigned int decomposed[MAX_DECOMP_LENGTH];
-      int type = get_decomposition (ch, &length, decomposed);
+    max_code1 = 0;
+    max_code2 = 0;
+    for (unsigned int ch = 0; ch < 0x110000; ch++)
+      {
+        unsigned int length;
+        unsigned int decomposed[MAX_DECOMP_LENGTH];
+        int type = get_decomposition (ch, &length, decomposed);
 
-      if (type == UC_DECOMP_CANONICAL
-          /* Consider only binary decompositions.
-             Exclude singleton decompositions.  */
-          && length == 2)
-        {
-          unsigned int code1 = decomposed[0];
-          unsigned int code2 = decomposed[1];
-          unsigned int combined = ch;
+        if (type == UC_DECOMP_CANONICAL
+            /* Consider only binary decompositions.
+               Exclude singleton decompositions.  */
+            && length == 2)
+          {
+            unsigned int code1 = decomposed[0];
+            unsigned int code2 = decomposed[1];
+            unsigned int combined = ch;
 
-          /* Exclude decompositions where the first part is not a starter,
-             i.e. is not of canonical combining class 0.  */
-          if (strcmp (unicode_attributes[code1].combining, "0") == 0
-              /* Exclude characters listed in CompositionExclusions.txt.  */
-              && !unicode_composition_exclusions[combined])
-            {
-              /* The combined character must now also be a starter.
-                 Verify this.  */
-              assert (strcmp (unicode_attributes[combined].combining, "0") == 0);
+            /* Exclude decompositions where the first part is not a starter,
+               i.e. is not of canonical combining class 0.  */
+            if (streq (unicode_attributes[code1].combining, "0")
+                /* Exclude characters listed in CompositionExclusions.txt.  */
+                && !unicode_composition_exclusions[combined])
+              {
+                /* The combined character must now also be a starter.
+                   Verify this.  */
+                assert (streq (unicode_attributes[combined].combining, "0"));
 
-              fprintf (stream, "\"\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x\", 0x%04x\n",
-                       (code1 >> 16) & 0xff, (code1 >> 8) & 0xff, code1 & 0xff,
-                       (code2 >> 16) & 0xff, (code2 >> 8) & 0xff, code2 & 0xff,
-                       combined);
-            }
-        }
-    }
+                if (max_code1 < code1)
+                  max_code1 = code1;
+                if (max_code2 < code2)
+                  max_code2 = code2;
 
-  if (ferror (stream) || fclose (stream))
-    {
-      fprintf (stderr, "error writing to '%s'\n", filename);
-      exit (1);
-    }
+                fprintf (stream, "\"\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x\", 0x%04x\n",
+                         (code1 >> 16) & 0xff, (code1 >> 8) & 0xff, code1 & 0xff,
+                         (code2 >> 16) & 0xff, (code2 >> 8) & 0xff, code2 & 0xff,
+                         combined);
+              }
+          }
+      }
+
+    if (ferror (stream) || fclose (stream))
+      {
+        fprintf (stderr, "error writing to '%s'\n", filename);
+        exit (1);
+      }
+  }
+  {
+    FILE *stream = fopen (filename2, "w");
+    if (stream == NULL)
+      {
+        fprintf (stderr, "cannot open '%s' for writing\n", filename2);
+        exit (1);
+      }
+
+    fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
+    fprintf (stream, "/* Canonical composition of Unicode characters.  */\n");
+    fprintf (stream, "/* Generated automatically by gen-uni-tables.c for Unicode %s.  */\n",
+             version);
+    fprintf (stream, "\n");
+
+    fprintf (stream, "/* Copyright (C) 2009-2026 Free Software Foundation, Inc.\n");
+    fprintf (stream, "\n");
+    output_library_license (stream, true);
+    fprintf (stream, "\n");
+
+    fprintf (stream, "/* Maximum value of the first argument for which gl_uninorm_compose_lookup\n"
+                     "   can return a non-NULL value.  */\n");
+    fprintf (stream, "#define UNINORM_COMPOSE_MAX_ARG1 0x%x\n", max_code1);
+    fprintf (stream, "/* Maximum value of the second argument for which gl_uninorm_compose_lookup\n"
+                     "   can return a non-NULL value.  */\n");
+    fprintf (stream, "#define UNINORM_COMPOSE_MAX_ARG2 0x%x\n", max_code2);
+
+    if (ferror (stream) || fclose (stream))
+      {
+        fprintf (stderr, "error writing to '%s'\n", filename2);
+        exit (1);
+      }
+  }
 }
 
 /* ========================================================================= */
@@ -10171,11 +10833,7 @@ output_simple_mapping_test (const char *filename,
                             unsigned int (*func) (unsigned int),
                             const char *version)
 {
-  FILE *stream;
-  bool need_comma;
-  unsigned int ch;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -10184,7 +10842,7 @@ output_simple_mapping_test (const char *filename,
 
   fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
   fprintf (stream, "/* Test the Unicode character mapping functions.\n");
-  fprintf (stream, "   Copyright (C) 2009-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "   Copyright (C) 2009-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_tests_license (stream);
   fprintf (stream, "\n");
@@ -10194,8 +10852,8 @@ output_simple_mapping_test (const char *filename,
   fprintf (stream, "#include \"test-mapping-part1.h\"\n");
   fprintf (stream, "\n");
 
-  need_comma = false;
-  for (ch = 0; ch < 0x110000; ch++)
+  bool need_comma = false;
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       unsigned int value = func (ch);
 
@@ -10236,12 +10894,7 @@ output_simple_mapping (const char *filename,
                        unsigned int (*func) (unsigned int),
                        const char *version)
 {
-  FILE *stream;
-  unsigned int ch, i;
-  struct mapping_table t;
-  unsigned int level1_offset, level2_offset, level3_offset;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -10254,18 +10907,19 @@ output_simple_mapping (const char *filename,
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2023 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream,
-                          strcmp (filename, "unicase/tolower.h") == 0
-                          || strcmp (filename, "unicase/toupper.h") == 0);
+                          streq (filename, "unicase/tolower.h")
+                          || streq (filename, "unicase/toupper.h"));
   fprintf (stream, "\n");
 
+  struct mapping_table t;
   t.p = 7;
   t.q = 9;
   mapping_table_init (&t);
 
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     {
       int value = (int) func (ch) - (int) ch;
 
@@ -10275,17 +10929,17 @@ output_simple_mapping (const char *filename,
   mapping_table_finalize (&t);
 
   /* Offsets in t.result, in memory of this process.  */
-  level1_offset =
+  unsigned int level1_offset =
     5 * sizeof (uint32_t);
-  level2_offset =
+  unsigned int level2_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t);
-  level3_offset =
+  unsigned int level3_offset =
     5 * sizeof (uint32_t)
     + t.level1_size * sizeof (uint32_t)
     + (t.level2_size << t.q) * sizeof (uint32_t);
 
-  for (i = 0; i < 5; i++)
+  for (unsigned int i = 0; i < 5; i++)
     fprintf (stream, "#define mapping_header_%d %d\n", i,
              ((uint32_t *) t.result)[i]);
   fprintf (stream, "static const\n");
@@ -10300,12 +10954,11 @@ output_simple_mapping (const char *filename,
   fprintf (stream, "  {");
   if (t.level1_size > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level1_size; i++)
+  for (unsigned int i = 0; i < t.level1_size; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level1_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level1_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -10320,12 +10973,11 @@ output_simple_mapping (const char *filename,
   fprintf (stream, "  {");
   if (t.level2_size << t.q > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level2_size << t.q; i++)
+  for (unsigned int i = 0; i < t.level2_size << t.q; i++)
     {
-      uint32_t offset;
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
-      offset = ((uint32_t *) (t.result + level2_offset))[i];
+      uint32_t offset = ((uint32_t *) (t.result + level2_offset))[i];
       if (offset == 0)
         fprintf (stream, " %5d", -1);
       else
@@ -10340,7 +10992,7 @@ output_simple_mapping (const char *filename,
   fprintf (stream, "  {");
   if (t.level3_size << t.p > 8)
     fprintf (stream, "\n   ");
-  for (i = 0; i < t.level3_size << t.p; i++)
+  for (unsigned int i = 0; i < t.level3_size << t.p; i++)
     {
       if (i > 0 && (i % 8) == 0)
         fprintf (stream, "\n   ");
@@ -10411,9 +11063,7 @@ add_casing_rule (struct special_casing_rule *new_rule)
 static void
 fill_casing_rules (const char *specialcasing_filename)
 {
-  FILE *stream;
-
-  stream = fopen (specialcasing_filename, "r");
+  FILE *stream = fopen (specialcasing_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", specialcasing_filename);
@@ -10427,26 +11077,18 @@ fill_casing_rules (const char *specialcasing_filename)
   for (;;)
     {
       char buf[200+1];
-      char *scanptr;
-      char *endptr;
-      int i;
-
-      unsigned int code;
-      unsigned int lower_mapping[3];
-      unsigned int title_mapping[3];
-      unsigned int upper_mapping[3];
-      char *language;
-      int context;
-
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      char *scanptr;
+      char *endptr;
+
       /* Scan code.  */
       scanptr = buf;
-      code = strtoul (scanptr, &endptr, 16);
+      unsigned int code = strtoul (scanptr, &endptr, 16);
       if (endptr == scanptr)
         {
           fprintf (stderr, "parse error in '%s'\n", specialcasing_filename);
@@ -10461,9 +11103,10 @@ fill_casing_rules (const char *specialcasing_filename)
       scanptr++;
 
       /* Scan lower mapping.  */
-      for (i = 0; i < 3; i++)
+      unsigned int lower_mapping[3];
+      for (int i = 0; i < 3; i++)
         lower_mapping[i] = 0;
-      for (i = 0; i < 3; i++)
+      for (int i = 0; i < 3; i++)
         {
           while (*scanptr == ' ')
             scanptr++;
@@ -10485,9 +11128,10 @@ fill_casing_rules (const char *specialcasing_filename)
       scanptr++;
 
       /* Scan title mapping.  */
-      for (i = 0; i < 3; i++)
+      unsigned int title_mapping[3];
+      for (int i = 0; i < 3; i++)
         title_mapping[i] = 0;
-      for (i = 0; i < 3; i++)
+      for (int i = 0; i < 3; i++)
         {
           while (*scanptr == ' ')
             scanptr++;
@@ -10509,9 +11153,10 @@ fill_casing_rules (const char *specialcasing_filename)
       scanptr++;
 
       /* Scan upper mapping.  */
-      for (i = 0; i < 3; i++)
+      unsigned int upper_mapping[3];
+      for (int i = 0; i < 3; i++)
         upper_mapping[i] = 0;
-      for (i = 0; i < 3; i++)
+      for (int i = 0; i < 3; i++)
         {
           while (*scanptr == ' ')
             scanptr++;
@@ -10533,18 +11178,16 @@ fill_casing_rules (const char *specialcasing_filename)
       scanptr++;
 
       /* Scan language and context.  */
-      language = NULL;
-      context = SCC_ALWAYS;
+      char *language = NULL;
+      int context = SCC_ALWAYS;
       while (*scanptr == ' ')
         scanptr++;
       if (*scanptr != '\0' && *scanptr != '#')
         {
           const char *word_begin = scanptr;
-          const char *word_end;
-
           while (*scanptr != '\0' && *scanptr != '#' && *scanptr != ';' && *scanptr != ' ')
             scanptr++;
-          word_end = scanptr;
+          const char *word_end = scanptr;
 
           while (*scanptr == ' ')
             scanptr++;
@@ -10569,20 +11212,20 @@ fill_casing_rules (const char *specialcasing_filename)
             {
               bool negate = false;
 
-              if (word_end - word_begin >= 4 && memcmp (word_begin, "Not_", 4) == 0)
+              if (word_end - word_begin >= 4 && memeq (word_begin, "Not_", 4))
                 {
                   word_begin += 4;
                   negate = true;
                 }
-              if (word_end - word_begin == 11 && memcmp (word_begin, "Final_Sigma", 11) == 0)
+              if (word_end - word_begin == 11 && memeq (word_begin, "Final_Sigma", 11))
                 context = SCC_FINAL_SIGMA;
-              else if (word_end - word_begin == 17 && memcmp (word_begin, "After_Soft_Dotted", 17) == 0)
+              else if (word_end - word_begin == 17 && memeq (word_begin, "After_Soft_Dotted", 17))
                 context = SCC_AFTER_SOFT_DOTTED;
-              else if (word_end - word_begin == 10 && memcmp (word_begin, "More_Above", 10) == 0)
+              else if (word_end - word_begin == 10 && memeq (word_begin, "More_Above", 10))
                 context = SCC_MORE_ABOVE;
-              else if (word_end - word_begin == 10 && memcmp (word_begin, "Before_Dot", 10) == 0)
+              else if (word_end - word_begin == 10 && memeq (word_begin, "Before_Dot", 10))
                 context = SCC_BEFORE_DOT;
-              else if (word_end - word_begin == 7 && memcmp (word_begin, "After_I", 7) == 0)
+              else if (word_end - word_begin == 7 && memeq (word_begin, "After_I", 7))
                 context = SCC_AFTER_I;
               else
                 {
@@ -10640,9 +11283,7 @@ unsigned int allocated_casefolding_rules;
 static void
 fill_casefolding_rules (const char *casefolding_filename)
 {
-  FILE *stream;
-
-  stream = fopen (casefolding_filename, "r");
+  FILE *stream = fopen (casefolding_filename, "r");
   if (stream == NULL)
     {
       fprintf (stderr, "error during fopen of '%s'\n", casefolding_filename);
@@ -10656,23 +11297,18 @@ fill_casefolding_rules (const char *casefolding_filename)
   for (;;)
     {
       char buf[200+1];
-      char *scanptr;
-      char *endptr;
-      int i;
-
-      unsigned int code;
-      char type;
-      unsigned int mapping[3];
-
       if (fscanf (stream, "%200[^\n]\n", buf) < 1)
         break;
 
       if (buf[0] == '\0' || buf[0] == '#')
         continue;
 
+      char *scanptr;
+      char *endptr;
+
       /* Scan code.  */
       scanptr = buf;
-      code = strtoul (scanptr, &endptr, 16);
+      unsigned int code = strtoul (scanptr, &endptr, 16);
       if (endptr == scanptr)
         {
           fprintf (stderr, "parse error in '%s'\n", casefolding_filename);
@@ -10690,6 +11326,7 @@ fill_casefolding_rules (const char *casefolding_filename)
       while (*scanptr == ' ')
         scanptr++;
 
+      char type;
       switch (*scanptr)
         {
         case 'C': case 'F': case 'S': case 'T':
@@ -10708,9 +11345,10 @@ fill_casefolding_rules (const char *casefolding_filename)
       scanptr++;
 
       /* Scan casefold mapping.  */
-      for (i = 0; i < 3; i++)
+      unsigned int mapping[3];
+      for (int i = 0; i < 3; i++)
         mapping[i] = 0;
-      for (i = 0; i < 3; i++)
+      for (int i = 0; i < 3; i++)
         {
           while (*scanptr == ' ')
             scanptr++;
@@ -10752,7 +11390,7 @@ fill_casefolding_rules (const char *casefolding_filename)
               languages_count = 1;
             }
 
-          for (i = 0; i < languages_count; i++)
+          for (int i = 0; i < languages_count; i++)
             {
               /* Store a new rule.  */
               struct casefold_rule *new_rule =
@@ -10799,18 +11437,16 @@ to_casefold (unsigned int ch)
 static void
 redistribute_casefolding_rules (void)
 {
-  unsigned int ch, i, j;
-
   /* Fill unicode_casefold[].  */
-  for (ch = 0; ch < 0x110000; ch++)
+  for (unsigned int ch = 0; ch < 0x110000; ch++)
     unicode_casefold[ch] = ch;
-  for (i = 0; i < num_casefolding_rules; i++)
+  for (unsigned int i = 0; i < num_casefolding_rules; i++)
     {
       struct casefold_rule *cfrule = casefolding_rules[i];
 
       if (cfrule->language == NULL && cfrule->mapping[1] == 0)
         {
-          ch = cfrule->code;
+          unsigned int ch = cfrule->code;
           assert (ch < 0x110000);
           unicode_casefold[ch] = cfrule->mapping[0];
         }
@@ -10818,18 +11454,17 @@ redistribute_casefolding_rules (void)
 
   /* Extend the special casing rules by filling in their casefold_mapping[]
      field.  */
-  for (j = 0; j < num_casing_rules; j++)
+  for (unsigned int j = 0; j < num_casing_rules; j++)
     {
       struct special_casing_rule *rule = casing_rules[j];
-      unsigned int k;
 
       rule->casefold_mapping[0] = to_casefold (rule->code);
-      for (k = 1; k < 3; k++)
+      for (unsigned int k = 1; k < 3; k++)
         rule->casefold_mapping[k] = 0;
     }
 
   /* Now merge the other casefolding rules into casing_rules.  */
-  for (i = 0; i < num_casefolding_rules; i++)
+  for (unsigned int i = 0; i < num_casefolding_rules; i++)
     {
       struct casefold_rule *cfrule = casefolding_rules[i];
 
@@ -10840,14 +11475,14 @@ redistribute_casefolding_rules (void)
              have the same code and same or more specific language.  */
           struct special_casing_rule *found_rule = NULL;
 
-          for (j = 0; j < num_casing_rules; j++)
+          for (unsigned int j = 0; j < num_casing_rules; j++)
             {
               struct special_casing_rule *rule = casing_rules[j];
 
               if (rule->code == cfrule->code
                   && (cfrule->language == NULL
                       || (rule->language != NULL
-                          && strcmp (rule->language, cfrule->language) == 0)))
+                          && streq (rule->language, cfrule->language))))
                 {
                   memcpy (rule->casefold_mapping, cfrule->mapping,
                           sizeof (rule->casefold_mapping));
@@ -10855,7 +11490,7 @@ redistribute_casefolding_rules (void)
                   if ((cfrule->language == NULL
                        ? rule->language == NULL
                        : rule->language != NULL
-                         && strcmp (rule->language, cfrule->language) == 0)
+                         && streq (rule->language, cfrule->language))
                       && rule->context == SCC_ALWAYS)
                     {
                       /* Found it.  */
@@ -10872,7 +11507,7 @@ redistribute_casefolding_rules (void)
 
               /* Try to find a rule that applies to the same code, no language
                  restriction, and with context SCC_ALWAYS.  */
-              for (j = 0; j < num_casing_rules; j++)
+              for (unsigned int j = 0; j < num_casing_rules; j++)
                 {
                   struct special_casing_rule *rule = casing_rules[j];
 
@@ -10900,16 +11535,14 @@ redistribute_casefolding_rules (void)
                 }
               else
                 {
-                  unsigned int k;
-
                   new_rule->lower_mapping[0] = to_lower (cfrule->code);
-                  for (k = 1; k < 3; k++)
+                  for (unsigned int k = 1; k < 3; k++)
                     new_rule->lower_mapping[k] = 0;
                   new_rule->title_mapping[0] = to_title (cfrule->code);
-                  for (k = 1; k < 3; k++)
+                  for (unsigned int k = 1; k < 3; k++)
                     new_rule->title_mapping[k] = 0;
                   new_rule->upper_mapping[0] = to_upper (cfrule->code);
-                  for (k = 1; k < 3; k++)
+                  for (unsigned int k = 1; k < 3; k++)
                     new_rule->upper_mapping[k] = 0;
                 }
               memcpy (new_rule->casefold_mapping, cfrule->mapping,
@@ -10952,11 +11585,7 @@ sort_casing_rules (void)
 static void
 output_casing_rules (const char *filename, const char *version)
 {
-  FILE *stream;
-  unsigned int i, j;
-  unsigned int minor;
-
-  stream = fopen (filename, "w");
+  FILE *stream = fopen (filename, "w");
   if (stream == NULL)
     {
       fprintf (stderr, "cannot open '%s' for writing\n", filename);
@@ -10969,7 +11598,7 @@ output_casing_rules (const char *filename, const char *version)
            version);
   fprintf (stream, "\n");
 
-  fprintf (stream, "/* Copyright (C) 2000-2022 Free Software Foundation, Inc.\n");
+  fprintf (stream, "/* Copyright (C) 2000-2026 Free Software Foundation, Inc.\n");
   fprintf (stream, "\n");
   output_library_license (stream, false);
   fprintf (stream, "\n");
@@ -10986,8 +11615,8 @@ output_casing_rules (const char *filename, const char *version)
   fprintf (stream, "%%omit-struct-type\n");
   fprintf (stream, "%%%%\n");
 
-  minor = 0;
-  for (i = 0; i < num_casing_rules; i++)
+  unsigned int minor = 0;
+  for (unsigned int i = 0; i < num_casing_rules; i++)
     {
       struct special_casing_rule *rule = casing_rules[i];
       int context;
@@ -11051,7 +11680,7 @@ output_casing_rules (const char *filename, const char *version)
         fprintf (stream, "{ '\\0', '\\0' }, ");
 
       fprintf (stream, "{ ");
-      for (j = 0; j < 3; j++)
+      for (unsigned int j = 0; j < 3; j++)
         {
           if (j > 0)
             fprintf (stream, ", ");
@@ -11066,7 +11695,7 @@ output_casing_rules (const char *filename, const char *version)
             fprintf (stream, "     0");
         }
       fprintf (stream, " }, { ");
-      for (j = 0; j < 3; j++)
+      for (unsigned int j = 0; j < 3; j++)
         {
           if (j > 0)
             fprintf (stream, ", ");
@@ -11081,7 +11710,7 @@ output_casing_rules (const char *filename, const char *version)
             fprintf (stream, "     0");
         }
       fprintf (stream, " }, { ");
-      for (j = 0; j < 3; j++)
+      for (unsigned int j = 0; j < 3; j++)
         {
           if (j > 0)
             fprintf (stream, ", ");
@@ -11096,7 +11725,7 @@ output_casing_rules (const char *filename, const char *version)
             fprintf (stream, "     0");
         }
       fprintf (stream, " }, { ");
-      for (j = 0; j < 3; j++)
+      for (unsigned int j = 0; j < 3; j++)
         {
           if (j > 0)
             fprintf (stream, ", ");
@@ -11179,6 +11808,50 @@ output_casing_properties (const char *version)
 
 /* ========================================================================= */
 
+/* Output the Unicode version.  */
+static void
+output_version (const char *filename, const char *version)
+{
+  FILE *stream = fopen (filename, "w");
+  if (stream == NULL)
+    {
+      fprintf (stderr, "cannot open '%s' for writing\n", filename);
+      exit (1);
+    }
+
+  fprintf (stream, "/* DO NOT EDIT! GENERATED AUTOMATICALLY! */\n");
+  fprintf (stream, "/* Supported Unicode version.  */\n");
+  fprintf (stream, "/* Generated automatically by gen-uni-tables.c for Unicode %s.  */\n",
+           version);
+  fprintf (stream, "\n");
+
+  fprintf (stream, "/* Copyright (C) 2024-2026 Free Software Foundation, Inc.\n");
+  fprintf (stream, "\n");
+  output_library_license (stream, false);
+  fprintf (stream, "\n");
+
+  fprintf (stream, "#include <config.h>\n");
+  fprintf (stream, "\n");
+
+  fprintf (stream, "/* Specification.  */\n");
+  fprintf (stream, "#include \"unimetadata.h\"\n");
+  fprintf (stream, "\n");
+
+  int major;
+  int minor;
+  sscanf (version, "%d.%d", &major, &minor);
+  fprintf (stream, "const int _libunistring_unicode_version = (%d << 8) | %d;\n",
+           major, minor);
+
+  if (ferror (stream) || fclose (stream))
+    {
+      fprintf (stderr, "error writing to '%s'\n", filename);
+      exit (1);
+    }
+}
+
+/* ========================================================================= */
+
 int
 main (int argc, char * argv[])
 {
@@ -11190,6 +11863,7 @@ main (int argc, char * argv[])
   const char *scripts_filename;
   const char *blocks_filename;
   const char *proplist30_filename;
+  const char *bidimirroring_filename;
   const char *eastasianwidth_filename;
   const char *linebreak_filename;
   const char *wordbreakproperty_filename;
@@ -11199,9 +11873,9 @@ main (int argc, char * argv[])
   const char *casefolding_filename;
   const char *version;
 
-  if (argc != 17)
+  if (argc != 18)
     {
-      fprintf (stderr, "Usage: %s UnicodeData.txt PropList.txt DerivedCoreProperties.txt emoji-data.txt ArabicShaping.txt Scripts.txt Blocks.txt PropList-3.0.1.txt EastAsianWidth.txt LineBreak.txt WordBreakProperty.txt GraphemeBreakProperty.txt CompositionExclusions.txt SpecialCasing.txt CaseFolding.txt version\n",
+      fprintf (stderr, "Usage: %s UnicodeData.txt PropList.txt DerivedCoreProperties.txt emoji-data.txt ArabicShaping.txt Scripts.txt Blocks.txt PropList-3.0.1.txt BidiMirroring.txt EastAsianWidth.txt LineBreak.txt WordBreakProperty.txt GraphemeBreakProperty.txt CompositionExclusions.txt SpecialCasing.txt CaseFolding.txt version\n",
                argv[0]);
       exit (1);
     }
@@ -11214,14 +11888,15 @@ main (int argc, char * argv[])
   scripts_filename = argv[6];
   blocks_filename = argv[7];
   proplist30_filename = argv[8];
-  eastasianwidth_filename = argv[9];
-  linebreak_filename = argv[10];
-  wordbreakproperty_filename = argv[11];
-  graphemebreakproperty_filename = argv[12];
-  compositionexclusions_filename = argv[13];
-  specialcasing_filename = argv[14];
-  casefolding_filename = argv[15];
-  version = argv[16];
+  bidimirroring_filename = argv[9];
+  eastasianwidth_filename = argv[10];
+  linebreak_filename = argv[11];
+  wordbreakproperty_filename = argv[12];
+  graphemebreakproperty_filename = argv[13];
+  compositionexclusions_filename = argv[14];
+  specialcasing_filename = argv[15];
+  casefolding_filename = argv[16];
+  version = argv[17];
 
   fill_attributes (unicodedata_filename);
   clear_properties ();
@@ -11232,6 +11907,7 @@ main (int argc, char * argv[])
   fill_arabicshaping (arabicshaping_filename);
   fill_scripts (scripts_filename);
   fill_blocks (blocks_filename);
+  fill_mirror (bidimirroring_filename);
   fill_width (eastasianwidth_filename);
   fill_org_lbp (linebreak_filename);
   fill_org_wbp (wordbreakproperty_filename);
@@ -11254,6 +11930,8 @@ main (int argc, char * argv[])
   output_numeric ("unictype/numeric.h", version);
   output_mirror ("unictype/mirror.h", version);
   output_properties (version);
+  output_indic_conjunct_break_test ("../tests/unictype/test-incb_of.h", version);
+  output_indic_conjunct_break ("unictype/incb_of.h", version);
   output_joining_type_test ("../tests/unictype/test-joiningtype_of.h", version);
   output_joining_type ("unictype/joiningtype_of.h", version);
   output_joining_group_test ("../tests/unictype/test-joininggroup_of.h", version);
@@ -11282,7 +11960,7 @@ main (int argc, char * argv[])
 
   output_decomposition_tables ("uninorm/decomposition-table1.h", "uninorm/decomposition-table2.h", version);
   debug_output_composition_tables ("uninorm/composition.txt");
-  output_composition_tables ("uninorm/composition-table.gperf", version);
+  output_composition_tables ("uninorm/composition-table.gperf", "uninorm/composition-table-bounds.h", version);
 
   output_simple_mapping_test ("../tests/unicase/test-uc_toupper.c", "uc_toupper", to_upper, version);
   output_simple_mapping_test ("../tests/unicase/test-uc_tolower.c", "uc_tolower", to_lower, version);
@@ -11294,6 +11972,8 @@ main (int argc, char * argv[])
   output_casing_rules ("unicase/special-casing-table.gperf", version);
   output_casing_properties (version);
 
+  output_version ("unimetadata/u-version.c", version);
+
   return 0;
 }
 
@@ -11303,32 +11983,52 @@ main (int argc, char * argv[])
  * compile-command: "\
  *   gcc -O -Wall gen-uni-tables.c -Iunictype -o gen-uni-tables &&      \\
  *   ./gen-uni-tables                                                   \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/UnicodeData.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/PropList.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/DerivedCoreProperties.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/emoji/emoji-data.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/ArabicShaping.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/Scripts.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/Blocks.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/UnicodeData.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/PropList.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/DerivedCoreProperties.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/emoji/emoji-data.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/ArabicShaping.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/Scripts.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/Blocks.txt \\
  *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/3.0.1/PropList-3.0.1.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/EastAsianWidth.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/LineBreak.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/auxiliary/WordBreakProperty.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/auxiliary/GraphemeBreakProperty.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/CompositionExclusions.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/SpecialCasing.txt \\
- *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/CaseFolding.txt \\
- *        15.0.0                                                         \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/BidiMirroring.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/EastAsianWidth.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/LineBreak.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/auxiliary/WordBreakProperty.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/auxiliary/GraphemeBreakProperty.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/CompositionExclusions.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/SpecialCasing.txt \\
+ *        /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/CaseFolding.txt \\
+ *        17.0.0                                                        \\
  *   && diff unilbrk/lbrkprop_org.txt unilbrk/lbrkprop.txt              \\
  *   && diff uniwbrk/wbrkprop_org.txt uniwbrk/wbrkprop.txt              \\
  *   && clisp -C uniname/gen-uninames.lisp                              \\
- *            /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/UnicodeData.txt \\
+ *            /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/UnicodeData.txt \\
+ *            /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/NameAliases.txt \\
  *            uniname/uninames.h                                        \\
- *            /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/NameAliases.txt \\
- *   && cp /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/NameAliases.txt ../tests/uniname/NameAliases.txt \\
- *   && cp /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/UnicodeData.txt ../tests/uniname/UnicodeData.txt \\
- *   && cp /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/NormalizationTest.txt ../tests/uninorm/NormalizationTest.txt \\
- *   && cp /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/auxiliary/GraphemeBreakTest.txt ../tests/unigbrk/GraphemeBreakTest.txt \\
- *   && cp /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/15.0.0/ucd/auxiliary/WordBreakTest.txt ../tests/uniwbrk/WordBreakTest.txt"
+ *   && { sed -e 's/^/# /' -e 's/ $//' < /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/license.txt; \\
+ *        echo; \\
+ *        cat /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/NameAliases.txt; } \\
+ *      > ../tests/uniname/NameAliases.txt \\
+ *   && { sed -e 's/^/# /' -e 's/ $//' < /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/license.txt; \\
+ *        echo; \\
+ *        cat /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/UnicodeData.txt; } \\
+ *      > ../tests/uniname/UnicodeData.txt \\
+ *   && { sed -e 's/^/# /' -e 's/ $//' < /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/license.txt; \\
+ *        echo; \\
+ *        cat /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/NormalizationTest.txt; } \\
+ *      > ../tests/uninorm/NormalizationTest.txt \\
+ *   && { sed -e 's/^/# /' -e 's/ $//' < /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/license.txt; \\
+ *        echo; \\
+ *        cat /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/auxiliary/GraphemeBreakTest.txt; } \\
+ *      > ../tests/unigbrk/GraphemeBreakTest.txt \\
+ *   && { sed -e 's/^/# /' -e 's/ $//' < /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/license.txt; \\
+ *        echo; \\
+ *        cat /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/auxiliary/LineBreakTest.txt; } \\
+ *      > ../tests/unilbrk/LineBreakTest.txt \\
+ *   && { sed -e 's/^/# /' -e 's/ $//' < /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/license.txt; \\
+ *        echo; \\
+ *        cat /media/nas/bruno/www-archive/software/i18n/unicode/ftp.unicode.org/ArchiveVersions/17.0.0/ucd/auxiliary/WordBreakTest.txt; } \\
+ *      > ../tests/uniwbrk/WordBreakTest.txt"
  * End:
  */

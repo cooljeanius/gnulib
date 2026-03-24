@@ -1,5 +1,5 @@
 /* Creating and controlling ISO C 11 threads.
-   Copyright (C) 2005-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -26,15 +26,17 @@
 #if HAVE_THREADS_H
 /* Provide workarounds.  */
 
-# if BROKEN_THRD_START_T
+# if BROKEN_THRD_START_T || BROKEN_THRD_JOIN
 
 #  undef thrd_t
 
 /* AIX 7.1..7.2 defines thrd_start_t incorrectly, namely as
    'void * (*) (void *)' instead of 'int (*) (void *)'.
-   As a consequence, its thrd_join function never stores an exit code.  */
+   As a consequence, its thrd_join function never stores an exit code.
+   AIX 7.3.1 has a corrected thrd_start_t.  But the thrd_join function still
+   never stores an exit code.  */
 
-/* The Thread-Specific Storage (TSS) key that allows to access each thread's
+/* The Thread-Specific Storage (TSS) key that allows accessing each thread's
    'struct thrd_with_exitcode *' pointer.  */
 static tss_t thrd_with_exitcode_key;
 
@@ -68,7 +70,12 @@ typedef union
         }
         main_arg_t;
 
-static void *
+static
+#  if BROKEN_THRD_START_T
+void *
+#  else /* BROKEN_THRD_JOIN */
+int
+#  endif
 thrd_main_func (void *pmarg)
 {
   /* Unpack the object that combines mainfunc and arg.  */
@@ -89,7 +96,11 @@ thrd_main_func (void *pmarg)
         /* Clean up the thread, like thrd_join would do.  */
         free (&main_arg->t);
       }
+#  if BROKEN_THRD_START_T
     return NULL;
+#  else /* BROKEN_THRD_JOIN */
+    return 0;
+#  endif
   }
 }
 
@@ -203,9 +214,24 @@ rpl_thrd_join (rpl_thrd_t thread, int *exitcodep)
   }
 }
 
+_Noreturn void
+rpl_thrd_exit (int exitcode)
+{
+  rpl_thrd_t t = rpl_thrd_current ();
+
+  /* Store the exitcode, for use by thrd_join().  */
+  t->exitcode = exitcode;
+  if (t->detached)
+    {
+      /* Clean up the thread, like thrd_join would do.  */
+      free (t);
+    }
+  pthread_exit (NULL);
+}
+
 # endif
 
-# if BROKEN_THRD_JOIN
+# if BROKEN_THRD_JOIN_NULL
 
 /* On Solaris 11.4, thrd_join crashes when the second argument is NULL.  */
 int

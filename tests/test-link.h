@@ -1,5 +1,5 @@
 /* Test of link() function.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -87,13 +87,13 @@ test_link (int (*func) (char const *, char const *), bool print)
     fd = open (BASE "a", O_RDONLY);
     ASSERT (0 <= fd);
     ASSERT (read (fd, buf, 10) == 10);
-    ASSERT (strcmp (buf, "helloworld") == 0);
+    ASSERT (streq (buf, "helloworld"));
     ASSERT (close (fd) == 0);
     ASSERT (unlink (BASE "b") == 0);
     fd = open (BASE "a", O_RDONLY);
     ASSERT (0 <= fd);
     ASSERT (read (fd, buf, 10) == 10);
-    ASSERT (strcmp (buf, "helloworld") == 0);
+    ASSERT (streq (buf, "helloworld"));
     ASSERT (close (fd) == 0);
   }
 

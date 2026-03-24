@@ -1,5 +1,5 @@
 /* Tests of areadlinkat.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,10 +70,10 @@ main (void)
       ASSERT (chdir (BASE "dir") == 0);
       buf = areadlinkat (dfd, BASE "link");
       ASSERT (buf);
-      ASSERT (strcmp (buf, "nowhere") == 0);
+      ASSERT (streq (buf, "nowhere"));
       free (buf);
       errno = 0;
-      ASSERT (areadlinkat (-1, BASE "link") == NULL);
+      ASSERT (areadlinkat (AT_FDCWD == -2 ? -1 : -2, BASE "link") == NULL);
       ASSERT (errno == EBADF);
       errno = 0;
       ASSERT (areadlinkat (AT_FDCWD, BASE "link") == NULL);
@@ -84,5 +84,5 @@ main (void)
     }
 
   ASSERT (close (dfd) == 0);
-  return result;
+  return (result ? result : test_exit_status);
 }

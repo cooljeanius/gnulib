@@ -1,5 +1,5 @@
 /* Test of explicit_bzero() function.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,6 +41,11 @@ static char zero[SECRET_SIZE] = { 0 };
 # define explicit_bzero(a, n)  memset (a, '\0', n)
 #endif
 
+/* Suppress GCC 13.2.1 false alarm, as this test needs a dangling pointer.  */
+#if _GL_GNUC_PREREQ (12, 0)
+# pragma GCC diagnostic ignored "-Wdangling-pointer"
+#endif
+
 /* =================== Verify operation on static memory =================== */
 
 static char stbuf[SECRET_SIZE];
@@ -50,13 +55,27 @@ test_static (void)
 {
   memcpy (stbuf, SECRET, SECRET_SIZE);
   explicit_bzero (stbuf, SECRET_SIZE);
-  ASSERT (memcmp (zero, stbuf, SECRET_SIZE) == 0);
+  ASSERT (memeq (zero, stbuf, SECRET_SIZE));
 }
 
 /* =============== Verify operation on heap-allocated memory =============== */
 
+/* Skip this part when an address sanitizer is in use, because it would report
+   a "heap use after free".  */
+#ifndef __has_feature
+# define __has_feature(a) 0
+#endif
+#if defined __SANITIZE_ADDRESS__ || __has_feature (address_sanitizer)
+
+static void
+test_heap (void)
+{
+}
+
+#else
+
 /* Test whether an address range is mapped in memory.  */
-#if VMA_ITERATE_SUPPORTED
+# if VMA_ITERATE_SUPPORTED
 
 struct locals
 {
@@ -91,7 +110,7 @@ is_range_mapped (uintptr_t range_start, uintptr_t range_end)
   return l.range_start == l.range_end;
 }
 
-#else
+# else
 
 static bool
 is_range_mapped (uintptr_t range_start, uintptr_t range_end)
@@ -99,7 +118,7 @@ is_range_mapped (uintptr_t range_start, uintptr_t range_end)
   return true;
 }
 
-#endif
+# endif
 
 static void
 test_heap (void)
@@ -115,14 +134,30 @@ test_heap (void)
     {
       /* some implementation could override freed memory by canaries so
          compare against secret */
-      ASSERT (memcmp (heapbuf, SECRET, SECRET_SIZE) != 0);
+      ASSERT (!memeq (heapbuf, SECRET, SECRET_SIZE));
       printf ("test_heap: address range is still mapped after free().\n");
     }
   else
     printf ("test_heap: address range is unmapped after free().\n");
 }
 
+#endif /* ! address sanitizer enabled */
+
 /* =============== Verify operation on stack-allocated memory =============== */
+
+/* Skip this part when an address sanitizer is in use, because it would report
+   a "stack use after return".  */
+#ifndef __has_feature
+# define __has_feature(a) 0
+#endif
+#if defined __SANITIZE_ADDRESS__ || __has_feature (address_sanitizer)
+
+static void
+test_stack (void)
+{
+}
+
+#else
 
 /* There are two passes:
      1. Put a secret in memory and invoke explicit_bzero on it.
@@ -133,8 +168,18 @@ test_heap (void)
    does not eliminate a call to explicit_bzero, even if data flow analysis
    reveals that the stack area is dead at the end of the function.  */
 static bool _GL_ATTRIBUTE_NOINLINE
+# if _GL_GNUC_PREREQ (4, 5)
+__attribute__ ((__noclone__))
+# endif
+# if _GL_GNUC_PREREQ (8, 0)
+__attribute__ ((__noipa__))
+# endif
 do_secret_stuff (int volatile pass, char *volatile *volatile last_stackbuf)
 {
+# if _GL_GNUC_PREREQ (12, 0) ||  __clang_major__ >= 14
+  /* Support -ftrivial-auto-var-init  */
+  __attribute__ ((uninitialized))
+# endif
   char stackbuf[SECRET_SIZE];
   if (pass == 1)
     {
@@ -149,7 +194,7 @@ do_secret_stuff (int volatile pass, char *volatile *volatile last_stackbuf)
          different address than *last_stackbuf.  This can happen
          when the compiler splits this function into different functions,
          one for pass == 1 and one for pass != 1.  */
-      return memcmp (zero, *last_stackbuf, SECRET_SIZE) != 0;
+      return !memeq (zero, *last_stackbuf, SECRET_SIZE);
     }
 }
 
@@ -157,10 +202,9 @@ static void
 test_stack (void)
 {
   int count = 0;
-  int repeat;
   char *volatile last_stackbuf;
 
-  for (repeat = 2 * 1000; repeat > 0; repeat--)
+  for (int repeat = 2 * 1000; repeat > 0; repeat--)
     {
       /* This odd way of writing two consecutive statements
            do_secret_stuff (1, &last_stackbuf);
@@ -181,6 +225,8 @@ test_stack (void)
   ASSERT (count < 50);
 }
 
+#endif /* ! address sanitizer enabled */
+
 /* ========================================================================== */
 
 int
@@ -190,5 +236,5 @@ main ()
   test_heap ();
   test_stack ();
 
-  return 0;
+  return test_exit_status;
 }

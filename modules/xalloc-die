@@ -9,6 +9,7 @@ Depends-on:
 error
 extern-inline
 gettext-h
+gnulib-i18n
 exitfail
 
 configure.ac:
@@ -19,6 +20,9 @@ lib_SOURCES += xalloc-die.c
 
 Include:
 "xalloc.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

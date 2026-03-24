@@ -1,5 +1,5 @@
 /* rijndael-api-fst.h --- Rijndael cipher implementation.
- * Copyright (C) 2005, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2009-2026 Free Software Foundation, Inc.
  *
  * This file is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -61,6 +61,11 @@
 #include "rijndael-alg-fst.h"
 
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Default number of bits in a cipher block */
 #define RIJNDAEL_BITSPERBLOCK 128
@@ -135,16 +140,17 @@ typedef struct
    from KEYMATERIAL, a hex string, of KEYLEN size.  KEYLEN should be
    128, 192 or 256. Returns 0 on success, or an error code. */
 extern rijndael_rc
-rijndaelMakeKey (rijndaelKeyInstance *key, rijndael_direction direction,
-                 size_t keyLen, const char *keyMaterial);
+rijndaelMakeKey (rijndaelKeyInstance *restrict key,
+                 rijndael_direction direction,
+                 size_t keyLen, char const *restrict keyMaterial);
 
 /* Initialize cipher state CIPHER for encryption MODE (e.g.,
    RIJNDAEL_MODE_CBC) with initialization vector IV, a hex string of
    2*RIJNDAEL_MAX_IV_SIZE length.  IV may be NULL for modes that do
    not need an IV (i.e., RIJNDAEL_MODE_ECB).  */
 extern rijndael_rc
-rijndaelCipherInit (rijndaelCipherInstance *cipher,
-                    rijndael_mode mode, const char *IV);
+rijndaelCipherInit (rijndaelCipherInstance *restrict cipher,
+                    rijndael_mode mode, char const *restrict IV);
 
 /* Encrypt data in INPUT, of INPUTLEN/8 bytes length, placing the
    output in the pre-allocated OUTBUFFER which must hold at least
@@ -154,9 +160,9 @@ rijndaelCipherInit (rijndaelCipherInstance *cipher,
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelBlockEncrypt (rijndaelCipherInstance *cipher,
-                      const rijndaelKeyInstance *key,
-                      const char *input, size_t inputLen,
+rijndaelBlockEncrypt (rijndaelCipherInstance *restrict cipher,
+                      const rijndaelKeyInstance *restrict key,
+                      char const *restrict input, size_t inputLen,
                       char *restrict outBuffer);
 
 /* Encrypt data in INPUT, of INPUTOCTETS bytes length, placing the
@@ -169,9 +175,9 @@ rijndaelBlockEncrypt (rijndaelCipherInstance *cipher,
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelPadEncrypt (rijndaelCipherInstance *cipher,
-                    const rijndaelKeyInstance *key,
-                    const char *input, size_t inputOctets,
+rijndaelPadEncrypt (rijndaelCipherInstance *restrict cipher,
+                    const rijndaelKeyInstance *restrict key,
+                    char const *restrict input, size_t inputOctets,
                     char *restrict outBuffer);
 
 /* Decrypt data in INPUT, of INPUTLEN/8 bytes length, placing the
@@ -182,9 +188,9 @@ rijndaelPadEncrypt (rijndaelCipherInstance *cipher,
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelBlockDecrypt (rijndaelCipherInstance *cipher,
-                      const rijndaelKeyInstance *key,
-                      const char *input, size_t inputLen,
+rijndaelBlockDecrypt (rijndaelCipherInstance *restrict cipher,
+                      const rijndaelKeyInstance *restrict key,
+                      char const *restrict input, size_t inputLen,
                       char *restrict outBuffer);
 
 /* Decrypt data in INPUT, of INPUTOCTETS bytes length, placing the
@@ -197,9 +203,14 @@ rijndaelBlockDecrypt (rijndaelCipherInstance *cipher,
    calling this function.  Return the number of bits written, or a
    negative rijndael_rc error code. */
 extern int
-rijndaelPadDecrypt (rijndaelCipherInstance *cipher,
-                    const rijndaelKeyInstance *key,
-                    const char *input, size_t inputOctets,
+rijndaelPadDecrypt (rijndaelCipherInstance *restrict cipher,
+                    const rijndaelKeyInstance *restrict key,
+                    char const *restrict input, size_t inputOctets,
                     char *restrict outBuffer);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __RIJNDAEL_API_FST_H */

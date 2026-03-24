@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2003, 2006-2023 Free Software Foundation, Inc.
+/* Copyright (C) 2001-2003, 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This file is free software: you can redistribute it and/or modify
@@ -78,10 +78,6 @@
         Need to define _Bool ourselves. As 'signed char' or as an enum type?
         Use of a typedef, with SunPRO C, leads to a stupid
           "warning: _Bool is a keyword in ISO C99".
-        Use of an enum type, with IRIX cc, leads to a stupid
-          "warning(1185): enumerated type mixed with another type".
-        Even the existence of an enum type, without a typedef,
-          "Invalid enumerator. (badenum)" with HP-UX cc on Tru64.
         The only benefit of the enum, debuggability, is not important
         with these compilers.  So use 'signed char' and no enum.  */
 #  define _Bool signed char

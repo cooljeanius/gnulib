@@ -1,5 +1,5 @@
 /* Test of command line argument processing.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -81,18 +81,19 @@ getopt_loop (int argc, const char **argv,
 static void
 test_getopt (void)
 {
-  int start;
   bool posixly = !!getenv ("POSIXLY_CORRECT");
   /* See comment in getopt.c:
      glibc gets a LSB-compliant getopt.
-     Standalone applications get a POSIX-compliant getopt.  */
-#if defined __GETOPT_PREFIX || !(__GLIBC__ >= 2 || defined __MINGW32__)
+     Standalone applications get a POSIX-compliant getopt.
+     Note: The 'defined __GETOPT_PREFIX' condition is equivalent to
+     $REPLACE_GETOPT = 1 at configure time.  */
+#if defined __GETOPT_PREFIX || !(__GLIBC__ >= 2)
   /* Using getopt from gnulib or from a non-glibc system.  */
   posixly = true;
 #endif
 
   /* Test processing of boolean options.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -124,7 +125,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -157,7 +158,7 @@ test_getopt (void)
       ASSERT (optind == 3);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -189,7 +190,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -224,7 +225,7 @@ test_getopt (void)
     }
 
   /* Test processing of options with arguments.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -248,14 +249,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 0);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == 0);
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -280,14 +281,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 0);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == 0);
       ASSERT (optind == 3);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -314,8 +315,8 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 1);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
-      ASSERT (q_value != NULL && strcmp (q_value, "baz") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
+      ASSERT (q_value != NULL && streq (q_value, "baz"));
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == 0);
       ASSERT (optind == 5);
@@ -324,7 +325,7 @@ test_getopt (void)
 
 #if GNULIB_TEST_GETOPT_GNU
   /* Test processing of options with optional arguments.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -348,14 +349,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 0);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == 0);
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -387,7 +388,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -423,7 +424,7 @@ test_getopt (void)
 
   /* Check that invalid options are recognized; and that both opterr
      and leading ':' can silence output.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -450,14 +451,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == 'x');
       ASSERT (optind == 5);
       ASSERT (output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -484,14 +485,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == 'x');
       ASSERT (optind == 5);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -518,14 +519,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == 'x');
       ASSERT (optind == 5);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -552,14 +553,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == ':');
       ASSERT (optind == 5);
       ASSERT (output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -586,14 +587,14 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == ':');
       ASSERT (optind == 5);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -620,7 +621,7 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "foo") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "foo"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 0);
       ASSERT (unrecognized == ':');
@@ -629,7 +630,7 @@ test_getopt (void)
     }
 
   /* Check for missing argument behavior.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -659,7 +660,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -689,7 +690,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -721,7 +722,7 @@ test_getopt (void)
     }
 
   /* Check that by default, non-options arguments are moved to the end.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -749,13 +750,13 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       if (posixly)
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "donald") == 0);
-          ASSERT (strcmp (argv[2], "-p") == 0);
-          ASSERT (strcmp (argv[3], "billy") == 0);
-          ASSERT (strcmp (argv[4], "duck") == 0);
-          ASSERT (strcmp (argv[5], "-a") == 0);
-          ASSERT (strcmp (argv[6], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "donald"));
+          ASSERT (streq (argv[2], "-p"));
+          ASSERT (streq (argv[3], "billy"));
+          ASSERT (streq (argv[4], "duck"));
+          ASSERT (streq (argv[5], "-a"));
+          ASSERT (streq (argv[6], "bar"));
           ASSERT (argv[7] == NULL);
           ASSERT (a_seen == 0);
           ASSERT (b_seen == 0);
@@ -768,17 +769,17 @@ test_getopt (void)
         }
       else
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "-p") == 0);
-          ASSERT (strcmp (argv[2], "billy") == 0);
-          ASSERT (strcmp (argv[3], "-a") == 0);
-          ASSERT (strcmp (argv[4], "donald") == 0);
-          ASSERT (strcmp (argv[5], "duck") == 0);
-          ASSERT (strcmp (argv[6], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "-p"));
+          ASSERT (streq (argv[2], "billy"));
+          ASSERT (streq (argv[3], "-a"));
+          ASSERT (streq (argv[4], "donald"));
+          ASSERT (streq (argv[5], "duck"));
+          ASSERT (streq (argv[6], "bar"));
           ASSERT (argv[7] == NULL);
           ASSERT (a_seen == 1);
           ASSERT (b_seen == 0);
-          ASSERT (p_value != NULL && strcmp (p_value, "billy") == 0);
+          ASSERT (p_value != NULL && streq (p_value, "billy"));
           ASSERT (q_value == NULL);
           ASSERT (non_options_count == 0);
           ASSERT (unrecognized == 0);
@@ -788,7 +789,7 @@ test_getopt (void)
     }
 
   /* Check that '--' ends the argument processing.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -821,18 +822,18 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       if (posixly)
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "donald") == 0);
-          ASSERT (strcmp (argv[2], "-p") == 0);
-          ASSERT (strcmp (argv[3], "billy") == 0);
-          ASSERT (strcmp (argv[4], "duck") == 0);
-          ASSERT (strcmp (argv[5], "-a") == 0);
-          ASSERT (strcmp (argv[6], "--") == 0);
-          ASSERT (strcmp (argv[7], "-b") == 0);
-          ASSERT (strcmp (argv[8], "foo") == 0);
-          ASSERT (strcmp (argv[9], "-q") == 0);
-          ASSERT (strcmp (argv[10], "johnny") == 0);
-          ASSERT (strcmp (argv[11], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "donald"));
+          ASSERT (streq (argv[2], "-p"));
+          ASSERT (streq (argv[3], "billy"));
+          ASSERT (streq (argv[4], "duck"));
+          ASSERT (streq (argv[5], "-a"));
+          ASSERT (streq (argv[6], "--"));
+          ASSERT (streq (argv[7], "-b"));
+          ASSERT (streq (argv[8], "foo"));
+          ASSERT (streq (argv[9], "-q"));
+          ASSERT (streq (argv[10], "johnny"));
+          ASSERT (streq (argv[11], "bar"));
           ASSERT (argv[12] == NULL);
           ASSERT (a_seen == 0);
           ASSERT (b_seen == 0);
@@ -845,22 +846,22 @@ test_getopt (void)
         }
       else
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "-p") == 0);
-          ASSERT (strcmp (argv[2], "billy") == 0);
-          ASSERT (strcmp (argv[3], "-a") == 0);
-          ASSERT (strcmp (argv[4], "--") == 0);
-          ASSERT (strcmp (argv[5], "donald") == 0);
-          ASSERT (strcmp (argv[6], "duck") == 0);
-          ASSERT (strcmp (argv[7], "-b") == 0);
-          ASSERT (strcmp (argv[8], "foo") == 0);
-          ASSERT (strcmp (argv[9], "-q") == 0);
-          ASSERT (strcmp (argv[10], "johnny") == 0);
-          ASSERT (strcmp (argv[11], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "-p"));
+          ASSERT (streq (argv[2], "billy"));
+          ASSERT (streq (argv[3], "-a"));
+          ASSERT (streq (argv[4], "--"));
+          ASSERT (streq (argv[5], "donald"));
+          ASSERT (streq (argv[6], "duck"));
+          ASSERT (streq (argv[7], "-b"));
+          ASSERT (streq (argv[8], "foo"));
+          ASSERT (streq (argv[9], "-q"));
+          ASSERT (streq (argv[10], "johnny"));
+          ASSERT (streq (argv[11], "bar"));
           ASSERT (argv[12] == NULL);
           ASSERT (a_seen == 1);
           ASSERT (b_seen == 0);
-          ASSERT (p_value != NULL && strcmp (p_value, "billy") == 0);
+          ASSERT (p_value != NULL && streq (p_value, "billy"));
           ASSERT (q_value == NULL);
           ASSERT (non_options_count == 0);
           ASSERT (unrecognized == 0);
@@ -871,7 +872,7 @@ test_getopt (void)
 
 #if GNULIB_TEST_GETOPT_GNU
   /* Check that the '-' flag causes non-options to be returned in order.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -897,29 +898,29 @@ test_getopt (void)
       getopt_loop (argc, argv, "-abp:q:",
                    &a_seen, &b_seen, &p_value, &q_value,
                    &non_options_count, non_options, &unrecognized, &output);
-      ASSERT (strcmp (argv[0], "program") == 0);
-      ASSERT (strcmp (argv[1], "donald") == 0);
-      ASSERT (strcmp (argv[2], "-p") == 0);
-      ASSERT (strcmp (argv[3], "billy") == 0);
-      ASSERT (strcmp (argv[4], "duck") == 0);
-      ASSERT (strcmp (argv[5], "-a") == 0);
-      ASSERT (strcmp (argv[6], "bar") == 0);
+      ASSERT (streq (argv[0], "program"));
+      ASSERT (streq (argv[1], "donald"));
+      ASSERT (streq (argv[2], "-p"));
+      ASSERT (streq (argv[3], "billy"));
+      ASSERT (streq (argv[4], "duck"));
+      ASSERT (streq (argv[5], "-a"));
+      ASSERT (streq (argv[6], "bar"));
       ASSERT (argv[7] == NULL);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "billy") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "billy"));
       ASSERT (q_value == NULL);
       ASSERT (non_options_count == 3);
-      ASSERT (strcmp (non_options[0], "donald") == 0);
-      ASSERT (strcmp (non_options[1], "duck") == 0);
-      ASSERT (strcmp (non_options[2], "bar") == 0);
+      ASSERT (streq (non_options[0], "donald"));
+      ASSERT (streq (non_options[1], "duck"));
+      ASSERT (streq (non_options[2], "bar"));
       ASSERT (unrecognized == 0);
       ASSERT (optind == 7);
       ASSERT (!output);
     }
 
   /* Check that '--' ends the argument processing.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -950,30 +951,30 @@ test_getopt (void)
       getopt_loop (argc, argv, "-abp:q:",
                    &a_seen, &b_seen, &p_value, &q_value,
                    &non_options_count, non_options, &unrecognized, &output);
-      ASSERT (strcmp (argv[0], "program") == 0);
-      ASSERT (strcmp (argv[1], "donald") == 0);
-      ASSERT (strcmp (argv[2], "-p") == 0);
-      ASSERT (strcmp (argv[3], "billy") == 0);
-      ASSERT (strcmp (argv[4], "duck") == 0);
-      ASSERT (strcmp (argv[5], "-a") == 0);
-      ASSERT (strcmp (argv[6], "--") == 0);
-      ASSERT (strcmp (argv[7], "-b") == 0);
-      ASSERT (strcmp (argv[8], "foo") == 0);
-      ASSERT (strcmp (argv[9], "-q") == 0);
-      ASSERT (strcmp (argv[10], "johnny") == 0);
-      ASSERT (strcmp (argv[11], "bar") == 0);
+      ASSERT (streq (argv[0], "program"));
+      ASSERT (streq (argv[1], "donald"));
+      ASSERT (streq (argv[2], "-p"));
+      ASSERT (streq (argv[3], "billy"));
+      ASSERT (streq (argv[4], "duck"));
+      ASSERT (streq (argv[5], "-a"));
+      ASSERT (streq (argv[6], "--"));
+      ASSERT (streq (argv[7], "-b"));
+      ASSERT (streq (argv[8], "foo"));
+      ASSERT (streq (argv[9], "-q"));
+      ASSERT (streq (argv[10], "johnny"));
+      ASSERT (streq (argv[11], "bar"));
       ASSERT (argv[12] == NULL);
       ASSERT (a_seen == 1);
       ASSERT (b_seen == 0);
-      ASSERT (p_value != NULL && strcmp (p_value, "billy") == 0);
+      ASSERT (p_value != NULL && streq (p_value, "billy"));
       ASSERT (q_value == NULL);
       ASSERT (!output);
       if (non_options_count == 2)
         {
           /* glibc behaviour.  */
           ASSERT (non_options_count == 2);
-          ASSERT (strcmp (non_options[0], "donald") == 0);
-          ASSERT (strcmp (non_options[1], "duck") == 0);
+          ASSERT (streq (non_options[0], "donald"));
+          ASSERT (streq (non_options[1], "duck"));
           ASSERT (unrecognized == 0);
           ASSERT (optind == 7);
         }
@@ -981,20 +982,20 @@ test_getopt (void)
         {
           /* Another valid behaviour.  */
           ASSERT (non_options_count == 7);
-          ASSERT (strcmp (non_options[0], "donald") == 0);
-          ASSERT (strcmp (non_options[1], "duck") == 0);
-          ASSERT (strcmp (non_options[2], "-b") == 0);
-          ASSERT (strcmp (non_options[3], "foo") == 0);
-          ASSERT (strcmp (non_options[4], "-q") == 0);
-          ASSERT (strcmp (non_options[5], "johnny") == 0);
-          ASSERT (strcmp (non_options[6], "bar") == 0);
+          ASSERT (streq (non_options[0], "donald"));
+          ASSERT (streq (non_options[1], "duck"));
+          ASSERT (streq (non_options[2], "-b"));
+          ASSERT (streq (non_options[3], "foo"));
+          ASSERT (streq (non_options[4], "-q"));
+          ASSERT (streq (non_options[5], "johnny"));
+          ASSERT (streq (non_options[6], "bar"));
           ASSERT (unrecognized == 0);
           ASSERT (optind == 12);
         }
     }
 
   /* Check that the '-' flag has to come first.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1022,13 +1023,13 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       if (posixly)
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "donald") == 0);
-          ASSERT (strcmp (argv[2], "-p") == 0);
-          ASSERT (strcmp (argv[3], "billy") == 0);
-          ASSERT (strcmp (argv[4], "duck") == 0);
-          ASSERT (strcmp (argv[5], "-a") == 0);
-          ASSERT (strcmp (argv[6], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "donald"));
+          ASSERT (streq (argv[2], "-p"));
+          ASSERT (streq (argv[3], "billy"));
+          ASSERT (streq (argv[4], "duck"));
+          ASSERT (streq (argv[5], "-a"));
+          ASSERT (streq (argv[6], "bar"));
           ASSERT (argv[7] == NULL);
           ASSERT (a_seen == 0);
           ASSERT (b_seen == 0);
@@ -1041,17 +1042,17 @@ test_getopt (void)
         }
       else
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "-p") == 0);
-          ASSERT (strcmp (argv[2], "billy") == 0);
-          ASSERT (strcmp (argv[3], "-a") == 0);
-          ASSERT (strcmp (argv[4], "donald") == 0);
-          ASSERT (strcmp (argv[5], "duck") == 0);
-          ASSERT (strcmp (argv[6], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "-p"));
+          ASSERT (streq (argv[2], "billy"));
+          ASSERT (streq (argv[3], "-a"));
+          ASSERT (streq (argv[4], "donald"));
+          ASSERT (streq (argv[5], "duck"));
+          ASSERT (streq (argv[6], "bar"));
           ASSERT (argv[7] == NULL);
           ASSERT (a_seen == 1);
           ASSERT (b_seen == 0);
-          ASSERT (p_value != NULL && strcmp (p_value, "billy") == 0);
+          ASSERT (p_value != NULL && streq (p_value, "billy"));
           ASSERT (q_value == NULL);
           ASSERT (non_options_count == 0);
           ASSERT (unrecognized == 0);
@@ -1062,7 +1063,7 @@ test_getopt (void)
 
   /* Check that the '+' flag causes the first non-option to terminate the
      loop.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1088,13 +1089,13 @@ test_getopt (void)
       getopt_loop (argc, argv, "+abp:q:",
                    &a_seen, &b_seen, &p_value, &q_value,
                    &non_options_count, non_options, &unrecognized, &output);
-      ASSERT (strcmp (argv[0], "program") == 0);
-      ASSERT (strcmp (argv[1], "donald") == 0);
-      ASSERT (strcmp (argv[2], "-p") == 0);
-      ASSERT (strcmp (argv[3], "billy") == 0);
-      ASSERT (strcmp (argv[4], "duck") == 0);
-      ASSERT (strcmp (argv[5], "-a") == 0);
-      ASSERT (strcmp (argv[6], "bar") == 0);
+      ASSERT (streq (argv[0], "program"));
+      ASSERT (streq (argv[1], "donald"));
+      ASSERT (streq (argv[2], "-p"));
+      ASSERT (streq (argv[3], "billy"));
+      ASSERT (streq (argv[4], "duck"));
+      ASSERT (streq (argv[5], "-a"));
+      ASSERT (streq (argv[6], "bar"));
       ASSERT (argv[7] == NULL);
       ASSERT (a_seen == 0);
       ASSERT (b_seen == 0);
@@ -1105,7 +1106,7 @@ test_getopt (void)
       ASSERT (optind == 1);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1136,7 +1137,7 @@ test_getopt (void)
     }
 
   /* Check that '--' ends the argument processing.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1167,18 +1168,18 @@ test_getopt (void)
       getopt_loop (argc, argv, "+abp:q:",
                    &a_seen, &b_seen, &p_value, &q_value,
                    &non_options_count, non_options, &unrecognized, &output);
-      ASSERT (strcmp (argv[0], "program") == 0);
-      ASSERT (strcmp (argv[1], "donald") == 0);
-      ASSERT (strcmp (argv[2], "-p") == 0);
-      ASSERT (strcmp (argv[3], "billy") == 0);
-      ASSERT (strcmp (argv[4], "duck") == 0);
-      ASSERT (strcmp (argv[5], "-a") == 0);
-      ASSERT (strcmp (argv[6], "--") == 0);
-      ASSERT (strcmp (argv[7], "-b") == 0);
-      ASSERT (strcmp (argv[8], "foo") == 0);
-      ASSERT (strcmp (argv[9], "-q") == 0);
-      ASSERT (strcmp (argv[10], "johnny") == 0);
-      ASSERT (strcmp (argv[11], "bar") == 0);
+      ASSERT (streq (argv[0], "program"));
+      ASSERT (streq (argv[1], "donald"));
+      ASSERT (streq (argv[2], "-p"));
+      ASSERT (streq (argv[3], "billy"));
+      ASSERT (streq (argv[4], "duck"));
+      ASSERT (streq (argv[5], "-a"));
+      ASSERT (streq (argv[6], "--"));
+      ASSERT (streq (argv[7], "-b"));
+      ASSERT (streq (argv[8], "foo"));
+      ASSERT (streq (argv[9], "-q"));
+      ASSERT (streq (argv[10], "johnny"));
+      ASSERT (streq (argv[11], "bar"));
       ASSERT (argv[12] == NULL);
       ASSERT (a_seen == 0);
       ASSERT (b_seen == 0);
@@ -1192,7 +1193,7 @@ test_getopt (void)
 #endif /* GNULIB_TEST_GETOPT_GNU */
 
   /* Check that the '+' flag has to come first.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1220,13 +1221,13 @@ test_getopt (void)
                    &non_options_count, non_options, &unrecognized, &output);
       if (posixly)
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "donald") == 0);
-          ASSERT (strcmp (argv[2], "-p") == 0);
-          ASSERT (strcmp (argv[3], "billy") == 0);
-          ASSERT (strcmp (argv[4], "duck") == 0);
-          ASSERT (strcmp (argv[5], "-a") == 0);
-          ASSERT (strcmp (argv[6], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "donald"));
+          ASSERT (streq (argv[2], "-p"));
+          ASSERT (streq (argv[3], "billy"));
+          ASSERT (streq (argv[4], "duck"));
+          ASSERT (streq (argv[5], "-a"));
+          ASSERT (streq (argv[6], "bar"));
           ASSERT (argv[7] == NULL);
           ASSERT (a_seen == 0);
           ASSERT (b_seen == 0);
@@ -1239,17 +1240,17 @@ test_getopt (void)
         }
       else
         {
-          ASSERT (strcmp (argv[0], "program") == 0);
-          ASSERT (strcmp (argv[1], "-p") == 0);
-          ASSERT (strcmp (argv[2], "billy") == 0);
-          ASSERT (strcmp (argv[3], "-a") == 0);
-          ASSERT (strcmp (argv[4], "donald") == 0);
-          ASSERT (strcmp (argv[5], "duck") == 0);
-          ASSERT (strcmp (argv[6], "bar") == 0);
+          ASSERT (streq (argv[0], "program"));
+          ASSERT (streq (argv[1], "-p"));
+          ASSERT (streq (argv[2], "billy"));
+          ASSERT (streq (argv[3], "-a"));
+          ASSERT (streq (argv[4], "donald"));
+          ASSERT (streq (argv[5], "duck"));
+          ASSERT (streq (argv[6], "bar"));
           ASSERT (argv[7] == NULL);
           ASSERT (a_seen == 1);
           ASSERT (b_seen == 0);
-          ASSERT (p_value != NULL && strcmp (p_value, "billy") == 0);
+          ASSERT (p_value != NULL && streq (p_value, "billy"));
           ASSERT (q_value == NULL);
           ASSERT (non_options_count == 0);
           ASSERT (unrecognized == 0);
@@ -1261,8 +1262,8 @@ test_getopt (void)
 #if GNULIB_TEST_GETOPT_GNU
   /* If GNU extensions are supported, require compliance with POSIX
      interpretation on leading '+' behavior.
-     http://austingroupbugs.net/view.php?id=191  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+     https://austingroupbugs.net/view.php?id=191  */
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1288,13 +1289,13 @@ test_getopt (void)
       getopt_loop (argc, argv, "+:abp:q:",
                    &a_seen, &b_seen, &p_value, &q_value,
                    &non_options_count, non_options, &unrecognized, &output);
-      ASSERT (strcmp (argv[0], "program") == 0);
-      ASSERT (strcmp (argv[1], "donald") == 0);
-      ASSERT (strcmp (argv[2], "-p") == 0);
-      ASSERT (strcmp (argv[3], "billy") == 0);
-      ASSERT (strcmp (argv[4], "duck") == 0);
-      ASSERT (strcmp (argv[5], "-a") == 0);
-      ASSERT (strcmp (argv[6], "bar") == 0);
+      ASSERT (streq (argv[0], "program"));
+      ASSERT (streq (argv[1], "donald"));
+      ASSERT (streq (argv[2], "-p"));
+      ASSERT (streq (argv[3], "billy"));
+      ASSERT (streq (argv[4], "duck"));
+      ASSERT (streq (argv[5], "-a"));
+      ASSERT (streq (argv[6], "bar"));
       ASSERT (argv[7] == NULL);
       ASSERT (a_seen == 0);
       ASSERT (b_seen == 0);
@@ -1305,7 +1306,7 @@ test_getopt (void)
       ASSERT (optind == 1);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1334,7 +1335,7 @@ test_getopt (void)
       ASSERT (optind == 2);
       ASSERT (!output);
     }
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int a_seen = 0;
       int b_seen = 0;
@@ -1366,11 +1367,11 @@ test_getopt (void)
     }
 
   /* Check that 'W' does not dump core:
-     https://sourceware.org/bugzilla/show_bug.cgi?id=12922
+     https://sourceware.org/PR12922
      Technically, POSIX says the presence of ';' in the opt-string
      gives unspecified behavior, so we only test this when GNU compliance
      is desired.  */
-  for (start = OPTIND_MIN; start <= 1; start++)
+  for (int start = OPTIND_MIN; start <= 1; start++)
     {
       int argc = 0;
       const char *argv[10];

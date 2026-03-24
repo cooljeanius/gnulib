@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,29 +35,25 @@ main (int argc, char *argv[])
     "\xd7\x9e\x1c\x30\x8a\xa5\xbb\xcd\xee\xa8\xed\x63\xdf\x41\x2d\xa9";
   char buf[MD4_DIGEST_SIZE];
 
-  if (memcmp (md4_buffer (in1, strlen (in1), buf), out1, MD4_DIGEST_SIZE) !=
-      0)
+  if (!memeq (md4_buffer (in1, strlen (in1), buf), out1, MD4_DIGEST_SIZE))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < MD4_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD4_DIGEST_SIZE; i++)
         printf ("%02x ", out1[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < MD4_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD4_DIGEST_SIZE; i++)
         printf ("%02x ", buf[i] & 0xFF);
       printf ("\n");
       return 1;
     }
 
-  if (memcmp (md4_buffer (in2, strlen (in2), buf), out2, MD4_DIGEST_SIZE) !=
-      0)
+  if (!memeq (md4_buffer (in2, strlen (in2), buf), out2, MD4_DIGEST_SIZE))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < MD4_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD4_DIGEST_SIZE; i++)
         printf ("%02x ", out2[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < MD4_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < MD4_DIGEST_SIZE; i++)
         printf ("%02x ", buf[i] & 0xFF);
       printf ("\n");
       return 1;

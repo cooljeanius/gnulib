@@ -1,5 +1,5 @@
 /* Test of c32swidth() function.
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ main ()
         /* Check whether it's really an UTF-8 locale.
            On native Windows, these setlocale calls succeed but the encoding
            of this locale is CP1252, not UTF-8.  */
-        && strcmp (locale_charset (), "UTF-8") == 0))
+        && streq (locale_charset (), "UTF-8")))
     {
       fprintf (stderr, "Skipping test: No common Unicode locale is installed\n");
       return 77;
@@ -124,5 +124,5 @@ main ()
     ASSERT (w == 4);
   }
 
-  return 0;
+  return test_exit_status;
 }

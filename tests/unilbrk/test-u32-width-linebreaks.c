@@ -1,5 +1,5 @@
 /* Test of line breaking of UTF-32 strings.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "unilbrk.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "macros.h"
@@ -43,11 +44,10 @@ test_function (int (*my_u32_width_linebreaks) (const uint32_t *, size_t, int, in
       };
 
     {
-      char *p = (char *) malloc (SIZEOF (input));
-      size_t i;
+      char *p = (char *) malloc (countof (input));
 
-      my_u32_width_linebreaks (input, SIZEOF (input), 25, 0, 0, NULL, "GB18030", p);
-      for (i = 0; i < 61; i++)
+      my_u32_width_linebreaks (input, countof (input), 25, 0, 0, NULL, "GB18030", p);
+      for (size_t i = 0; i < 61; i++)
         {
           ASSERT (p[i] == (i == 60 ? UC_BREAK_MANDATORY :
                            i == 25 || i == 45 ? UC_BREAK_POSSIBLE :
@@ -57,11 +57,10 @@ test_function (int (*my_u32_width_linebreaks) (const uint32_t *, size_t, int, in
     }
 
     {
-      char *p = (char *) malloc (SIZEOF (input));
-      size_t i;
+      char *p = (char *) malloc (countof (input));
 
-      my_u32_width_linebreaks (input, SIZEOF (input), 25, 0, 0, NULL, "GB2312", p);
-      for (i = 0; i < 61; i++)
+      my_u32_width_linebreaks (input, countof (input), 25, 0, 0, NULL, "GB2312", p);
+      for (size_t i = 0; i < 61; i++)
         {
           ASSERT (p[i] == (i == 60 ? UC_BREAK_MANDATORY :
                            i == 11 || i == 25 || i == 45 ? UC_BREAK_POSSIBLE :
@@ -81,5 +80,5 @@ main ()
   test_function (u32_width_linebreaks, 1);
 #endif
 
-  return 0;
+  return test_exit_status;
 }

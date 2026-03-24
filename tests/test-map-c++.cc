@@ -1,5 +1,5 @@
 /* Test of map data type implementation as a C++ class.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2020.
 
    This program is free software: you can redistribute it and/or modify
@@ -26,12 +26,6 @@
 
 static const int integers[6] = { 0, 1, 2, 3, 4, 5 };
 
-static bool
-streq (const char *str1, const char *str2)
-{
-  return strcmp (str1, str2) == 0;
-}
-
 int
 main (int argc, char *argv[])
 {
@@ -52,23 +46,23 @@ main (int argc, char *argv[])
   const char *key;
   const int *val;
   ASSERT (iter1.next (key, val));
-  ASSERT (strcmp (key, "five") == 0);
+  ASSERT (streq (key, "five"));
   ASSERT (*val == 5);
   ASSERT (iter1.next (key, val));
-  ASSERT (strcmp (key, "one") == 0);
+  ASSERT (streq (key, "one"));
   ASSERT (*val == 1);
   ASSERT (iter1.next (key, val));
-  ASSERT (strcmp (key, "two") == 0);
+  ASSERT (streq (key, "two"));
   ASSERT (*val == 2);
   ASSERT (iter1.next (key, val));
-  ASSERT (strcmp (key, "three") == 0);
+  ASSERT (streq (key, "three"));
   ASSERT (*val == 3);
   ASSERT (iter1.next (key, val));
-  ASSERT (strcmp (key, "four") == 0);
+  ASSERT (streq (key, "four"));
   ASSERT (*val == 4);
   ASSERT (!iter1.next (key, val));
 
   map1.free ();
 
-  return 0;
+  return test_exit_status;
 }

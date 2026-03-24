@@ -1,5 +1,5 @@
 /* Test of xmemdup0() function.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -49,30 +49,30 @@ main (int argc, char **argv)
   {
     char *result = xmemdup0 (buffer, 4);
     ASSERT (result);
-    ASSERT (strcmp (result, buffer) == 0);
+    ASSERT (streq (result, buffer));
     free (result);
   }
   {
     char *result = xmemdup0 (buffer, 5);
     ASSERT (result);
-    ASSERT (strcmp (result, buffer) == 0);
+    ASSERT (streq (result, buffer));
     ASSERT (result[5] == '\0');
     free (result);
   }
   {
     char *result = xmemdup0 (buffer, 9);
     ASSERT (result);
-    ASSERT (memcmp (result, buffer, 9) == 0);
+    ASSERT (memeq (result, buffer, 9));
     ASSERT (result[9] == '\0');
     free (result);
   }
   {
     char *result = xmemdup0 (buffer, 10);
     ASSERT (result);
-    ASSERT (memcmp (result, buffer, 10) == 0);
+    ASSERT (memeq (result, buffer, 10));
     ASSERT (result[10] == '\0');
     free (result);
   }
 
-  return 0;
+  return test_exit_status;
 }

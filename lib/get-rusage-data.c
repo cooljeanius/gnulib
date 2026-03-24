@@ -1,5 +1,5 @@
 /* Getter for RLIMIT_DATA.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify
@@ -88,17 +88,6 @@
      Both methods agree, except that the value of get_rusage_data_via_iterator()
      is sometimes 4 KB larger than get_rusage_data_via_setrlimit().
 
-   IRIX:
-     a) setrlimit with RLIMIT_DATA works.
-     b) The /proc/$pid file supports ioctls PIOCNMAP and PIOCMAP.
-     get_rusage_data_via_setrlimit() works slightly better than
-     get_rusage_data_via_iterator() before the first malloc() call.
-
-   OSF/1:
-     a) setrlimit with RLIMIT_DATA works.
-     b) The /proc/$pid file supports ioctls PIOCNMAP and PIOCMAP.
-     Both methods agree.
-
    Solaris:
      a) setrlimit with RLIMIT_DATA works.
      b) The /proc/$pid file supports ioctls PIOCNMAP and PIOCMAP, and the
@@ -174,9 +163,8 @@ get_rusage_data_via_setrlimit (void)
     struct utsname buf;
 
     if (uname (&buf) == 0
-        && strlen (buf.release) >= 5
-        && (strcmp (buf.release + strlen (buf.release) - 5, "11.00") == 0
-            || strcmp (buf.release + strlen (buf.release) - 5, "11.11") == 0))
+        && (str_endswith (buf.release, "11.00")
+            || str_endswith (buf.release, "11.11")))
       return 0;
   }
 #  endif
@@ -202,7 +190,6 @@ get_rusage_data_via_setrlimit (void)
     for (;;)
       {
         /* Here we know that the data segment size is >= low_bound.  */
-        struct rlimit try_limit;
         uintptr_t try_next = 2 * low_bound + pagesize;
 
         if (try_next < low_bound)
@@ -223,6 +210,7 @@ get_rusage_data_via_setrlimit (void)
             goto done;
           }
 
+        struct rlimit try_limit;
         try_limit.rlim_max = orig_limit.rlim_max;
         try_limit.rlim_cur = try_next;
         if (setrlimit (RLIMIT_DATA, &try_limit) == 0)
@@ -262,11 +250,11 @@ get_rusage_data_via_setrlimit (void)
        >= low_bound and < high_bound.  */
     while (high_bound - low_bound > pagesize)
       {
-        struct rlimit try_limit;
         uintptr_t try_next =
           low_bound + (((high_bound - low_bound) / 2) / pagesize) * pagesize;
 
         /* Here low_bound <= try_next < high_bound.  */
+        struct rlimit try_limit;
         try_limit.rlim_max = orig_limit.rlim_max;
         try_limit.rlim_cur = try_next;
         if (setrlimit (RLIMIT_DATA, &try_limit) == 0)
@@ -414,15 +402,13 @@ get_rusage_data (void)
      Prefer get_rusage_data_via_iterator().  */
   return get_rusage_data_via_iterator ();
 #elif HAVE_SETRLIMIT && defined RLIMIT_DATA && !defined __HAIKU__
-# if defined __linux__ || defined __ANDROID__ || defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined _AIX || defined __hpux || defined __sgi || defined __osf__ || defined __sun /* Linux, FreeBSD, NetBSD, OpenBSD, AIX, HP-UX, IRIX, OSF/1, Solaris */
+# if defined __linux__ || defined __ANDROID__ || defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined _AIX || defined __hpux || defined __sun /* Linux, FreeBSD, NetBSD, OpenBSD, AIX, HP-UX, Solaris */
   /* get_rusage_data_via_setrlimit() works.  */
   return get_rusage_data_via_setrlimit ();
 # else
   /* Prefer get_rusage_data_via_setrlimit() if it succeeds,
      because the caller may want to use the result with setrlimit().  */
-  uintptr_t result;
-
-  result = get_rusage_data_via_setrlimit ();
+  uintptr_t result = get_rusage_data_via_setrlimit ();
   if (result == 0)
     result = get_rusage_data_via_iterator ();
   return result;

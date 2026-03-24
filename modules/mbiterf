@@ -13,8 +13,8 @@ mbchar
 mbrtoc32
 mbsinit
 mbszero
-uchar
-stdbool
+uchar-h
+bool
 
 configure.ac:
 gl_MBITER

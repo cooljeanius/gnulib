@@ -1,5 +1,5 @@
 /* Test of ordered set data type implementation as a C++ class.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2020.
 
    This program is free software: you can redistribute it and/or modify
@@ -60,11 +60,11 @@ main (int argc, char *argv[])
     gl_OSet<const char *>::iterator iter1 = set1.begin ();
     const char *elt;
     ASSERT (iter1.next (elt));
-    ASSERT (strcmp (elt, "D") == 0);
+    ASSERT (streq (elt, "D"));
     ASSERT (iter1.next (elt));
-    ASSERT (strcmp (elt, "C") == 0);
+    ASSERT (streq (elt, "C"));
     ASSERT (iter1.next (elt));
-    ASSERT (strcmp (elt, "A") == 0);
+    ASSERT (streq (elt, "A"));
     ASSERT (!iter1.next (elt));
   }
 
@@ -75,11 +75,11 @@ main (int argc, char *argv[])
     gl_OSet<const char *>::iterator iter2 = set1.begin ();
     const char *elt;
     ASSERT (iter2.next (elt));
-    ASSERT (strcmp (elt, "Z") == 0);
+    ASSERT (streq (elt, "Z"));
     ASSERT (iter2.next (elt));
-    ASSERT (strcmp (elt, "D") == 0);
+    ASSERT (streq (elt, "D"));
     ASSERT (iter2.next (elt));
-    ASSERT (strcmp (elt, "C") == 0);
+    ASSERT (streq (elt, "C"));
     ASSERT (!iter2.next (elt));
   }
 
@@ -87,13 +87,13 @@ main (int argc, char *argv[])
     gl_OSet<const char *>::iterator iter3 = set1.begin_atleast (is_at_most, "R");
     const char *elt;
     ASSERT (iter3.next (elt));
-    ASSERT (strcmp (elt, "D") == 0);
+    ASSERT (streq (elt, "D"));
     ASSERT (iter3.next (elt));
-    ASSERT (strcmp (elt, "C") == 0);
+    ASSERT (streq (elt, "C"));
     ASSERT (!iter3.next (elt));
   }
 
   set1.free ();
 
-  return 0;
+  return test_exit_status;
 }

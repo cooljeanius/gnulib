@@ -7,9 +7,9 @@ lib/mbmemcasecoll.h
 lib/mbmemcasecoll.c
 
 Depends-on:
-stdbool
-wchar
-uchar
+bool
+wchar-h
+uchar-h
 malloca
 mbszero
 mbrtoc32

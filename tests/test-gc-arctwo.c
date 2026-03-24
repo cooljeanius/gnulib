@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,9 +27,12 @@ main (int argc, char *argv[])
 {
   gc_cipher_handle ctx;
   /* Test vectors from RFC 2268. */
-  static char key[8] = "\xff\xff\xff\xff\xff\xff\xff\xff";
-  static char plaintext[8] = "\xff\xff\xff\xff\xff\xff\xff\xff";
-  static const char ciphertext[8] = "\x27\x8b\x27\xe4\x2e\x2f\x0d\x49";
+  static char key[8] _GL_ATTRIBUTE_NONSTRING =
+    "\xff\xff\xff\xff\xff\xff\xff\xff";
+  static char plaintext[8] _GL_ATTRIBUTE_NONSTRING =
+    "\xff\xff\xff\xff\xff\xff\xff\xff";
+  static const char ciphertext[8] _GL_ATTRIBUTE_NONSTRING =
+    "\x27\x8b\x27\xe4\x2e\x2f\x0d\x49";
   char scratch[16];
   Gc_rc rc;
 
@@ -53,14 +56,13 @@ main (int argc, char *argv[])
   if (rc != GC_OK)
     return 1;
 
-  if (memcmp (scratch, ciphertext, sizeof (ciphertext)))
+  if (!memeq (scratch, ciphertext, sizeof (ciphertext)))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", scratch[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", ciphertext[i] & 0xFF);
       printf ("\n");
       return 1;
@@ -76,14 +78,13 @@ main (int argc, char *argv[])
   if (rc != GC_OK)
     return 1;
 
-  if (memcmp (scratch, plaintext, sizeof (plaintext)))
+  if (!memeq (scratch, plaintext, sizeof (plaintext)))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", plaintext[i] & 0xFF);
       printf ("\ncomputed:\n");
-      for (i = 0; i < 5; i++)
+      for (size_t i = 0; i < 5; i++)
         printf ("%02x ", scratch[i] & 0xFF);
       printf ("\n");
       return 1;

@@ -8,7 +8,7 @@ lib/gl_xmap.c
 Depends-on:
 map
 extern-inline
-stdbool
+bool
 xalloc-die
 
 configure.ac:
@@ -18,6 +18,9 @@ lib_SOURCES += gl_xmap.h gl_xmap.c
 
 Include:
 "gl_xmap.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

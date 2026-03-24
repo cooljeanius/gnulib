@@ -8,7 +8,7 @@ lib/gl_xset.c
 Depends-on:
 set
 extern-inline
-stdbool
+bool
 xalloc-die
 
 configure.ac:
@@ -18,6 +18,9 @@ lib_SOURCES += gl_xset.h gl_xset.c
 
 Include:
 "gl_xset.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

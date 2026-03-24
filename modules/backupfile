@@ -20,11 +20,11 @@ ialloc
 memcmp
 opendirat
 readdir
-realloc-gnu
 renameatu
-stdbool
-stdckdint
-stdint
+bool
+stdckdint-h
+stdint-h
+memeq
 xalloc-die
 
 configure.ac:
@@ -40,6 +40,7 @@ Link:
 $(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 $(MBRTOWC_LIB)
 $(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

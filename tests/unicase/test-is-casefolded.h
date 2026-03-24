@@ -1,5 +1,5 @@
 /* Test of test whether a Unicode string is already case-folded.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,21 +23,21 @@ test_ascii (int (*my_is) (const UNIT *, size_t, const char *, bool *))
     static const UNIT input[] = { 'J', 'O', 'H', 'N', ' ', 'S', 'M', 'I', 'T', 'H' };
     bool result;
 
-    ASSERT (my_is (input, SIZEOF (input), NULL, &result) == 0);
+    ASSERT (my_is (input, countof (input), NULL, &result) == 0);
     ASSERT (result == false);
   }
   {
     static const UNIT input[] = { 'J', 'o', 'h', 'n', ' ', 'S', 'm', 'i', 't', 'h' };
     bool result;
 
-    ASSERT (my_is (input, SIZEOF (input), NULL, &result) == 0);
+    ASSERT (my_is (input, countof (input), NULL, &result) == 0);
     ASSERT (result == false);
   }
   {
     static const UNIT input[] = { 'j', 'o', 'h', 'n', ' ', 's', 'm', 'i', 't', 'h' };
     bool result;
 
-    ASSERT (my_is (input, SIZEOF (input), NULL, &result) == 0);
+    ASSERT (my_is (input, countof (input), NULL, &result) == 0);
     ASSERT (result == true);
   }
 }

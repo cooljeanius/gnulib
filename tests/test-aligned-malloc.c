@@ -1,6 +1,6 @@
 /* Test of allocating memory with given alignment.
 
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,9 +19,12 @@
 
 #include <config.h>
 
+#include <stdcountof.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+/* AIX defines a macro ALIGNMENT in <sys/socket.h>.  Undefine it.  */
+#undef ALIGNMENT
 #define ALIGNMENT 4
 #define aligned_malloc aligned4_malloc
 #define aligned_free aligned4_free
@@ -29,6 +32,10 @@
 #undef aligned_free
 #undef aligned_malloc
 #undef ALIGNMENT
+void *(*volatile my_aligned4_malloc) (size_t) = aligned4_malloc;
+#define aligned4_malloc my_aligned4_malloc
+void (*volatile my_aligned4_free) (void *) = aligned4_free;
+#define aligned4_free my_aligned4_free
 
 #define ALIGNMENT 8
 #define aligned_malloc aligned8_malloc
@@ -37,6 +44,10 @@
 #undef aligned_free
 #undef aligned_malloc
 #undef ALIGNMENT
+void *(*volatile my_aligned8_malloc) (size_t) = aligned8_malloc;
+#define aligned8_malloc my_aligned8_malloc
+void (*volatile my_aligned8_free) (void *) = aligned8_free;
+#define aligned8_free my_aligned8_free
 
 #define ALIGNMENT 16
 #define aligned_malloc aligned16_malloc
@@ -45,6 +56,10 @@
 #undef aligned_free
 #undef aligned_malloc
 #undef ALIGNMENT
+void *(*volatile my_aligned16_malloc) (size_t) = aligned16_malloc;
+#define aligned16_malloc my_aligned16_malloc
+void (*volatile my_aligned16_free) (void *) = aligned16_free;
+#define aligned16_free my_aligned16_free
 
 #define ALIGNMENT 32
 #define aligned_malloc aligned32_malloc
@@ -53,6 +68,10 @@
 #undef aligned_free
 #undef aligned_malloc
 #undef ALIGNMENT
+void *(*volatile my_aligned32_malloc) (size_t) = aligned32_malloc;
+#define aligned32_malloc my_aligned32_malloc
+void (*volatile my_aligned32_free) (void *) = aligned32_free;
+#define aligned32_free my_aligned32_free
 
 #include <string.h>
 
@@ -63,13 +82,12 @@ main (int argc, char *argv[])
 {
   static size_t sizes[] =
     { 13, 8, 17, 450, 320, 1, 99, 4, 15, 16, 2, 76, 37, 127, 2406, 641 };
-  void *volatile aligned4_blocks[SIZEOF (sizes)];
-  void *volatile aligned8_blocks[SIZEOF (sizes)];
-  void *volatile aligned16_blocks[SIZEOF (sizes)];
-  void *volatile aligned32_blocks[SIZEOF (sizes)];
-  size_t i;
+  void *aligned4_blocks[countof (sizes)];
+  void *aligned8_blocks[countof (sizes)];
+  void *aligned16_blocks[countof (sizes)];
+  void *aligned32_blocks[countof (sizes)];
 
-  for (i = 0; i < SIZEOF (sizes); i++)
+  for (size_t i = 0; i < countof (sizes); i++)
     {
       size_t size = sizes[i];
 
@@ -90,7 +108,7 @@ main (int argc, char *argv[])
       memset (aligned32_blocks[i], 'z', size);
     }
 
-  for (i = 0; i < SIZEOF (sizes); i++)
+  for (size_t i = 0; i < countof (sizes); i++)
     {
       aligned4_free (aligned4_blocks[i]);
       aligned8_free (aligned8_blocks[i]);
@@ -98,5 +116,5 @@ main (int argc, char *argv[])
       aligned32_free (aligned32_blocks[i]);
     }
 
-  return 0;
+  return test_exit_status;
 }

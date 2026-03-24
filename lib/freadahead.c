@@ -1,5 +1,5 @@
 /* Retrieve information about a FILE stream.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -28,7 +28,7 @@ extern size_t __sreadahead (FILE *);
 #endif
 
 /* This file is not used on systems that have the __freadahead function,
-   namely musl libc.  */
+   namely OpenBSD >= 7.6, musl libc, Haiku >= hrev58760.  */
 
 size_t
 freadahead (FILE *fp)
@@ -41,7 +41,7 @@ freadahead (FILE *fp)
          + (fp->_flags & _IO_IN_BACKUP ? fp->_IO_save_end - fp->_IO_save_base :
             0);
 #elif defined __sferror || defined __DragonFly__ || defined __ANDROID__
-  /* FreeBSD, NetBSD, OpenBSD, DragonFly, Mac OS X, Cygwin, Minix 3, Android */
+  /* FreeBSD, NetBSD, OpenBSD < 7.6, DragonFly, Mac OS X, Cygwin, Minix 3, Android */
   if ((fp_->_flags & __SWR) != 0 || fp_->_r < 0)
     return 0;
 # if defined __DragonFly__
@@ -62,7 +62,7 @@ freadahead (FILE *fp)
   if ((fp_->_flags & _IOWRITING) != 0)
     return 0;
   return fp_->_count;
-#elif defined _IOERR                /* AIX, HP-UX, IRIX, OSF/1, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
+#elif defined _IOERR                /* AIX, HP-UX, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
   if ((fp_->_flag & _IOWRT) != 0)
     return 0;
   return fp_->_cnt;

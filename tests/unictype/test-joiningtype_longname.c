@@ -1,5 +1,5 @@
 /* Test the Unicode character Arabic joining type functions.
-   Copyright (C) 2011 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2011.
 
    This program is free software: you can redistribute it and/or modify it
@@ -27,13 +27,13 @@
 int
 main ()
 {
-  ASSERT (strcmp (uc_joining_type_long_name (UC_JOINING_TYPE_U), "Non Joining") == 0);
-  ASSERT (strcmp (uc_joining_type_long_name (UC_JOINING_TYPE_T), "Transparent") == 0);
-  ASSERT (strcmp (uc_joining_type_long_name (UC_JOINING_TYPE_C), "Join Causing") == 0);
-  ASSERT (strcmp (uc_joining_type_long_name (UC_JOINING_TYPE_L), "Left Joining") == 0);
-  ASSERT (strcmp (uc_joining_type_long_name (UC_JOINING_TYPE_R), "Right Joining") == 0);
-  ASSERT (strcmp (uc_joining_type_long_name (UC_JOINING_TYPE_D), "Dual Joining") == 0);
+  ASSERT (streq (uc_joining_type_long_name (UC_JOINING_TYPE_U), "Non Joining"));
+  ASSERT (streq (uc_joining_type_long_name (UC_JOINING_TYPE_T), "Transparent"));
+  ASSERT (streq (uc_joining_type_long_name (UC_JOINING_TYPE_C), "Join Causing"));
+  ASSERT (streq (uc_joining_type_long_name (UC_JOINING_TYPE_L), "Left Joining"));
+  ASSERT (streq (uc_joining_type_long_name (UC_JOINING_TYPE_R), "Right Joining"));
+  ASSERT (streq (uc_joining_type_long_name (UC_JOINING_TYPE_D), "Dual Joining"));
   ASSERT (uc_joining_type_long_name (-1) == NULL);
 
-  return 0;
+  return test_exit_status;
 }

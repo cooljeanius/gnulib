@@ -1,5 +1,5 @@
 /* Test of conversion of multibyte character to 32-bit wide character.
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ main (int argc, char *argv[])
      0x88 0xA5    U+00EA U+030C    LATIN SMALL LETTER E WITH CIRCUMFLEX AND CARON
 
      Test one of them.
-     See <https://sourceware.org/bugzilla/show_bug.cgi?id=30611>.  */
+     See <https://sourceware.org/PR30611>.  */
   mbstate_t state;
   memset (&state, '\0', sizeof (mbstate_t));
   char32_t c32 = (char32_t) 0xBADFACE;
@@ -75,5 +75,5 @@ main (int argc, char *argv[])
       ASSERT (c32 == 0);
     }
 
-  return 0;
+  return test_exit_status;
 }

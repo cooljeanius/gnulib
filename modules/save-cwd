@@ -9,11 +9,9 @@ m4/save-cwd.m4
 Depends-on:
 chdir-long
 fchdir
-fd-safer-flag
 getcwd-lgpl
 open
-stdbool
-unistd-safer
+bool
 
 configure.ac:
 gl_SAVE_CWD
@@ -23,6 +21,9 @@ lib_SOURCES += save-cwd.c
 
 Include:
 "save-cwd.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

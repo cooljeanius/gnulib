@@ -9,9 +9,10 @@ tests/test-getopt_long.h
 Depends-on:
 dup2
 setenv
-stdbool
-unistd
+bool
+unistd-h
 unsetenv
+streq
 
 configure.ac:
 

@@ -1,5 +1,5 @@
 /* Test the write() function.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ main (void)
     ASSERT (rfd >= 0);
     ASSERT (read (rfd, buf, sizeof (buf)) == 17);
     ASSERT (close (rfd) == 0);
-    ASSERT (memcmp (buf, "Hello fascination", 17) == 0);
+    ASSERT (memeq (buf, "Hello fascination", 17));
   }
 
   ASSERT (close (fd) == 0);
@@ -75,5 +75,5 @@ main (void)
   /* Clean up.  */
   unlink (filename);
 
-  return 0;
+  return test_exit_status;
 }

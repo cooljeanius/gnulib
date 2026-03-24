@@ -9,8 +9,9 @@ m4/supersede.m4
 Depends-on:
 c99
 fcntl-h
-stdbool
-sys_stat
+bool
+streq
+sys_stat-h
 clean-temp
 tempname
 canonicalize
@@ -40,6 +41,7 @@ $(QCOPY_ACL_LIB)
 $(GETRANDOM_LIB)
 $(CLOCK_TIME_LIB)
 $(LIBTHREAD)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

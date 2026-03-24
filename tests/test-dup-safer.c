@@ -1,5 +1,5 @@
 /* Test that dup_safer leaves standard fds alone.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,8 +41,12 @@
 #endif
 
 #if !O_BINARY
-# define set_binary_mode(f,m) zero ()
-static int zero (void) { return 0; }
+# define set_binary_mode my_set_binary_mode
+static int
+set_binary_mode (_GL_UNUSED int fd, _GL_UNUSED int mode)
+{
+  return 0;
+}
 #endif
 
 /* This test intentionally closes stderr.  So, we arrange to have fd 10
@@ -109,7 +113,6 @@ is_mode (int fd, int mode)
 int
 main (void)
 {
-  int i;
   int fd;
   int bad_fd = getdtablesize ();
 
@@ -124,7 +127,7 @@ main (void)
 
   /* Four iterations, with progressively more standard descriptors
      closed.  */
-  for (i = -1; i <= STDERR_FILENO; i++)
+  for (int i = -1; i <= STDERR_FILENO; i++)
     {
       if (0 <= i)
         ASSERT (close (i) == 0);
@@ -175,5 +178,5 @@ main (void)
   ASSERT (close (fd) == 0);
   ASSERT (unlink (witness) == 0);
 
-  return 0;
+  return test_exit_status;
 }

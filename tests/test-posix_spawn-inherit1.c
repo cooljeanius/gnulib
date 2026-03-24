@@ -1,5 +1,5 @@
 /* Test of posix_spawn() function with an inherited file descriptor 1.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,7 +38,9 @@ static int
 parent_main (void)
 {
   FILE *fp;
-  char *argv[3] = { CHILD_PROGRAM_FILENAME, "-child", NULL };
+  char argv0[] = CHILD_PROGRAM_FILENAME;
+  char argv1[] = "-child";
+  char *argv[] = { argv0, argv1, NULL };
   int err;
   pid_t child;
   int status;
@@ -95,7 +97,7 @@ parent_main (void)
     }
   char buf[1024];
   int nread = fread (buf, 1, sizeof (buf), fp);
-  if (!(nread == 11 && memcmp (buf, "Halle Potta", 11) == 0))
+  if (!(nread == 11 && memeq (buf, "Halle Potta", 11)))
     {
       fprintf (stderr, "data file wrong: has %d bytes, expected %d bytes\n", nread, 11);
       return 1;
@@ -139,7 +141,7 @@ main (int argc, char *argv[])
 {
   int exitstatus;
 
-  if (!(argc > 1 && strcmp (argv[1], "-child") == 0))
+  if (!(argc > 1 && streq (argv[1], "-child")))
     {
       /* This is the parent process.  */
       signal (SIGINT, cleanup_then_die);

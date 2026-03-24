@@ -9,9 +9,10 @@ m4/exponentd.m4
 m4/isnand.m4
 
 Depends-on:
-math
+math-h
 fpieee
 memcmp
+memeq
 
 configure.ac:
 gl_FUNC_ISNAND
@@ -33,7 +34,7 @@ Link:
 $(ISNAND_LIBM)
 
 License:
-LGPL
+LGPLv2+
 
 Maintainer:
 all

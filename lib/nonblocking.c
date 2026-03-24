@@ -1,5 +1,5 @@
 /* Non-blocking I/O for pipe or socket descriptors.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -135,9 +135,7 @@ set_nonblocking_flag (int desc, bool value)
 int
 get_nonblocking_flag (int desc)
 {
-  int fcntl_flags;
-
-  fcntl_flags = fcntl (desc, F_GETFL, 0);
+  int fcntl_flags = fcntl (desc, F_GETFL, 0);
   if (fcntl_flags < 0)
     return -1;
   return (fcntl_flags & O_NONBLOCK) != 0;
@@ -146,9 +144,7 @@ get_nonblocking_flag (int desc)
 int
 set_nonblocking_flag (int desc, bool value)
 {
-  int fcntl_flags;
-
-  fcntl_flags = fcntl (desc, F_GETFL, 0);
+  int fcntl_flags = fcntl (desc, F_GETFL, 0);
   if (fcntl_flags < 0)
     return -1;
   if (((fcntl_flags & O_NONBLOCK) != 0) == value)

@@ -1,17 +1,28 @@
 @node strncpy
-@section @code{strncpy}
+@subsection @code{strncpy}
 @findex strncpy
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/strncpy.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/strncpy.html}
 
-Gnulib module: string
+Gnulib module: string-h or strncpy
+@mindex string-h
+@mindex strncpy
 
-Portability problems fixed by Gnulib:
+Portability problems fixed by Gnulib module @code{string-h} or Gnulib module @code{strncpy}:
 @itemize
 @item
 This function cannot be called from plain inline or extern inline functions
 on some platforms:
-OS X 10.8.
+macOS 10.8.
+@end itemize
+
+Portability problems fixed by Gnulib module @code{strncpy}:
+@itemize
+@item
+This function looks at more bytes of the source string than allowed
+on some platforms:
+@c https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=291359
+FreeBSD 15.0/x86_64.
 @end itemize
 
 Portability problems not fixed by Gnulib:

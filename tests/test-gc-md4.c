@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,14 +53,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (out, expect, 16) != 0)
+    if (!memeq (out, expect, 16))
       {
-        size_t i;
         printf ("md4 1 mismatch. expected:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", out[i] & 0xFF);
         printf ("\n");
         return 1;
@@ -72,14 +71,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (out, expect, 16) != 0)
+    if (!memeq (out, expect, 16))
       {
-        size_t i;
         printf ("md4 1 mismatch. expected:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", out[i] & 0xFF);
         printf ("\n");
         return 1;
@@ -107,14 +105,13 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    if (memcmp (p, expect, 16) != 0)
+    if (!memeq (p, expect, 16))
       {
-        size_t i;
         printf ("md4 1 mismatch. expected:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", expect[i] & 0xFF);
         printf ("\ncomputed:\n");
-        for (i = 0; i < 16; i++)
+        for (size_t i = 0; i < 16; i++)
           printf ("%02x ", p[i] & 0xFF);
         printf ("\n");
         return 1;

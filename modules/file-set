@@ -7,8 +7,8 @@ lib/file-set.h
 
 Depends-on:
 hash
-hash-triple-simple
-stdbool
+hashcode-named-file
+bool
 xalloc
 xalloc-die
 
@@ -19,6 +19,9 @@ lib_SOURCES += file-set.c
 
 Include:
 "file-set.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

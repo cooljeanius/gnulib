@@ -1,5 +1,5 @@
 /* Test of splitting a 'long double' into fraction and mantissa.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 SIGNATURE_CHECK (frexpl, long double, (long double, int *));
 
 #include <float.h>
+#include <stdcountof.h>
 
 #include "fpucw.h"
 #include "isnanl-nolibm.h"
@@ -49,14 +50,10 @@ SIGNATURE_CHECK (frexpl, long double, (long double, int *));
 #define MINUS_ZERO minus_zerol
 #define MAX_EXP LDBL_MAX_EXP
 #define MIN_EXP LDBL_MIN_EXP
-/* On MIPS IRIX machines, LDBL_MIN_EXP is -1021, but the smallest reliable
-   exponent for 'long double' is -964.  Similarly, on PowerPC machines,
-   LDBL_MIN_EXP is -1021, but the smallest reliable exponent for 'long double'
-   is -968.  For exponents below that, the precision may be truncated to the
-   precision used for 'double'.  */
-#ifdef __sgi
-# define MIN_NORMAL_EXP (LDBL_MIN_EXP + 57)
-#elif defined __ppc || defined __ppc__ || defined __powerpc || defined __powerpc__
+/* On PowerPC machines, LDBL_MIN_EXP is -1021, but the smallest reliable
+   exponent for 'long double' is -968.  For exponents below that, the precision
+   may be truncated to the precision used for 'double'.  */
+#if defined _ARCH_PPC
 # define MIN_NORMAL_EXP (LDBL_MIN_EXP + 53)
 #else
 # define MIN_NORMAL_EXP LDBL_MIN_EXP
@@ -74,5 +71,5 @@ main ()
 
   test_function ();
 
-  return 0;
+  return test_exit_status;
 }

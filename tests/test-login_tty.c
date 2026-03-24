@@ -1,5 +1,5 @@
 /* Test of login_tty() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
+
+#include "ignore-value.h"
 
 int
 main ()
@@ -58,44 +60,41 @@ main ()
 
   /* Check that fd = 0, 1, 2 are now open to the controlling terminal for the
      current process and that it is a session of its own.  */
-  {
-    int fd;
-    for (fd = 0; fd < 3; fd++)
-      if (!(tcgetpgrp (fd) == getpid ()))
-        {
-          freopen ("err", "w+", stderr);
-          fprintf (stderr, "tcgetpgrp(%d) = %ld whereas getpid() = %ld\n",
-                   fd, (long) tcgetpgrp (fd), (long) getpid ());
-          fflush (stderr);
-          abort ();
-        }
-    for (fd = 0; fd < 3; fd++)
+  for (int fd = 0; fd < 3; fd++)
+    if (!(tcgetpgrp (fd) == getpid ()))
       {
-        pid_t sid = tcgetsid (fd);
-        if (sid == -1)
-          {
-            if (!(errno == ENOSYS))
-              {
-                freopen ("err", "w+", stderr);
-                fprintf (stderr, "tcgetsid(%d) = -1 and errno = %d\n",
-                         fd, errno);
-                fflush (stderr);
-                abort ();
-              }
-          }
-        else
-          {
-            if (!(sid == getpid ()))
-              {
-                freopen ("err", "w+", stderr);
-                fprintf (stderr, "tcgetsid(%d) = %ld whereas getpid() = %ld\n",
-                         fd, (long) tcgetsid (fd), (long) getpid ());
-                fflush (stderr);
-                abort ();
-              }
-          }
+        ignore_value (freopen ("err", "w+", stderr));
+        fprintf (stderr, "tcgetpgrp(%d) = %ld whereas getpid() = %ld\n",
+                 fd, (long) tcgetpgrp (fd), (long) getpid ());
+        fflush (stderr);
+        abort ();
       }
-  }
+  for (int fd = 0; fd < 3; fd++)
+    {
+      pid_t sid = tcgetsid (fd);
+      if (sid == -1)
+        {
+          if (!(errno == ENOSYS))
+            {
+              ignore_value (freopen ("err", "w+", stderr));
+              fprintf (stderr, "tcgetsid(%d) = -1 and errno = %d\n",
+                       fd, errno);
+              fflush (stderr);
+              abort ();
+            }
+        }
+      else
+        {
+          if (!(sid == getpid ()))
+            {
+              ignore_value (freopen ("err", "w+", stderr));
+              fprintf (stderr, "tcgetsid(%d) = %ld whereas getpid() = %ld\n",
+                       fd, (long) tcgetsid (fd), (long) getpid ());
+              fflush (stderr);
+              abort ();
+            }
+        }
+    }
 
   return 0;
 }

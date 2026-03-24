@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2010-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,14 +38,13 @@ main (int argc, char *argv[])
    * DES Maintenance Test
    */
   {
-    int i;
     char key[8] = { 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55 };
     char input[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
     char result[8] = { 0x24, 0x6e, 0x9d, 0xb9, 0xc5, 0x50, 0x38, 0x1a };
     char temp1[8], temp2[8], temp3[8];
     gc_cipher_handle ctx_array[64];
 
-    for (i = 0; i < 64; ++i)
+    for (int i = 0; i < 64; ++i)
       {
         gc_cipher_handle ctx;
 
@@ -81,10 +80,10 @@ main (int argc, char *argv[])
 
         ctx_array[i] = ctx;
       }
-    if (memcmp (temp3, result, 8))
+    if (!memeq (temp3, result, 8))
       return 1;
 
-    for (i = 0; i < 64; ++i)
+    for (int i = 0; i < 64; ++i)
       gc_cipher_close (ctx_array[i]);
   }
 

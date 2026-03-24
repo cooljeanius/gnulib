@@ -1,8 +1,10 @@
-# log2f.m4 serial 13
-dnl Copyright (C) 2010-2023 Free Software Foundation, Inc.
+# log2f.m4
+# serial 17
+dnl Copyright (C) 2010-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_LOG2F],
 [
@@ -17,20 +19,17 @@ AC_DEFUN([gl_FUNC_LOG2F],
   gl_COMMON_DOUBLE_MATHFUNC([log2f])
 
   dnl Test whether log2f() exists.
-  save_LIBS="$LIBS"
+  saved_LIBS="$LIBS"
   LIBS="$LIBS $LOG2F_LIBM"
   gl_CHECK_FUNCS_ANDROID([log2f], [[#include <math.h>]])
-  LIBS="$save_LIBS"
+  LIBS="$saved_LIBS"
   if test $ac_cv_func_log2f = yes; then
     HAVE_LOG2F=1
-    dnl Also check whether it's declared.
-    dnl IRIX 6.5 has log2f() in libm but doesn't declare it in <math.h>.
-    AC_CHECK_DECL([log2f], , [HAVE_DECL_LOG2F=0], [[#include <math.h>]])
 
-    save_LIBS="$LIBS"
+    saved_LIBS="$LIBS"
     LIBS="$LIBS $LOG2F_LIBM"
     gl_FUNC_LOG2F_WORKS
-    LIBS="$save_LIBS"
+    LIBS="$saved_LIBS"
     case "$gl_cv_func_log2f_works" in
       *yes) ;;
       *) REPLACE_LOG2F=1 ;;
@@ -42,7 +41,7 @@ AC_DEFUN([gl_FUNC_LOG2F],
         AC_CACHE_CHECK([whether log2f works according to ISO C 99 with IEC 60559],
           [gl_cv_func_log2f_ieee],
           [
-            save_LIBS="$LIBS"
+            saved_LIBS="$LIBS"
             LIBS="$LIBS $LOG2F_LIBM"
             AC_RUN_IFELSE(
               [AC_LANG_SOURCE([[
@@ -58,8 +57,7 @@ extern
 float log2f (float);
 #endif
 /* Compare two numbers with ==.
-   This is a separate function because IRIX 6.5 "cc -O" miscompiles an
-   'x == x' test.  */
+   This is a separate function in order to disable compiler optimizations.  */
 static int
 numeric_equal (float x, float y)
 {
@@ -85,12 +83,12 @@ int main (int argc, char *argv[])
                                      # Guess yes on musl systems.
                  *-musl* | midipix*) gl_cv_func_log2f_ieee="guessing yes" ;;
                                      # Guess yes on native Windows.
-                 mingw*)             gl_cv_func_log2f_ieee="guessing yes" ;;
+                 mingw* | windows*)  gl_cv_func_log2f_ieee="guessing yes" ;;
                                      # If we don't know, obey --enable-cross-guesses.
                  *)                  gl_cv_func_log2f_ieee="$gl_cross_guess_normal" ;;
                esac
               ])
-            LIBS="$save_LIBS"
+            LIBS="$saved_LIBS"
           ])
         case "$gl_cv_func_log2f_ieee" in
           *yes) ;;
@@ -100,7 +98,6 @@ int main (int argc, char *argv[])
     ])
   else
     HAVE_LOG2F=0
-    HAVE_DECL_LOG2F=0
     case "$gl_cv_onwards_func_log2f" in
       future*) REPLACE_LOG2F=1 ;;
     esac
@@ -136,7 +133,6 @@ int main (int argc, char *argv[])
 ])
 
 dnl Test whether log2() works.
-dnl On OSF/1 5.1, log2f(-0.0f) is NaN.
 dnl On Cygwin 1.7.9, log2f(2^13) is not exactly 13.
 AC_DEFUN([gl_FUNC_LOG2F_WORKS],
 [
@@ -159,26 +155,21 @@ volatile float y;
 int main ()
 {
   int result = 0;
-  /* This test fails on OSF/1 5.1.  */
-  x = -0.0f;
-  y = log2f (x);
-  if (!(y + y == y))
-    result |= 1;
   /* This test fails on Cygwin 1.7.9.  */
   x = 8192.0f;
   y = log2f (x);
   if (!(y == 13.0f))
-    result |= 2;
+    result |= 1;
   return result;
 }
 ]])],
         [gl_cv_func_log2f_works=yes],
         [gl_cv_func_log2f_works=no],
         [case "$host_os" in
-           cygwin* | osf*) gl_cv_func_log2f_works="guessing no" ;;
-                           # Guess yes on native Windows.
-           mingw*)         gl_cv_func_log2f_works="guessing yes" ;;
-           *)              gl_cv_func_log2f_works="guessing yes" ;;
+           cygwin*)           gl_cv_func_log2f_works="guessing no" ;;
+                              # Guess yes on native Windows.
+           mingw* | windows*) gl_cv_func_log2f_works="guessing yes" ;;
+           *)                 gl_cv_func_log2f_works="guessing yes" ;;
          esac
         ])
     ])

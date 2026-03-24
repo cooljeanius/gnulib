@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2008-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,7 +53,7 @@ main (int argc, _GL_UNUSED char *argv[])
       return 1;
     }
 
-  if (strcmp (buf, NODOMAINNAME) == 0)
+  if (streq (buf, NODOMAINNAME))
     {
       printf ("getdomainname left buffer untouched.\n");
       return 1;

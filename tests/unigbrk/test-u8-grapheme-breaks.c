@@ -1,5 +1,5 @@
 /* Grapheme cluster breaks test.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify it
    under the terms of the GNU Lesser General Public License as published
@@ -33,7 +33,6 @@ test_u8_grapheme_breaks (const char *input, const char *expected)
   const uint8_t *s = (const uint8_t *) input;
   size_t n = strlen (expected);
   char *breaks;
-  size_t i;
 
   breaks = malloc (n);
   if (!breaks)
@@ -41,28 +40,27 @@ test_u8_grapheme_breaks (const char *input, const char *expected)
   memset (breaks, 0xcc, n);
 
   u8_grapheme_breaks (s, n, breaks);
-  for (i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     if (breaks[i] != (expected[i] == '#'))
       {
-        size_t j;
-
         fprintf (stderr, "wrong grapheme breaks:\n");
 
         fprintf (stderr, "   input:");
-        for (j = 0; j < n; j++)
-          fprintf (stderr, " %02x", s[j]);
+        for (size_t j = 0; j < n; j++)
+          fprintf (stderr, " %02X", s[j]);
         putc ('\n', stderr);
 
         fprintf (stderr, "expected:");
-        for (j = 0; j < n; j++)
+        for (size_t j = 0; j < n; j++)
           fprintf (stderr, "  %d", expected[j] == '#');
         putc ('\n', stderr);
 
         fprintf (stderr, "  actual:");
-        for (j = 0; j < n; j++)
+        for (size_t j = 0; j < n; j++)
           fprintf (stderr, "  %d", breaks[j]);
         putc ('\n', stderr);
 
+        fflush (stderr);
         abort ();
       }
 
@@ -95,12 +93,12 @@ main (void)
   test_u8_grapheme_breaks ("a\nb\rc\r\nd", "######_#");
 
   /* Emoji modifier / ZWJ sequence. */
-  test_u8_grapheme_breaks ("\342\230\205\314\205\315\207\342\200\215\342\230\200",
+  test_u8_grapheme_breaks ("\342\255\220\314\205\315\207\342\200\215\342\230\200",
                            "#____________");
 
   /* Regional indicators. */
   test_u8_grapheme_breaks (".\360\237\207\251\360\237\207\252\360\237\207\253\360\237\207\267.",
                            "##_______#_______#");
 
-  return 0;
+  return test_exit_status;
 }

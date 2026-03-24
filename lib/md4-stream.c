@@ -1,6 +1,6 @@
 /* Functions to compute MD4 message digest of files or memory blocks.
    according to the definition of MD4 in RFC 1320 from April 1992.
-   Copyright (C) 1995-1997, 1999-2003, 2005-2006, 2008-2023 Free Software
+   Copyright (C) 1995-1997, 1999-2003, 2005-2006, 2008-2026 Free Software
    Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
@@ -39,31 +39,29 @@
    resulting message digest number will be written into the 16 bytes
    beginning at RESBLOCK.  */
 int
-md4_stream (FILE * stream, void *resblock)
+md4_stream (FILE *restrict stream, void *restrict resblock)
 {
-  struct md4_ctx ctx;
-  size_t sum;
-
-  char *buffer = malloc (BLOCKSIZE + 72);
+  char *buffer = malloc (BLOCKSIZE);
   if (!buffer)
     return 1;
 
   /* Initialize the computation context.  */
+  struct md4_ctx ctx;
   md4_init_ctx (&ctx);
 
   /* Iterate over full file contents.  */
+  size_t sum;
   while (1)
     {
       /* We read the file in blocks of BLOCKSIZE bytes.  One call of the
          computation function processes the whole buffer so that with the
          next round of the loop another block can be read.  */
-      size_t n;
       sum = 0;
 
       /* Read block.  Take care for partial reads.  */
       while (1)
         {
-          n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
+          size_t n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
 
           sum += n;
 

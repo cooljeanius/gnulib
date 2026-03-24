@@ -13,7 +13,8 @@ tests/test-idpriv-droptemp.c
 tests/macros.h
 
 Depends-on:
-stdbool
+bool
+streq
 
 configure.ac:
 

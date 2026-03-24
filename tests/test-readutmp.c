@@ -1,5 +1,5 @@
 /* Test of readutmp module.
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -101,8 +101,8 @@ main (int argc, char *argv[])
       merge_sort_inplace (entries, num_entries,
                           XNMALLOC (num_entries, STRUCT_UTMP));
 
-      idx_t i;
-      for (i = 0; i < num_entries; i++)
+      idx_t boot_time_count = 0;
+      for (idx_t i = 0; i < num_entries; i++)
         {
           const STRUCT_UTMP *entry = &entries[i];
 
@@ -131,19 +131,33 @@ main (int argc, char *argv[])
                   UT_TYPE_BOOT_TIME (entry) ? 'X' : ' ',
                   UT_TYPE_USER_PROCESS (entry) ? 'X' : ' ',
                   host);
+
+          if (UT_TYPE_BOOT_TIME (entry))
+            boot_time_count++;
         }
       fflush (stdout);
 
       /* If the first time is more than 5 years in the past or the last time
-         is more than a week in the future, the time_t members are wrong.  */
+         is more than a week in the future, the time_t members are wrong.
+         Except that CI environments built on Docker sometimes have a boot time
+         long ago in the past, such as 2020-11-13 for CentOS 7.  Such CI
+         environments lack the USER environment variable.  */
       time_t first = UT_TIME_MEMBER (&entries[0]);
       time_t last = UT_TIME_MEMBER (&entries[num_entries - 1]);
       time_t now = time (NULL);
-      ASSERT (first >= now - 157680000);
+      if (getenv ("USER") != NULL)
+        ASSERT (first >= now - 157680000);
       ASSERT (last <= now + 604800);
+
+      /* read_utmp should not produce multiple BOOT_TIME entries.  */
+      ASSERT (boot_time_count <= 1);
+
+      /* read_utmp should fake a BOOT_TIME entry if needed.
+         Platform specific hacks go into lib/boot-time-aux.h.  */
+      ASSERT (boot_time_count >= 1);
     }
 
   free (entries);
 
-  return 0;
+  return test_exit_status;
 }

@@ -1,5 +1,5 @@
 /* Test renameatu.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -55,7 +55,6 @@ do_rename (char const *name1, char const *name2)
 int
 main (void)
 {
-  int i;
   int dfd;
   char *cwd;
   int result;
@@ -66,7 +65,8 @@ main (void)
   /* Test behaviour for invalid file descriptors.  */
   {
     errno = 0;
-    ASSERT (renameatu (-1, "foo", AT_FDCWD, "bar", 0) == -1);
+    ASSERT (renameatu (AT_FDCWD == -2 ? -1 : -2, "foo", AT_FDCWD, "bar", 0)
+            == -1);
     ASSERT (errno == EBADF);
   }
   {
@@ -78,7 +78,8 @@ main (void)
   ASSERT (close (creat (BASE "oo", 0600)) == 0);
   {
     errno = 0;
-    ASSERT (renameatu (AT_FDCWD, BASE "oo", -1, "bar", 0) == -1);
+    ASSERT (renameatu (AT_FDCWD, BASE "oo", AT_FDCWD == -2 ? -1 : -2, "bar", 0)
+            == -1);
     ASSERT (errno == EBADF);
   }
   {
@@ -123,7 +124,7 @@ main (void)
      last scenario (two relative paths given, neither one AT_FDCWD)
      has two paths, based on whether the two fds are equivalent, so we
      do the other variant after the loop.  */
-  for (i = 0; i < 16; i++)
+  for (int i = 0; i < 16; i++)
     {
       int fd1 = (i & 8) ? dfd : AT_FDCWD;
       char *file1 = file_name_concat ((i & 4) ? ".." : cwd, BASE "xx", NULL);
@@ -205,6 +206,13 @@ main (void)
            == -1)
           && errno == EEXIST);
 
+  errno = 0;
+  ASSERT (renameatu (dfd, BASE "sub2", dfd, BASE "sub1", RENAME_EXCHANGE) < 0
+          ? errno == EINVAL || errno == ENOSYS || errno == ENOTSUP
+          : (renameatu (dfd, BASE "sub1/file", dfd, BASE "sub2/file",
+                        RENAME_NOREPLACE)
+             == 0));
+
   /* Cleanup.  */
   ASSERT (close (dfd) == 0);
   ASSERT (unlink (BASE "sub2/file") == 0);
@@ -213,8 +221,8 @@ main (void)
   ASSERT (rmdir (BASE "sub2") == 0);
   free (cwd);
 
-  if (result)
+  if (result == 77)
     fputs ("skipping test: symlinks not supported on this file system\n",
            stderr);
-  return result;
+  return (result ? result : test_exit_status);
 }

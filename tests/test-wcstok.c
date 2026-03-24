@@ -1,5 +1,5 @@
 /* Test of conversion of wide string to string.
-   Copyright (C) 2019-2023 Free Software Foundation, Inc.
+   Copyright (C) 2019-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,16 +38,16 @@ main ()
 
   ret = wcstok (string, delim, &ptr);
   ASSERT (ret == string);
-  ASSERT (memcmp (string, L"hello\0 world!", 14 * sizeof (wchar_t)) == 0);
+  ASSERT (memeq (string, L"hello\0 world!", 14 * sizeof (wchar_t)));
   ASSERT (ptr == string + 6);
 
   ret = wcstok (NULL, delim, &ptr);
   ASSERT (ret == string + 7);
-  ASSERT (memcmp (string, L"hello\0 world!", 14 * sizeof (wchar_t)) == 0);
+  ASSERT (memeq (string, L"hello\0 world!", 14 * sizeof (wchar_t)));
   ASSERT (ptr == NULL || *ptr == L'\0');
 
   ret = wcstok (NULL, delim, &ptr);
   ASSERT (ret == NULL);
 
-  return 0;
+  return test_exit_status;
 }

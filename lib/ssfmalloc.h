@@ -1,6 +1,6 @@
 /* Simple and straight-forward malloc implementation (front end).
 
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -133,6 +133,9 @@ static void free_block (uintptr_t block);
 #include "thread-optim.h"
 #include "gl_oset.h"
 #include "gl_rbtree_oset.h"
+#ifdef __CHERI_PURE_CAPABILITY__
+# include <cheri.h>
+#endif
 
 /* Help the branch prediction.  */
 #if __GNUC__ >= 3
@@ -178,6 +181,10 @@ struct page_tree_element
 struct dissected_page_header
 {
   struct any_page_header common;
+  #ifdef __CHERI_PURE_CAPABILITY__
+  /* This page, with bounds [page, page + PAGESIZE).  */
+  uintptr_t whole_page;
+  #endif
   /* Amount of free space in this page.  Always a multiple of ALIGNMENT.  */
   pg_offset_t free_space;
   /* The tree element.  */
@@ -280,8 +287,7 @@ static inline void
 add_update (uintptr_t page, struct page_pool *pool)
 {
   size_t count = pool->update_queue_count;
-  size_t i;
-  for (i = 0; i < count; i++)
+  for (size_t i = 0; i < count; i++)
     if (pool->update_queue[i] == page)
       /* It's already in the queue.  */
       return;
@@ -299,8 +305,7 @@ static inline void
 drop_update (uintptr_t page, struct page_pool *pool)
 {
   size_t count = pool->update_queue_count;
-  size_t i;
-  for (i = 0; i < count; i++)
+  for (size_t i = 0; i < count; i++)
     if (pool->update_queue[i] == page)
       {
         /* It's in the queue.  Remove it.  */
@@ -386,6 +391,9 @@ init_small_block_page (uintptr_t page)
 {
   struct small_page_header *pageptr = (struct small_page_header *) page;
   pageptr->common.common.page_type = small_page_type;
+  #ifdef __CHERI_PURE_CAPABILITY__
+  pageptr->common.whole_page = page;
+  #endif
 
   /* Initialize available_bitmap.  */
   uint32_t *available_bitmap = small_block_page_available_bitmap (pageptr);
@@ -493,7 +501,7 @@ free_small_block_in_page (uintptr_t block, uintptr_t page)
 }
 
 /* Management of pages of small blocks.  */
-struct page_pool small_block_pages =
+static struct page_pool small_block_pages =
   {
     init_small_block_page_pool,
     init_small_block_page,
@@ -545,6 +553,9 @@ init_medium_block_page (uintptr_t page)
 {
   struct medium_page_header *pageptr = (struct medium_page_header *) page;
   pageptr->common.common.page_type = medium_page_type;
+  #ifdef __CHERI_PURE_CAPABILITY__
+  pageptr->common.whole_page = page;
+  #endif
   pageptr->num_gaps = 1;
   pageptr->gaps[0].start = MEDIUM_BLOCKS_PAGE_FIRST_GAP_START;
   pageptr->gaps[0].end   = MEDIUM_BLOCKS_PAGE_LAST_GAP_END;
@@ -564,8 +575,7 @@ allocate_medium_block_in_page (size_t size, uintptr_t page)
   size_t best_i = (size_t)(-1);
   size_t best_length = (size_t)(-1);
   size_t num_gaps = pageptr->num_gaps;
-  size_t i;
-  for (i = 0; i < num_gaps; i++)
+  for (size_t i = 0; i < num_gaps; i++)
     {
       size_t length = pageptr->gaps[i].end - pageptr->gaps[i].start;
       if (length >= size)
@@ -589,7 +599,7 @@ allocate_medium_block_in_page (size_t size, uintptr_t page)
     abort ();
 
   /* Split the gap, leaving an empty gap and a remaining gap.  */
-  for (i = num_gaps - 1; ; i--)
+  for (size_t i = num_gaps - 1; ; i--)
     {
       pageptr->gaps[i + 1] = pageptr->gaps[i];
       if (i == best_i)
@@ -652,14 +662,13 @@ free_medium_block_in_page (uintptr_t block, uintptr_t page)
   gaps[index].end = gaps[index + 1].end;
 
   size_t num_gaps = pageptr->num_gaps - 1;
-  size_t i;
-  for (i = index + 1; i < num_gaps; i++)
+  for (size_t i = index + 1; i < num_gaps; i++)
     gaps[i] = gaps[i + 1];
   pageptr->num_gaps = num_gaps;
 }
 
 /* Management of pages of medium blocks.  */
-struct page_pool medium_block_pages =
+static struct page_pool medium_block_pages =
   {
     init_medium_block_page_pool,
     init_medium_block_page,
@@ -674,19 +683,19 @@ struct page_pool medium_block_pages =
 static inline uintptr_t
 allocate_block_from_pool (size_t size, struct page_pool *pool)
 {
-  uintptr_t page;
-
   /* Try in the last used page first.  */
-  page = pool->last_page;
-  if (likely (page != 0))
-    {
-      uintptr_t block = pool->allocate_block_in_page (size, page);
-      if (likely (block != 0))
-        {
-          add_update (page, pool);
-          return block;
-        }
-    }
+  {
+    uintptr_t page = pool->last_page;
+    if (likely (page != 0))
+      {
+        uintptr_t block = pool->allocate_block_in_page (size, page);
+        if (likely (block != 0))
+          {
+            add_update (page, pool);
+            return block;
+          }
+      }
+  }
 
   /* Ensure that the pool and its managed_pages is initialized.  */
   if (unlikely (pool->managed_pages == NULL))
@@ -712,7 +721,7 @@ allocate_block_from_pool (size_t size, struct page_pool *pool)
     while (gl_oset_iterator_next (&iter, &elt))
       {
         struct page_tree_element *element = (struct page_tree_element *) elt;
-        page = element->page;
+        uintptr_t page = element->page;
         /* No need to try the last used page again.  */
         if (likely (page != pool->last_page))
           {
@@ -728,6 +737,8 @@ allocate_block_from_pool (size_t size, struct page_pool *pool)
       }
     gl_oset_iterator_free (&iter);
   }
+
+  uintptr_t page;
 
   /* If we have a freeable page ready for reuse, use it.  */
   if (pool->freeable_page != 0)
@@ -753,50 +764,43 @@ allocate_block_from_pool (size_t size, struct page_pool *pool)
         }
       ((struct dissected_page_header *) page)->tree_element = element;
       pool->freeable_page = 0;
-
-      uintptr_t block = pool->allocate_block_in_page (size, page);
-      if (block == 0)
-        /* If the size is too large for an empty page, this function should not
-           have been invoked.  */
+    }
+  else
+    {
+      /* Allocate a fresh page.  */
+      page = ALLOC_PAGES (PAGESIZE);
+      if (unlikely (page == 0))
+        {
+          /* Failed.  */
+          pool->last_page = 0;
+          return 0;
+        }
+      if ((page & (PAGESIZE - 1)) != 0)
+        /* ALLOC_PAGES's result is not aligned as expected.  */
         abort ();
-      add_update (page, pool);
-      pool->last_page = page;
-      return block;
-    }
 
-  /* Allocate a fresh page.  */
-  page = ALLOC_PAGES (PAGESIZE);
-  if (unlikely (page == 0))
-    {
-      /* Failed.  */
-      pool->last_page = 0;
-      return 0;
+      pool->init_page (page);
+      struct page_tree_element *element =
+        (struct page_tree_element *) malloc (sizeof (struct page_tree_element));
+      if (unlikely (element == NULL))
+        {
+          /* Could not allocate the tree element.  */
+          FREE_PAGES (page, PAGESIZE);
+          pool->last_page = 0;
+          return 0;
+        }
+      element->page = page;
+      element->free_space = ((struct dissected_page_header *) page)->free_space;
+      if (unlikely (gl_oset_nx_add (pool->managed_pages, element) < 0))
+        {
+          /* Could not allocate the tree node.  */
+          free (element);
+          FREE_PAGES (page, PAGESIZE);
+          pool->last_page = 0;
+          return 0;
+        }
+      ((struct dissected_page_header *) page)->tree_element = element;
     }
-  if ((page & (PAGESIZE - 1)) != 0)
-    /* ALLOC_PAGES's result is not aligned as expected.  */
-    abort ();
-
-  pool->init_page (page);
-  struct page_tree_element *element =
-    (struct page_tree_element *) malloc (sizeof (struct page_tree_element));
-  if (unlikely (element == NULL))
-    {
-      /* Could not allocate the tree element.  */
-      FREE_PAGES (page, PAGESIZE);
-      pool->last_page = 0;
-      return 0;
-    }
-  element->page = page;
-  element->free_space = ((struct dissected_page_header *) page)->free_space;
-  if (unlikely (gl_oset_nx_add (pool->managed_pages, element) < 0))
-    {
-      /* Could not allocate the tree node.  */
-      free (element);
-      FREE_PAGES (page, PAGESIZE);
-      pool->last_page = 0;
-      return 0;
-    }
-  ((struct dissected_page_header *) page)->tree_element = element;
 
   uintptr_t block = pool->allocate_block_in_page (size, page);
   if (block == 0)
@@ -844,7 +848,11 @@ free_block_from_pool (uintptr_t block, uintptr_t page, struct page_pool *pool)
         FREE_PAGES (pool->freeable_page, PAGESIZE);
 
       /* Don't free the page now, but later.  */
+      #ifdef __CHERI_PURE_CAPABILITY__
+      pool->freeable_page = pageptr->whole_page;
+      #else
       pool->freeable_page = page;
+      #endif
     }
 }
 
@@ -908,6 +916,15 @@ allocate_block (size_t size)
         (size <= SMALL_BLOCK_MAX_SIZE ? &small_block_pages : &medium_block_pages);
       block = allocate_block_from_pool (size, pool);
       if (mt) gl_lock_unlock (ssfmalloc_lock);
+#if defined __CHERI_PURE_CAPABILITY__
+      if (block != 0)
+        {
+          size_t offset = block & (PAGESIZE - 1);
+          block = (uintptr_t) cheri_bounds_set ((void *) (block - offset),
+                                                offset + size)
+                  + offset;
+        }
+#endif
     }
   return block;
 }

@@ -1,5 +1,5 @@
 /* Invoke tmpfile, but avoid some glitches.
-   Copyright (C) 2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,9 +46,9 @@ tmpfile_safer (void)
 
           if (f < 0)
             {
-              int e = errno;
+              int saved_errno = errno;
               fclose (fp);
-              errno = e;
+              errno = saved_errno;
               return NULL;
             }
 
@@ -57,9 +57,9 @@ tmpfile_safer (void)
           if (fclose (fp) != 0
               || ! (fp = fdopen (f, O_BINARY ? "wb+" : "w+")))
             {
-              int e = errno;
+              int saved_errno = errno;
               close (f);
-              errno = e;
+              errno = saved_errno;
               return NULL;
             }
         }

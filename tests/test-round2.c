@@ -1,5 +1,5 @@
 /* Test of rounding to nearest, breaking ties away from zero.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -89,10 +89,9 @@ check (DOUBLE x)
 int
 main (void)
 {
-  DOUBLE_UINT highbits, lowbits;
   int error = 0;
-  for (highbits = 0; highbits < (1 << NUM_HIGHBITS); highbits++)
-    for (lowbits = 0; lowbits < (1 << NUM_LOWBITS); lowbits++)
+  for (DOUBLE_UINT highbits = 0; highbits < (1 << NUM_HIGHBITS); highbits++)
+    for (DOUBLE_UINT lowbits = 0; lowbits < (1 << NUM_LOWBITS); lowbits++)
       {
         /* Combine highbits and lowbits into a floating-point number,
            sign-extending the lowbits to DOUBLE_BITS-NUM_HIGHBITS bits.  */

@@ -1,5 +1,5 @@
 /* Test that the handler can be exited multiple times.
-   Copyright (C) 2002-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
 
 # if SIGSEGV_FAULT_ADDRESS_ALIGNMENT > 1UL
 #  include <unistd.h>
-#  define SIGSEGV_FAULT_ADDRESS_ROUNDOFF_BITS (getpagesize () - 1)
+#  define SIGSEGV_FAULT_ADDRESS_ROUNDOFF_BITS (sysconf (_SC_PAGESIZE) - 1)
 # else
 #  define SIGSEGV_FAULT_ADDRESS_ROUNDOFF_BITS 0
 # endif
@@ -86,11 +86,6 @@ main ()
   int prot_unwritable;
   void *p;
   sigset_t emptyset;
-
-  /* Preparations.  */
-# if !HAVE_MAP_ANONYMOUS
-  zero_fd = open ("/dev/zero", O_RDONLY, 0644);
-# endif
 
 # if defined __linux__ && defined __sparc__
   /* On Linux 2.6.26/SPARC64, PROT_READ has the same effect as

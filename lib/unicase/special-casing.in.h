@@ -1,5 +1,5 @@
 /* Special casing table.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2009.
 
    This file is free software.
@@ -23,7 +23,17 @@
    License and of the GNU General Public License along with this
    program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+/* This file uses _GL_ATTRIBUTE_NONSTRING.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* A special casing context.
    A context is negated through x -> -x.  */
@@ -41,7 +51,7 @@ struct special_casing_rule
 {
   /* The first two bytes are the code, in big-endian order.  The third byte
      only distinguishes different rules pertaining to the same code.  */
-  /*unsigned*/ char code[3];
+  /*unsigned*/ char code[3] _GL_ATTRIBUTE_NONSTRING;
 
   /* True when this rule is not the last one for the given code.  */
   /*bool*/ unsigned int has_next : 1;
@@ -67,3 +77,8 @@ struct special_casing_rule
 
 extern const struct special_casing_rule *
        gl_unicase_special_lookup (const char *str, size_t len);
+
+
+#ifdef __cplusplus
+}
+#endif

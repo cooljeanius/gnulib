@@ -6,11 +6,11 @@ lib/trim.h
 lib/trim.c
 
 Depends-on:
-xalloc
+c32isspace
 mbchar
-mbiterf
-memmove
-strdup
+mbuiterf
+mempcpy
+xalloc-die
 
 configure.ac:
 
@@ -24,6 +24,7 @@ Link:
 $(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 $(MBRTOWC_LIB)
 $(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

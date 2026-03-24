@@ -1,5 +1,5 @@
 /* Test of conversion from UTF-32 to legacy encodings.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "uniconv.h"
 
 #include <errno.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <string.h>
 #include "macros.h"
@@ -31,13 +32,12 @@ main ()
 #if HAVE_ICONV
   static enum iconv_ilseq_handler handlers[] =
     { iconveh_error, iconveh_question_mark, iconveh_escape_sequence };
-  size_t h;
 
   /* Assume that iconv() supports at least the encodings ASCII, ISO-8859-1,
      ISO-8859-2, and UTF-8.  */
 
   /* Test conversion from UTF-32 to ISO-8859-1 with no errors.  */
-  for (h = 0; h < SIZEOF (handlers); h++)
+  for (size_t h = 0; h < countof (handlers); h++)
     {
       enum iconv_ilseq_handler handler = handlers[h];
       static const uint32_t input[] = /* Ärger mit bösen Bübchen ohne Augenmaß */
@@ -49,12 +49,12 @@ main ()
       static const char expected[] = "\304rger mit b\366sen B\374bchen ohne Augenma\337";
       char *result = u32_strconv_to_encoding (input, "ISO-8859-1", handler);
       ASSERT (result != NULL);
-      ASSERT (strcmp (result, expected) == 0);
+      ASSERT (streq (result, expected));
       free (result);
     }
 
   /* Test conversion from UTF-32 to ISO-8859-1 with EILSEQ.  */
-  for (h = 0; h < SIZEOF (handlers); h++)
+  for (size_t h = 0; h < countof (handlers); h++)
     {
       enum iconv_ilseq_handler handler = handlers[h];
       static const uint32_t input[] = /* Rafał Maszkowski */
@@ -73,8 +73,8 @@ main ()
             static const char expected[] = "Rafa? Maszkowski";
             static const char expected_translit[] = "Rafal Maszkowski";
             ASSERT (result != NULL);
-            ASSERT (strcmp (result, expected) == 0
-                    || strcmp (result, expected_translit) == 0);
+            ASSERT (streq (result, expected)
+                    || streq (result, expected_translit));
             free (result);
           }
           break;
@@ -82,7 +82,7 @@ main ()
           {
             static const char expected[] = "Rafa\\u0142 Maszkowski";
             ASSERT (result != NULL);
-            ASSERT (strcmp (result, expected) == 0);
+            ASSERT (streq (result, expected));
             free (result);
           }
           break;
@@ -91,5 +91,5 @@ main ()
 
 #endif
 
-  return 0;
+  return test_exit_status;
 }

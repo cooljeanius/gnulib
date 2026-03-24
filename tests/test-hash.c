@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2009-2026 Free Software Foundation, Inc.
  * Written by Jim Meyering
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,10 @@
 #include <config.h>
 
 #include "hash.h"
-#include "hash-pjw.h"
+#include "hashcode-string2.h"
 #include "inttostr.h"
 
+#include <stdcountof.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,14 +29,12 @@
 
 #include "macros.h"
 
-#define STREQ(a, b) (strcmp (a, b) == 0)
-#define ARRAY_CARDINALITY(Array) (sizeof (Array) / sizeof *(Array))
 
 static bool
 hash_compare_strings (void const *x, void const *y)
 {
   ASSERT (x != y);
-  return STREQ (x, y) ? true : false;
+  return streq (x, y) ? true : false;
 }
 
 static void
@@ -80,8 +79,6 @@ get_seed (char const *str, unsigned int *seed)
 int
 main (int argc, char **argv)
 {
-  unsigned int i;
-  unsigned int k;
   unsigned int table_size[] = {1, 2, 3, 4, 5, 23, 53};
   Hash_table *ht;
   Hash_tuning tuning;
@@ -105,7 +102,7 @@ main (int argc, char **argv)
       srand (seed);
     }
 
-  for (i = 0; i < ARRAY_CARDINALITY (table_size); i++)
+  for (unsigned int i = 0; i < countof (table_size); i++)
     {
       size_t sz = table_size[i];
       ht = hash_initialize (sz, NULL, hash_pjw, hash_compare_strings, NULL);
@@ -117,7 +114,7 @@ main (int argc, char **argv)
         ASSERT (str1);
         str2 = hash_insert (ht, str1);
         ASSERT (str1 != str2);
-        ASSERT (STREQ (str1, str2));
+        ASSERT (streq (str1, str2));
         free (str1);
       }
       insert_new (ht, "b");
@@ -129,7 +126,7 @@ main (int argc, char **argv)
         void *buf[5] = { NULL };
         ASSERT (hash_get_entries (ht, NULL, 0) == 0);
         ASSERT (hash_get_entries (ht, buf, 5) == 3);
-        ASSERT (STREQ (buf[0], "a") || STREQ (buf[0], "b") || STREQ (buf[0], "c"));
+        ASSERT (streq (buf[0], "a") || streq (buf[0], "b") || streq (buf[0], "c"));
       }
       ASSERT (hash_remove (ht, "a"));
       ASSERT (hash_remove (ht, "a") == NULL);
@@ -186,14 +183,14 @@ main (int argc, char **argv)
   tuning.growth_threshold = 0.89;
 
   /* Run with default tuning, then with custom tuning settings.  */
-  for (k = 0; k < 2; k++)
+  for (unsigned int k = 0; k < 2; k++)
     {
       Hash_tuning const *tune = (k == 0 ? NULL : &tuning);
       /* Now, each entry is malloc'd.  */
       ht = hash_initialize (4651, tune, hash_pjw,
                             hash_compare_strings, hash_freer);
       ASSERT (ht);
-      for (i = 0; i < 10000; i++)
+      for (unsigned int i = 0; i < 10000; i++)
         {
           unsigned int op = rand () % 10;
           switch (op)
@@ -258,5 +255,5 @@ main (int argc, char **argv)
       hash_free (ht);
     }
 
-  return 0;
+  return test_exit_status;
 }

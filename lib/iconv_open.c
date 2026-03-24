@@ -1,5 +1,5 @@
 /* Character set conversion.
-   Copyright (C) 2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -20,11 +20,10 @@
 #include <iconv.h>
 
 #include <errno.h>
+#include <stdcountof.h>
 #include <string.h>
 #include "c-ctype.h"
 #include "c-strcase.h"
-
-#define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
 
 /* Namespace cleanliness.  */
 #define mapping_lookup rpl_iconv_open_mapping_lookup
@@ -33,8 +32,6 @@
 
 #define ICONV_FLAVOR_AIX "iconv_open-aix.h"
 #define ICONV_FLAVOR_HPUX "iconv_open-hpux.h"
-#define ICONV_FLAVOR_IRIX "iconv_open-irix.h"
-#define ICONV_FLAVOR_OSF "iconv_open-osf.h"
 #define ICONV_FLAVOR_SOLARIS "iconv_open-solaris.h"
 #define ICONV_FLAVOR_ZOS "iconv_open-zos.h"
 
@@ -46,15 +43,8 @@ iconv_t
 rpl_iconv_open (const char *tocode, const char *fromcode)
 #undef iconv_open
 {
-  char fromcode_upper[32];
-  char tocode_upper[32];
-  char *fromcode_upper_end;
-  char *tocode_upper_end;
-
 #if REPLACE_ICONV_UTF
   /* Special handling of conversion between UTF-8 and UTF-{16,32}{BE,LE}.
-     Do this here, before calling the real iconv_open(), because  OSF/1 5.1
-     iconv() to these encoding inserts a BOM, which is wrong.
      We do not need to handle conversion between arbitrary encodings and
      UTF-{16,32}{BE,LE}, because the 'striconveh' module implements two-step
      conversion through UTF-8.
@@ -71,7 +61,7 @@ rpl_iconv_open (const char *tocode, const char *fromcode)
           && c_toupper (tocode[2]) == 'F'
           && tocode[3] == '-')
         {
-          if (strcmp (fromcode + 4, "8") == 0)
+          if (streq (fromcode + 4, "8"))
             {
               if (c_strcasecmp (tocode + 4, "16BE") == 0)
                 return _ICONV_UTF8_UTF16BE;
@@ -82,7 +72,7 @@ rpl_iconv_open (const char *tocode, const char *fromcode)
               if (c_strcasecmp (tocode + 4, "32LE") == 0)
                 return _ICONV_UTF8_UTF32LE;
             }
-          else if (strcmp (tocode + 4, "8") == 0)
+          else if (streq (tocode + 4, "8"))
             {
               if (c_strcasecmp (fromcode + 4, "16BE") == 0)
                 return _ICONV_UTF16BE_UTF8;
@@ -115,9 +105,10 @@ rpl_iconv_open (const char *tocode, const char *fromcode)
   }
 
   /* Convert the encodings to upper case, because
-       1. in the arguments of iconv_open() on AIX, HP-UX, and OSF/1 the case
-          matters,
+       1. in the arguments of iconv_open() on AIX and HP-UX, the case matters,
        2. it makes searching in the table faster.  */
+  char fromcode_upper[32];
+  char *fromcode_upper_end;
   {
     const char *p = fromcode;
     char *q = fromcode_upper;
@@ -125,7 +116,7 @@ rpl_iconv_open (const char *tocode, const char *fromcode)
       {
         p++;
         q++;
-        if (q == &fromcode_upper[SIZEOF (fromcode_upper)])
+        if (q == &fromcode_upper[countof (fromcode_upper)])
           {
             errno = EINVAL;
             return (iconv_t)(-1);
@@ -134,6 +125,8 @@ rpl_iconv_open (const char *tocode, const char *fromcode)
     fromcode_upper_end = q;
   }
 
+  char tocode_upper[32];
+  char *tocode_upper_end;
   {
     const char *p = tocode;
     char *q = tocode_upper;
@@ -141,7 +134,7 @@ rpl_iconv_open (const char *tocode, const char *fromcode)
       {
         p++;
         q++;
-        if (q == &tocode_upper[SIZEOF (tocode_upper)])
+        if (q == &tocode_upper[countof (tocode_upper)])
           {
             errno = EINVAL;
             return (iconv_t)(-1);

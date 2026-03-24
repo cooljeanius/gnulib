@@ -1,5 +1,5 @@
 /* Fill a buffer with random bytes.
-   Copyright 2020-2023 Free Software Foundation, Inc.
+   Copyright 2020-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -29,22 +29,24 @@
 int
 getentropy (void *buffer, size_t length)
 {
-  char *buf = buffer;
 
   if (length <= 256)
-    for (;;)
-      {
-        ssize_t bytes;
-        if (length == 0)
-          return 0;
-        while ((bytes = getrandom (buf, length, 0)) < 0)
-          if (errno != EINTR)
-            return -1;
-        if (bytes == 0)
-          break;
-        buf += bytes;
-        length -= bytes;
-      }
+    {
+      char *buf = buffer;
+      for (;;)
+        {
+          if (length == 0)
+            return 0;
+          ssize_t bytes;
+          while ((bytes = getrandom (buf, length, 0)) < 0)
+            if (errno != EINTR)
+              return -1;
+          if (bytes == 0)
+            break;
+          buf += bytes;
+          length -= bytes;
+        }
+    }
 
   errno = EIO;
   return -1;

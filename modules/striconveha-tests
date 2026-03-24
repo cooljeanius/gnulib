@@ -4,6 +4,9 @@ tests/iconvsupport.c
 tests/macros.h
 
 Depends-on:
+stdcountof-h
+streq
+memeq
 
 configure.ac:
 

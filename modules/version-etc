@@ -8,7 +8,8 @@ m4/version-etc.m4
 
 Depends-on:
 gettext-h
-stdarg
+gnulib-i18n
+stdarg-h
 
 configure.ac:
 gl_VERSION_ETC
@@ -18,6 +19,9 @@ lib_SOURCES += version-etc.h version-etc.c
 
 Include:
 "version-etc.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 LGPL

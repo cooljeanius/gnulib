@@ -8,7 +8,7 @@ m4/readtokens.m4
 
 Depends-on:
 xalloc
-stdbool
+bool
 
 configure.ac:
 gl_READTOKENS
@@ -18,6 +18,9 @@ lib_SOURCES += readtokens.c
 
 Include:
 "readtokens.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

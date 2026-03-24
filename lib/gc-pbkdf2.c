@@ -1,5 +1,5 @@
 /* gc-pbkdf2.c --- Password-Based Key Derivation Function a'la PKCS#5
-   Copyright (C) 2002-2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002-2006, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -23,27 +23,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef Gc_rc (*gc_prf_func) (const void *key, size_t keylen,
-                              const void *in, size_t inlen, char *resbuf);
+typedef Gc_rc (*gc_prf_func) (void const *restrict key, size_t keylen,
+                              void const *restrict in, size_t inlen,
+                              char *restrict resbuf);
 
 static Gc_rc
 gc_pbkdf2_prf (gc_prf_func prf, size_t hLen,
-               const char *P, size_t Plen,
-               const char *S, size_t Slen,
+               char const *restrict P, size_t Plen,
+               char const *restrict S, size_t Slen,
                unsigned int c,
-               char *DK, size_t dkLen)
+               char *restrict DK, size_t dkLen)
 {
-  char U[GC_MAX_DIGEST_SIZE];
-  char T[GC_MAX_DIGEST_SIZE];
-  unsigned int u;
-  unsigned int l;
-  unsigned int r;
-  unsigned int i;
-  unsigned int k;
-  int rc;
-  char *tmp;
-  size_t tmplen = Slen + 4;
-
   if (c == 0)
     return GC_PKCS5_INVALID_ITERATION_COUNT;
 
@@ -53,20 +43,24 @@ gc_pbkdf2_prf (gc_prf_func prf, size_t hLen,
   if (dkLen > 4294967295U)
     return GC_PKCS5_DERIVED_KEY_TOO_LONG;
 
-  l = ((dkLen - 1) / hLen) + 1;
-  r = dkLen - (l - 1) * hLen;
+  unsigned int l = ((dkLen - 1) / hLen) + 1;
+  unsigned int r = dkLen - (l - 1) * hLen;
 
-  tmp = malloc (tmplen);
+  size_t tmplen = Slen + 4;
+  char *tmp = malloc (tmplen);
   if (tmp == NULL)
     return GC_MALLOC_ERROR;
 
   memcpy (tmp, S, Slen);
 
-  for (i = 1; i <= l; i++)
+  char U[GC_MAX_DIGEST_SIZE];
+  char T[GC_MAX_DIGEST_SIZE];
+  int rc;
+  for (unsigned int i = 1; i <= l; i++)
     {
       memset (T, 0, hLen);
 
-      for (u = 1; u <= c; u++)
+      for (unsigned int u = 1; u <= c; u++)
         {
           if (u == 1)
             {
@@ -86,7 +80,7 @@ gc_pbkdf2_prf (gc_prf_func prf, size_t hLen,
               return rc;
             }
 
-          for (k = 0; k < hLen; k++)
+          for (unsigned int k = 0; k < hLen; k++)
             T[k] ^= U[k];
         }
 
@@ -100,9 +94,9 @@ gc_pbkdf2_prf (gc_prf_func prf, size_t hLen,
 
 Gc_rc
 gc_pbkdf2_hmac (Gc_hash hash,
-                const char *P, size_t Plen,
-                const char *S, size_t Slen,
-                unsigned int c, char *DK, size_t dkLen)
+                char const *restrict P, size_t Plen,
+                char const *restrict S, size_t Slen,
+                unsigned int c, char *restrict DK, size_t dkLen)
 {
   gc_prf_func prf;
   size_t hLen;

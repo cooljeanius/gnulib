@@ -5,15 +5,21 @@ tests/test-vasnprintf-posix2.c
 tests/test-vasnprintf-posix3.c
 tests/minus-zero.h
 tests/infinity.h
-tests/nan.h
 tests/macros.h
 m4/locale-fr.m4
 m4/codeset.m4
 
 Depends-on:
-stdint
-float
+c99
+stdint-h
+float-h
+nan
+snan
 setlocale
+localeconv
+stdcountof-h
+streq
+memeq
 
 configure.ac:
 AC_REQUIRE([gl_LONG_DOUBLE_VS_DOUBLE])

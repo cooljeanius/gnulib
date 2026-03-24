@@ -1,5 +1,5 @@
 /* Test of canonical normalization of streams.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "uninorm.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "unistr.h"
@@ -55,7 +56,6 @@ check (const uint32_t *input, size_t input_length,
 {
   struct accumulator accu;
   struct uninorm_filter *filter;
-  size_t i;
 
   accu.result = NULL;
   accu.length = 0;
@@ -64,7 +64,7 @@ check (const uint32_t *input, size_t input_length,
   filter = uninorm_filter_create (UNINORM_NFC, write_to_accumulator, &accu);
   ASSERT (filter != NULL);
 
-  for (i = 0; i < input_length; i++)
+  for (size_t i = 0; i < input_length; i++)
     ASSERT (uninorm_filter_write (filter, input[i]) == 0);
 
   ASSERT (uninorm_filter_free (filter) == 0);
@@ -101,9 +101,9 @@ main ()
         0x65E5, 0x672C, 0x8A9E, ',', 0x4E2D, 0x6587, ',',
         0x1112, 0x1161, 0x11AB, 0x1100, 0x1173, 0x11AF, '\n'
       };
-    ASSERT (check (input, SIZEOF (input),           input, SIZEOF (input)) == 0);
-    ASSERT (check (decomposed, SIZEOF (decomposed), input, SIZEOF (input)) == 0);
+    ASSERT (check (input, countof (input),           input, countof (input)) == 0);
+    ASSERT (check (decomposed, countof (decomposed), input, countof (input)) == 0);
   }
 
-  return 0;
+  return test_exit_status;
 }

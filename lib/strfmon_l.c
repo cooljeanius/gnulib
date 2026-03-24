@@ -1,5 +1,5 @@
 /* strfmon_l override.
-   Copyright (C) 2017-2023 Free Software Foundation, Inc.
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -120,13 +120,9 @@ ssize_t
 rpl_strfmon_l (char *s, size_t maxsize, locale_t locale, const char *format, ...)
 {
   /* Work around glibc 2.23 bug
-     <https://sourceware.org/bugzilla/show_bug.cgi?id=19633>.  */
-  va_list argptr;
-  locale_t orig_locale;
-  directives_t directives;
-  ssize_t result;
+     <https://sourceware.org/PR19633>.  */
 
-  orig_locale = uselocale ((locale_t)0);
+  locale_t orig_locale = uselocale ((locale_t)0);
 
   if (uselocale (locale) == (locale_t)0)
     /* errno is set.  */
@@ -138,6 +134,8 @@ rpl_strfmon_l (char *s, size_t maxsize, locale_t locale, const char *format, ...
      requests 'long double' arguments.  But since 'long double' arguments
      are only supported on glibc, do so only if the original format string
      consumes at least one 'long double' argument.  */
+  ssize_t result;
+  directives_t directives;
   if (fmon_parse (format, &directives) < 0)
     {
       errno = EINVAL;
@@ -145,25 +143,21 @@ rpl_strfmon_l (char *s, size_t maxsize, locale_t locale, const char *format, ...
     }
   else
     {
-      bool use_long_double;
-      unsigned int i;
-
-      use_long_double = false;
-      for (i = 0; i < directives.count; i++)
+      bool use_long_double = false;
+      for (unsigned int i = 0; i < directives.count; i++)
         if (directives.dir[i].needs_long_double)
           {
             use_long_double = true;
             break;
           }
 
+      va_list argptr;
       va_start (argptr, format);
 
       if (use_long_double)
         {
-          char *ld_format;
-
           /* Allocate room for the modified format string.  */
-          ld_format = (char *) malloc (strlen (format) + directives.count + 1);
+          char *ld_format = (char *) malloc (strlen (format) + directives.count + 1);
           if (ld_format == NULL)
             {
               errno = ENOMEM;
@@ -177,7 +171,7 @@ rpl_strfmon_l (char *s, size_t maxsize, locale_t locale, const char *format, ...
               {
                 const char *p = format;
                 char *dest = ld_format;
-                for (i = 0; i < directives.count; i++)
+                for (unsigned int i = 0; i < directives.count; i++)
                   {
                     const char *q = directives.dir[i].conversion_ptr;
                     memcpy (dest, p, q - p);
@@ -189,14 +183,18 @@ rpl_strfmon_l (char *s, size_t maxsize, locale_t locale, const char *format, ...
                 strcpy (dest, p);
               }
 
-              /* Set up arguments array.  */
-              for (i = 0; i < directives.count; i++)
-                args[i] = (directives.dir[i].needs_long_double
-                           ? va_arg (argptr, long double)
-                           : (long double) va_arg (argptr, double));
-              /* Avoid uninitialized memory references.  */
-              for (; i < MAX_ARGS; i++)
-                args[i] = 0.0L;
+              {
+                unsigned int i;
+
+                /* Set up arguments array.  */
+                for (i = 0; i < directives.count; i++)
+                  args[i] = (directives.dir[i].needs_long_double
+                             ? va_arg (argptr, long double)
+                             : (long double) va_arg (argptr, double));
+                /* Avoid uninitialized memory references.  */
+                for (; i < MAX_ARGS; i++)
+                  args[i] = 0.0L;
+              }
 
               result = strfmon_l (s, maxsize, locale, ld_format,
                                   args[0], args[1], args[2], args[3], args[4],
@@ -211,12 +209,16 @@ rpl_strfmon_l (char *s, size_t maxsize, locale_t locale, const char *format, ...
         {
           double args[MAX_ARGS];
 
-          /* Set up arguments array.  */
-          for (i = 0; i < directives.count; i++)
-            args[i] = va_arg (argptr, double);
-          /* Avoid uninitialized memory references.  */
-          for (; i < MAX_ARGS; i++)
-            args[i] = 0.0;
+          {
+            unsigned int i;
+
+            /* Set up arguments array.  */
+            for (i = 0; i < directives.count; i++)
+              args[i] = va_arg (argptr, double);
+            /* Avoid uninitialized memory references.  */
+            for (; i < MAX_ARGS; i++)
+              args[i] = 0.0;
+          }
 
           result = strfmon_l (s, maxsize, locale, format,
                               args[0], args[1], args[2], args[3], args[4],

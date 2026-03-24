@@ -1,5 +1,5 @@
 /* Determine name of the slave side of a pseudo-terminal.
-   Copyright (C) 1998, 2002, 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 1998, 2002, 2010-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -49,7 +49,7 @@
 # include <stdio.h>
 #endif
 
-#if defined _AIX || defined __osf__
+#if defined _AIX
 /* Get ioctl(), ISPTM.  */
 # include <sys/ioctl.h>
 # include <stdio.h>
@@ -68,23 +68,44 @@ ptsname_r (int fd, char *buf, size_t buflen)
 #undef ptsname_r
 {
 #if HAVE_ESSENTIALLY_WORKING_PTSNAME_R
+# if defined __NetBSD__ || defined __sun
+  if (buf == NULL)
+    return EINVAL;
+  char tmpbuf[32];
+  if (buflen >= sizeof (tmpbuf))
+    /* ERANGE should not happen in this case.  */
+    return ptsname_r (fd, buf, buflen);
+  else
+    {
+      int ret = ptsname_r (fd, tmpbuf, sizeof (tmpbuf));
+      if (ret != 0)
+        return ret;
+      else
+        {
+          size_t len = strlen (tmpbuf);
+          if (len >= buflen)
+            return ERANGE;
+          memcpy (buf, tmpbuf, len + 1);
+          return 0;
+        }
+    }
+# else
   int ret = ptsname_r (fd, buf, buflen);
   if (ret == 0)
     return 0;
   else
     return errno;
+# endif
 #elif defined __DragonFly__
-  int saved_errno = errno;
-  char tmpbuf[5 + 4 + 10 + 1];
-  int ret;
-  int n;
   if (buf == NULL)
     {
       errno = EINVAL;
       return errno;
     }
+  int saved_errno = errno;
+  char tmpbuf[5 + 4 + 10 + 1];
   /* The result of fdevname_r is typically of the form ptm/N.  */
-  ret = fdevname_r (fd, tmpbuf + 5, sizeof (tmpbuf) - 5);
+  int ret = fdevname_r (fd, tmpbuf + 5, sizeof (tmpbuf) - 5);
   if (ret < 0 || strncmp (tmpbuf + 5, "ptm/", 4) != 0)
     {
       errno = ENOTTY;
@@ -92,7 +113,7 @@ ptsname_r (int fd, char *buf, size_t buflen)
     }
   /* Turn it into /dev/pts/N.  */
   memcpy (tmpbuf, "/dev/pts/", 5 + 4);
-  n = strlen (tmpbuf);
+  int n = strlen (tmpbuf);
   if (n >= buflen)
     {
       errno = ERANGE;
@@ -104,14 +125,14 @@ ptsname_r (int fd, char *buf, size_t buflen)
   errno = saved_errno;
   return 0;
 #else
-  int saved_errno = errno;
-  struct stat st;
-
   if (buf == NULL)
     {
       errno = EINVAL;
       return errno;
     }
+
+  int saved_errno = errno;
+  struct stat st;
 
 # if defined __sun /* Solaris */
   if (fstat (fd, &st) < 0)
@@ -150,7 +171,7 @@ ptsname_r (int fd, char *buf, size_t buflen)
       }
     memcpy (buf, tmpbuf, n + 1);
   }
-# elif defined _AIX || defined __osf__ /* AIX, OSF/1 */
+# elif defined _AIX /* AIX */
   /* This implementation returns /dev/pts/N, like ptsname() does.
      Whereas the generic implementation below returns /dev/ttypN.
      Both are correct, but let's be consistent with ptsname().  */
@@ -162,23 +183,15 @@ ptsname_r (int fd, char *buf, size_t buflen)
       return errno;
     }
   {
-    int ret;
     int dev;
-    char tmpbuf[9 + 10 + 1];
-    int n;
-#  ifdef _AIX
-    ret = ioctl (fd, ISPTM, &dev);
-#  endif
-#  ifdef __osf__
-    ret = ioctl (fd, ISPTM, NULL);
-    dev = ret;
-#  endif
+    int ret = ioctl (fd, ISPTM, &dev);
     if (ret < 0)
       {
         errno = ENOTTY;
         return errno;
       }
-    n = sprintf (tmpbuf, "/dev/pts/%u", minor (dev));
+    char tmpbuf[9 + 10 + 1];
+    int n = sprintf (tmpbuf, "/dev/pts/%u", minor (dev));
     if (n >= buflen)
       {
         errno = ERANGE;
@@ -189,7 +202,7 @@ ptsname_r (int fd, char *buf, size_t buflen)
 # else
   if (!isatty (fd))
     {
-#  if ISATTY_FAILS_WITHOUT_SETTING_ERRNO && defined F_GETFL /* IRIX, Solaris */
+#  if ISATTY_FAILS_WITHOUT_SETTING_ERRNO && defined F_GETFL /* Solaris */
       /* Set errno.  */
       if (fcntl (fd, F_GETFL) != -1)
         errno = ENOTTY;

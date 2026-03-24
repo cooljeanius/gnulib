@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2008-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2008-2026 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,15 +30,13 @@ main (void)
     "\x32\x2e\x93\xa0\x15\xbc\xf8\x68\xe3\x24\xd5\x6a";
   char buf[SHA1_DIGEST_SIZE];
 
-  if (memcmp (sha1_buffer (in1, strlen (in1), buf),
-              out1, SHA1_DIGEST_SIZE) != 0)
+  if (!memeq (sha1_buffer (in1, strlen (in1), buf), out1, SHA1_DIGEST_SIZE))
     {
-      size_t i;
       printf ("expected:\n");
-      for (i = 0; i < SHA1_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < SHA1_DIGEST_SIZE; i++)
         printf ("%02x ", out1[i] & 0xFFu);
       printf ("\ncomputed:\n");
-      for (i = 0; i < SHA1_DIGEST_SIZE; i++)
+      for (size_t i = 0; i < SHA1_DIGEST_SIZE; i++)
         printf ("%02x ", buf[i] & 0xFFu);
       printf ("\n");
       return 1;

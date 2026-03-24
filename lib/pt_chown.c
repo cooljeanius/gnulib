@@ -1,5 +1,5 @@
 /* pt_chown - helper program for 'grantpt'.
-   Copyright (C) 1998-1999, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 1998-1999, 2009-2026 Free Software Foundation, Inc.
    Contributed by C. Scott Ananian <cananian@alumni.princeton.edu>, 1998.
 
    This file is free software: you can redistribute it and/or modify
@@ -38,24 +38,20 @@
 static int
 do_pt_chown (void)
 {
-  char *pty;
-  struct stat st;
-  struct group *p;
-  gid_t gid;
-
   /* Check that PTY_FILENO is a valid master pseudo terminal.  */
-  pty = ptsname (PTY_FILENO);
+  char *pty = ptsname (PTY_FILENO);
   if (pty == NULL)
     return errno == EBADF ? FAIL_EBADF : FAIL_EINVAL;
 
   /* Check that the returned slave pseudo terminal is a
      character device.  */
+  struct stat st;
   if (stat (pty, &st) < 0 || !S_ISCHR (st.st_mode))
     return FAIL_EINVAL;
 
   /* Get the group ID of the special 'tty' group.  */
-  p = getgrnam (TTY_GROUP);
-  gid = p ? p->gr_gid : getgid ();
+  struct group *p = getgrnam (TTY_GROUP);
+  gid_t gid = p ? p->gr_gid : getgid ();
 
   /* Set the owner to the real user ID, and the group to that special
      group ID.  */
@@ -85,7 +81,7 @@ main (int argc, char *argv[])
     }
 
   /* It would be possible to drop setuid/setgid privileges here.  But it is not
-     really needed, since the code below only calls strcmp and [f]printf.  */
+     really needed, since the code below only calls streq and [f]printf.  */
 
   {
     int do_help = 0;
@@ -98,14 +94,14 @@ main (int argc, char *argv[])
 
         if (arg[0] == '-')
           {
-            if (strcmp (arg, "--") == 0)
+            if (streq (arg, "--"))
               {
                 remaining++;
                 break;
               }
-            else if (strcmp (arg, "--help") == 0)
+            else if (streq (arg, "--help"))
               do_help = 1;
-            else if (strcmp (arg, "--version") == 0)
+            else if (streq (arg, "--version"))
               do_version = 1;
             else
               {

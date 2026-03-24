@@ -1,4 +1,4 @@
-/* Copyright (C) 1992-2001, 2003-2007, 2009-2023 Free Software Foundation, Inc.
+/* Copyright (C) 1992-2001, 2003-2007, 2009-2026 Free Software Foundation, Inc.
 
    This file is part of the GNU C Library.
 
@@ -84,20 +84,11 @@ call_fclose (void *arg)
 char *
 getpass (const char *prompt)
 {
-  FILE *tty;
-  FILE *in, *out;
-# if HAVE_TCGETATTR
-  struct termios s, t;
-# endif
-  bool tty_changed = false;
-  static char *buf;
-  static size_t bufsize;
-  ssize_t nread;
-
   /* Try to write to and read from the terminal if we can.
      If we can't open the terminal, use stderr and stdin.  */
 
-  tty = fopen ("/dev/tty", "w+e");
+  FILE *tty = fopen ("/dev/tty", "w+e");
+  FILE *in, *out;
   if (tty == NULL)
     {
       in = stdin;
@@ -113,8 +104,11 @@ getpass (const char *prompt)
 
   flockfile (out);
 
+  bool tty_changed = false;
+
   /* Turn echoing off if it is on now.  */
 # if HAVE_TCGETATTR
+  struct termios s, t;
   if (tcgetattr (fileno (in), &t) == 0)
     {
       /* Save the old one. */
@@ -133,13 +127,15 @@ getpass (const char *prompt)
     }
 
   /* Read the password.  */
-  nread = getline (&buf, &bufsize, in);
+  static char *buf;
+  static size_t bufsize;
+  ssize_t nread = getline (&buf, &bufsize, in);
 
   /* According to the C standard, input may not be followed by output
      on the same stream without an intervening call to a file
      positioning function.  Suppose in == out; then without this fseek
-     call, on Solaris, HP-UX, AIX, OSF/1, the previous input gets
-     echoed, whereas on IRIX, the following newline is not output as
+     call, on Solaris, HP-UX, AIX, the previous input gets echoed,
+     whereas on IRIX, the following newline is not output as
      it should be.  POSIX imposes similar restrictions if fileno (in)
      == fileno (out).  The POSIX restrictions are tricky and change
      from POSIX version to POSIX version, so play it safe and invoke
@@ -194,35 +190,35 @@ getpass (const char *prompt)
 char *
 getpass (const char *prompt)
 {
-  char getpassbuf[PASS_MAX + 1];
-  size_t i = 0;
-  int c;
-
   if (prompt)
     {
       fputs (prompt, stderr);
       fflush (stderr);
     }
 
-  for (;;)
-    {
-      c = _getch ();
-      if (c == '\r')
-        {
-          getpassbuf[i] = '\0';
-          break;
-        }
-      else if (i < PASS_MAX)
-        {
-          getpassbuf[i++] = c;
-        }
+  char getpassbuf[PASS_MAX + 1];
+  {
+    size_t i = 0;
+    for (;;)
+      {
+        int c = _getch ();
+        if (c == '\r')
+          {
+            getpassbuf[i] = '\0';
+            break;
+          }
+        else if (i < PASS_MAX)
+          {
+            getpassbuf[i++] = c;
+          }
 
-      if (i >= PASS_MAX)
-        {
-          getpassbuf[i] = '\0';
-          break;
-        }
-    }
+        if (i >= PASS_MAX)
+          {
+            getpassbuf[i] = '\0';
+            break;
+          }
+      }
+  }
 
   if (prompt)
     {

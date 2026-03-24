@@ -1,5 +1,5 @@
 /* Test of fused multiply-add.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,19 +26,12 @@
 #define YE_RANGE 0
 
 /* Define to 1 if you want to allow the behaviour of the 'double-double'
-   implementation of 'long double' (seen on IRIX 6.5 and Linux/PowerPC).
+   implementation of 'long double' (seen on Linux/PowerPC).
    This floating-point type does not follow IEEE 754.  */
 #if MANT_BIT == LDBL_MANT_BIT && LDBL_MANT_BIT == 2 * DBL_MANT_BIT
 # define FORGIVE_DOUBLEDOUBLE_BUG 1
 #else
 # define FORGIVE_DOUBLEDOUBLE_BUG 0
-#endif
-
-/* Subnormal numbers appear to not work as expected on IRIX 6.5.  */
-#ifdef __sgi
-# define MIN_SUBNORMAL_EXP (MIN_EXP - 1)
-#else
-# define MIN_SUBNORMAL_EXP (MIN_EXP - MANT_BIT)
 #endif
 
 /* Check rounding behaviour.  */
@@ -60,27 +53,22 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
     volatile DOUBLE z;
     volatile DOUBLE result;
     volatile DOUBLE expected;
-    int xs;
-    int xe;
-    int ys;
-    int ye;
-    int ze;
     DOUBLE sign;
 
-    for (xs = 0; xs < 2; xs++)
-      for (xe = -XE_RANGE; xe <= XE_RANGE; xe++)
+    for (int xs = 0; xs < 2; xs++)
+      for (int xe = -XE_RANGE; xe <= XE_RANGE; xe++)
         {
           x = pow_m1[xs] * POW2 (xe); /* (-1)^xs * 2^xe */
 
-          for (ys = 0; ys < 2; ys++)
-            for (ye = -YE_RANGE; ye <= YE_RANGE; ye++)
+          for (int ys = 0; ys < 2; ys++)
+            for (int ye = -YE_RANGE; ye <= YE_RANGE; ye++)
               {
                 y = pow_m1[ys] * POW2 (ye); /* (-1)^ys * 2^ye */
 
                 sign = pow_m1[xs + ys];
 
                 /* Test addition (same signs).  */
-                for (ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
+                for (int ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
                   {
                     z = sign * POW2 (ze); /* (-1)^(xs+ys) * 2^ze */
                     result = my_fma (x, y, z);
@@ -101,7 +89,7 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
                   }
 
                 /* Test subtraction (opposite signs).  */
-                for (ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
+                for (int ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
                   {
                     z = - sign * POW2 (ze); /* (-1)^(xs+ys+1) * 2^ze */
                     result = my_fma (x, y, z);
@@ -132,23 +120,17 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
     volatile DOUBLE z;
     volatile DOUBLE result;
     volatile DOUBLE expected;
-    int i;
-    int xs;
-    int xe;
-    int ys;
-    int ye;
-    int ze;
     DOUBLE sign;
 
-    for (i = 1; i <= MANT_BIT - 1; i++)
-      for (xs = 0; xs < 2; xs++)
-        for (xe = -XE_RANGE; xe <= XE_RANGE; xe++)
+    for (int i = 1; i <= MANT_BIT - 1; i++)
+      for (int xs = 0; xs < 2; xs++)
+        for (int xe = -XE_RANGE; xe <= XE_RANGE; xe++)
           {
             x = /* (-1)^xs * (2^xe + 2^(xe-i)) */
               pow_m1[xs] * (POW2 (xe) + POW2 (xe - i));
 
-            for (ys = 0; ys < 2; ys++)
-              for (ye = -YE_RANGE; ye <= YE_RANGE; ye++)
+            for (int ys = 0; ys < 2; ys++)
+              for (int ye = -YE_RANGE; ye <= YE_RANGE; ye++)
                 {
                   y = /* (-1)^ys * (2^ye + 2^(ye-i)) */
                     pow_m1[ys] * (POW2 (ye) + POW2 (ye - i));
@@ -159,7 +141,7 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
                      (-1)^(xs+ys) * (2^(xe+ye) + 2^(xe+ye-i+1) + 2^(xe+ye-2*i)) */
 
                   /* Test addition (same signs).  */
-                  for (ze = MIN_SUBNORMAL_EXP; ze <= MAX_EXP - 1;)
+                  for (int ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
                     {
                       z = sign * POW2 (ze); /* (-1)^(xs+ys) * 2^ze */
                       result = my_fma (x, y, z);
@@ -256,7 +238,7 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
 
                   /* Test subtraction (opposite signs).  */
                   if (i > 1)
-                    for (ze = MIN_SUBNORMAL_EXP; ze <= MAX_EXP - 1;)
+                    for (int ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
                       {
                         z = - sign * POW2 (ze); /* (-1)^(xs+ys+1) * 2^ze */
                         result = my_fma (x, y, z);
@@ -371,23 +353,17 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
     volatile DOUBLE z;
     volatile DOUBLE result;
     volatile DOUBLE expected;
-    int i;
-    int xs;
-    int xe;
-    int ys;
-    int ye;
-    int ze;
     DOUBLE sign;
 
-    for (i = 1; i <= MANT_BIT - 1; i++)
-      for (xs = 0; xs < 2; xs++)
-        for (xe = -XE_RANGE; xe <= XE_RANGE; xe++)
+    for (int i = 1; i <= MANT_BIT - 1; i++)
+      for (int xs = 0; xs < 2; xs++)
+        for (int xe = -XE_RANGE; xe <= XE_RANGE; xe++)
           {
             x = /* (-1)^xs * (2^xe + 2^(xe-i)) */
               pow_m1[xs] * (POW2 (xe) + POW2 (xe - i));
 
-            for (ys = 0; ys < 2; ys++)
-              for (ye = -YE_RANGE; ye <= YE_RANGE; ye++)
+            for (int ys = 0; ys < 2; ys++)
+              for (int ye = -YE_RANGE; ye <= YE_RANGE; ye++)
                 {
                   y = /* (-1)^ys * (2^ye - 2^(ye-i)) */
                     pow_m1[ys] * (POW2 (ye) - POW2 (ye - i));
@@ -398,7 +374,7 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
                      (-1)^(xs+ys) * (2^(xe+ye) - 2^(xe+ye-2*i)) */
 
                   /* Test addition (same signs).  */
-                  for (ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
+                  for (int ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
                     {
                       z = sign * POW2 (ze); /* (-1)^(xs+ys) * 2^ze */
                       result = my_fma (x, y, z);
@@ -457,7 +433,7 @@ test_function (DOUBLE (*my_fma) (DOUBLE, DOUBLE, DOUBLE))
 
                   /* Test subtraction (opposite signs).  */
                   if (i > 1)
-                    for (ze = MIN_SUBNORMAL_EXP; ze <= MAX_EXP - 1;)
+                    for (int ze = MIN_EXP - MANT_BIT; ze <= MAX_EXP - 1;)
                       {
                         z = - sign * POW2 (ze); /* (-1)^(xs+ys+1) * 2^ze */
                         result = my_fma (x, y, z);

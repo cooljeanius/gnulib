@@ -1,5 +1,5 @@
 /* Test of line breaking of strings.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "unilbrk.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "macros.h"
@@ -33,14 +34,13 @@ test_function (void (*my_ulc_possible_linebreaks) (const char *, size_t, const c
 
 #if HAVE_ICONV
   {
-    static const char input[36] =
+    static const char input[36] _GL_ATTRIBUTE_NONSTRING =
       /* "Grüß Gott. x=(-b±sqrt(b²-4ac))/(2a)" */
       "Gr\374\337 Gott. x=(-b\261sqrt(b\262-4ac))/(2a)\n";
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    my_ulc_possible_linebreaks (input, SIZEOF (input), "ISO-8859-1", p);
-    for (i = 0; i < 36; i++)
+    my_ulc_possible_linebreaks (input, countof (input), "ISO-8859-1", p);
+    for (size_t i = 0; i < 36; i++)
       {
         ASSERT (p[i] == (i == 35 ? UC_BREAK_MANDATORY :
                          i == 5 || i == 11 || i == 15
@@ -52,12 +52,12 @@ test_function (void (*my_ulc_possible_linebreaks) (const char *, size_t, const c
 
   /* Test line breaking in a string with HTML markup.  */
   {
-    static const char input[21] = "<P>Some sentence.</P>";
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    static const char input[21] _GL_ATTRIBUTE_NONSTRING =
+      "<P>Some sentence.</P>";
+    char *p = (char *) malloc (countof (input));
 
-    my_ulc_possible_linebreaks (input, SIZEOF (input), "UTF-8", p);
-    for (i = 0; i < 21; i++)
+    my_ulc_possible_linebreaks (input, countof (input), "UTF-8", p);
+    for (size_t i = 0; i < 21; i++)
       {
         ASSERT (p[i] == (i == 8 || i == 17 || i == 19 ? UC_BREAK_POSSIBLE :
                          UC_BREAK_PROHIBITED));
@@ -76,5 +76,5 @@ main ()
   test_function (ulc_possible_linebreaks, 1);
 #endif
 
-  return 0;
+  return test_exit_status;
 }

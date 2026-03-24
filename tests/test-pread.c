@@ -1,5 +1,5 @@
 /* Test the pread function.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,7 +37,6 @@ main (void)
   char const *file = "in";
   int fd;
   char buf[] = "0123456789";
-  off_t pos;
 
   ASSERT (file);
 
@@ -49,13 +48,12 @@ main (void)
   fd = open (file, O_RDONLY);
   ASSERT (0 <= fd);
 
-  for (pos = 0; pos < 3; pos++)
+  for (off_t pos = 0; pos < 3; pos++)
     {
-      size_t i;
       off_t init_pos = lseek (fd, pos, SEEK_SET);
       ASSERT (init_pos == pos);
 
-      for (i = 0; i < N; i++)
+      for (size_t i = 0; i < N; i++)
         {
           char byte_buf;
           ASSERT (pread (fd, &byte_buf, 1, i) == 1);
@@ -98,5 +96,5 @@ main (void)
     ASSERT (errno == EBADF);
   }
 
-  return 0;
+  return test_exit_status;
 }

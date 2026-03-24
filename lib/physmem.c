@@ -1,6 +1,6 @@
 /* Calculate the size of physical memory.
 
-   Copyright (C) 2000-2001, 2003, 2005-2006, 2009-2023 Free Software
+   Copyright (C) 2000-2001, 2003, 2005-2006, 2009-2026 Free Software
    Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
@@ -22,26 +22,17 @@
 
 #include "physmem.h"
 
+#include <fcntl.h>
+#include <stdio.h>
 #include <unistd.h>
 
-#if HAVE_SYS_PSTAT_H
+#if HAVE_SYS_PSTAT_H /* HP-UX */
 # include <sys/pstat.h>
 #endif
 
-#if HAVE_SYS_SYSMP_H
-# include <sys/sysmp.h>
-#endif
-
 #if HAVE_SYS_SYSINFO_H
+/* Linux, AIX, HP-UX, Solaris, Cygwin, Android */
 # include <sys/sysinfo.h>
-#endif
-
-#if HAVE_MACHINE_HAL_SYSINFO_H
-# include <machine/hal_sysinfo.h>
-#endif
-
-#if HAVE_SYS_TABLE_H
-# include <sys/table.h>
 #endif
 
 #include <sys/types.h>
@@ -51,12 +42,15 @@
 #endif
 
 #if HAVE_SYS_SYSCTL_H && !(defined __GLIBC__ && defined __linux__)
+/* Linux/musl, macOS, *BSD, Minix */
 # include <sys/sysctl.h>
 #endif
 
-#if HAVE_SYS_SYSTEMCFG_H
+#if HAVE_SYS_SYSTEMCFG_H /* AIX */
 # include <sys/systemcfg.h>
 #endif
+
+#include "full-read.h"
 
 #ifdef _WIN32
 
@@ -125,34 +119,6 @@ physmem_total (void)
   }
 #endif
 
-#if HAVE_SYSMP && defined MP_SAGET && defined MPSA_RMINFO && defined _SC_PAGESIZE
-  { /* This works on irix6. */
-    struct rminfo realmem;
-    if (sysmp (MP_SAGET, MPSA_RMINFO, &realmem, sizeof realmem) == 0)
-      {
-        double pagesize = sysconf (_SC_PAGESIZE);
-        double pages = realmem.physmem;
-        if (0 <= pages && 0 <= pagesize)
-          return pages * pagesize;
-      }
-  }
-#endif
-
-#if HAVE_GETSYSINFO && defined GSI_PHYSMEM
-  { /* This works on Tru64 UNIX V4/5.  */
-    int physmem;
-
-    if (getsysinfo (GSI_PHYSMEM, (caddr_t) &physmem, sizeof (physmem),
-                    NULL, NULL, NULL) == 1)
-      {
-        double kbytes = physmem;
-
-        if (0 <= kbytes)
-          return kbytes * 1024.0;
-      }
-  }
-#endif
-
 #if HAVE_SYSCTL && !(defined __GLIBC__ && defined __linux__) && defined HW_PHYSMEM
   { /* This works on *bsd, kfreebsd-gnu, and darwin.  */
     unsigned int physmem;
@@ -172,14 +138,13 @@ physmem_total (void)
 
 #if defined _WIN32
   { /* this works on windows */
-    PFN_MS_EX pfnex;
     HMODULE h = GetModuleHandle ("kernel32.dll");
-
     if (!h)
       return 0.0;
 
     /*  Use GlobalMemoryStatusEx if available.  */
-    if ((pfnex = (PFN_MS_EX) GetProcAddress (h, "GlobalMemoryStatusEx")))
+    PFN_MS_EX pfnex = (PFN_MS_EX) GetProcAddress (h, "GlobalMemoryStatusEx");
+    if (pfnex)
       {
         lMEMORYSTATUSEX lms_ex;
         lms_ex.dwLength = sizeof lms_ex;
@@ -203,11 +168,84 @@ physmem_total (void)
   return 64 * 1024 * 1024;
 }
 
-/* Return the amount of physical memory available.  */
+#if defined __linux__
+
+/* Get the amount of free memory and of inactive file cache memory, and
+   return 0.  Upon failure, return -1.  */
+static int
+get_meminfo (unsigned long long *mem_free_p,
+             unsigned long long *mem_inactive_file_p)
+{
+  /* While the sysinfo() system call returns mem_total, mem_free, and a few
+     other numbers, the only way to get mem_inactive_file is by reading
+     /proc/meminfo.  */
+  int fd = open ("/proc/meminfo", O_RDONLY);
+  if (fd >= 0)
+    {
+      char buf[4096];
+      size_t buf_size = full_read (fd, buf, sizeof (buf));
+      close (fd);
+      if (buf_size > 0)
+        {
+          char *buf_end = buf + buf_size;
+          unsigned long long mem_free = 0;
+          unsigned long long mem_inactive_file = 0;
+
+          /* Iterate through the lines.  */
+          char *line = buf;
+          for (;;)
+            {
+              char *p;
+              for (p = line; p < buf_end; p++)
+                if (*p == '\n')
+                  break;
+              if (p == buf_end)
+                break;
+              *p = '\0';
+              if (sscanf (line, "MemFree: %llu kB", &mem_free) == 1)
+                {
+                  mem_free *= 1024;
+                }
+              if (sscanf (line, "Inactive(file): %llu kB", &mem_inactive_file) == 1)
+                {
+                  mem_inactive_file *= 1024;
+                }
+              line = p + 1;
+            }
+          if (mem_free > 0 && mem_inactive_file > 0)
+            {
+              *mem_free_p = mem_free;
+              *mem_inactive_file_p = mem_inactive_file;
+              return 0;
+            }
+        }
+    }
+  return -1;
+}
+
+#endif
+
+/* Return the amount of physical memory that can be claimed, with a given
+   aggressivity.  */
 double
-physmem_available (void)
+physmem_claimable (double aggressivity)
 {
 #if defined _SC_AVPHYS_PAGES && defined _SC_PAGESIZE
+# if defined __linux__
+  /* On Linux, sysconf (_SC_AVPHYS_PAGES) returns the amount of "free" memory.
+     The Linux memory management system attempts to keep only a small amount
+     of memory (something like 5% to 10%) as free, because memory is better
+     used in the file cache.
+     We compute the "claimable" memory as
+       (free memory) + aggressivity * (inactive memory in the file cache).  */
+  if (aggressivity > 0.0)
+    {
+      unsigned long long mem_free;
+      unsigned long long mem_inactive_file;
+      if (get_meminfo (&mem_free, &mem_inactive_file) == 0)
+        return (double) mem_free + aggressivity * (double) mem_inactive_file;
+    }
+# endif
   { /* This works on linux-gnu, kfreebsd-gnu, solaris2, and cygwin.  */
     double pages = sysconf (_SC_AVPHYS_PAGES);
     double pagesize = sysconf (_SC_PAGESIZE);
@@ -239,34 +277,6 @@ physmem_available (void)
   }
 #endif
 
-#if HAVE_SYSMP && defined MP_SAGET && defined MPSA_RMINFO && defined _SC_PAGESIZE
-  { /* This works on irix6. */
-    struct rminfo realmem;
-    if (sysmp (MP_SAGET, MPSA_RMINFO, &realmem, sizeof realmem) == 0)
-      {
-        double pagesize = sysconf (_SC_PAGESIZE);
-        double pages = realmem.availrmem;
-        if (0 <= pages && 0 <= pagesize)
-          return pages * pagesize;
-      }
-  }
-#endif
-
-#if HAVE_TABLE && defined TBL_VMSTATS
-  { /* This works on Tru64 UNIX V4/5.  */
-    struct tbl_vmstats vmstats;
-
-    if (table (TBL_VMSTATS, 0, &vmstats, 1, sizeof (vmstats)) == 1)
-      {
-        double pages = vmstats.free_count;
-        double pagesize = vmstats.pagesize;
-
-        if (0 <= pages && 0 <= pagesize)
-          return pages * pagesize;
-      }
-  }
-#endif
-
 #if HAVE_SYSCTL && !(defined __GLIBC__ && defined __linux__) && defined HW_USERMEM
   { /* This works on *bsd, kfreebsd-gnu, and darwin.  */
     unsigned int usermem;
@@ -281,14 +291,14 @@ physmem_available (void)
 
 #if defined _WIN32
   { /* this works on windows */
-    PFN_MS_EX pfnex;
     HMODULE h = GetModuleHandle ("kernel32.dll");
 
     if (!h)
       return 0.0;
 
     /*  Use GlobalMemoryStatusEx if available.  */
-    if ((pfnex = (PFN_MS_EX) GetProcAddress (h, "GlobalMemoryStatusEx")))
+    PFN_MS_EX pfnex = (PFN_MS_EX) GetProcAddress (h, "GlobalMemoryStatusEx");
+    if (pfnex)
       {
         lMEMORYSTATUSEX lms_ex;
         lms_ex.dwLength = sizeof lms_ex;
@@ -312,6 +322,12 @@ physmem_available (void)
   return physmem_total () / 4;
 }
 
+/* Return the amount of physical memory available.  */
+double
+physmem_available (void)
+{
+  return physmem_claimable (0.0);
+}
 
 #if DEBUG
 

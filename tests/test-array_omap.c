@@ -1,5 +1,5 @@
 /* Test of ordered map data type implementation.
-   Copyright (C) 2006-2023 Free Software Foundation, Inc.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2018.
 
    This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@
 
 #include "gl_array_omap.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,7 +34,7 @@ static const char *objects[30] =
   };
 
 #define RANDOM(n) (rand () % (n))
-#define RANDOM_OBJECT() objects[RANDOM (SIZEOF (objects))]
+#define RANDOM_OBJECT() objects[RANDOM (countof (objects))]
 
 static void
 check_equals (gl_omap_t map1, gl_list_t keys, gl_list_t values)
@@ -46,12 +47,11 @@ check_equals (gl_omap_t map1, gl_list_t keys, gl_list_t values)
   const void *key2;
   const void *value2;
   gl_list_node_t node;
-  size_t i;
 
   iter1 = gl_omap_iterator (map1);
   iterk = gl_list_iterator (keys);
   iterv = gl_list_iterator (values);
-  for (i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     {
       ASSERT (gl_omap_iterator_next (&iter1, &key1, &value1));
       ASSERT (gl_list_iterator_next (&iterk, &key2, &node));
@@ -86,8 +86,6 @@ main (int argc, char *argv[])
 
   {
     size_t initial_size = RANDOM (20);
-    size_t i;
-    unsigned int repeat;
 
     /* Create map1.  */
     map1 = gl_omap_nx_create_empty (GL_ARRAY_OMAP, (gl_mapkey_compar_fn) strcmp, NULL, NULL);
@@ -100,7 +98,7 @@ main (int argc, char *argv[])
     check_all (map1, keys, values);
 
     /* Initialize them.  */
-    for (i = 0; i < initial_size; i++)
+    for (size_t i = 0; i < initial_size; i++)
       {
         const char *key = RANDOM_OBJECT ();
         const char *value = RANDOM_OBJECT ();
@@ -118,7 +116,7 @@ main (int argc, char *argv[])
         check_all (map1, keys, values);
       }
 
-    for (repeat = 0; repeat < 100000; repeat++)
+    for (unsigned int repeat = 0; repeat < 100000; repeat++)
       {
         unsigned int operation = RANDOM (3);
         switch (operation)
@@ -174,5 +172,5 @@ main (int argc, char *argv[])
     gl_list_free (values);
   }
 
-  return 0;
+  return test_exit_status;
 }

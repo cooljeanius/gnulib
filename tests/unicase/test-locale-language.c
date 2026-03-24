@@ -1,5 +1,5 @@
 /* Test of language code determination.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ main (int argc, char *argv[])
   expected = argv[1];
 
   language = uc_locale_language ();
-  ASSERT (strcmp (language, expected) == 0);
+  ASSERT (streq (language, expected));
 
-  return 0;
+  return test_exit_status;
 }

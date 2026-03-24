@@ -7,11 +7,12 @@ lib/striconveha.h
 lib/striconveha.c
 
 Depends-on:
-stdbool
+bool
 striconveh
 malloca
 strdup
-c-strcase
+streq
+c-strcasecmp
 
 configure.ac:
 

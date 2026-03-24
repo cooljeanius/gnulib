@@ -1,5 +1,5 @@
 /* Test counting of trailing zeros.
-   Copyright (C) 2013-2023 Free Software Foundation, Inc.
+   Copyright (C) 2013-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,17 +32,15 @@
 int
 main (int argc, char *argv[])
 {
-  int i, j;
-
 #define TEST_COUNT_TRAILING_ZEROS(FUNC, TYPE, BITS, MAX, ONE) \
   ASSERT (FUNC (0) == BITS);                                  \
-  for (i = 0; i < BITS; i++)                                  \
+  for (int i = 0; i < BITS; i++)                              \
     {                                                         \
       ASSERT (FUNC (ONE << i) == i);                          \
-      for (j = 0; j < i; j++)                                 \
+      for (int j = 0; j < i; j++)                             \
         ASSERT (FUNC ((ONE << i) | (ONE << j)) == j);         \
     }                                                         \
-  for (i = 0; i < 1000; i++)                                  \
+  for (int i = 0; i < 1000; i++)                              \
     {                                                         \
       /* RAND_MAX is most often 0x7fff or 0x7fffffff.  */     \
       TYPE value =                                            \
@@ -57,7 +55,7 @@ main (int argc, char *argv[])
            ^ (((TYPE) rand () >> 3) << 22)                    \
            ^ (((TYPE) rand () >> 3) << 22 << 22));            \
       int count = 0;                                          \
-      for (j = BITS - 1; 0 <= j; j--)                         \
+      for (int j = BITS - 1; 0 <= j; j--)                     \
         if (value & (ONE << j))                               \
           count = j;                                          \
       ASSERT (count == FUNC (value));                         \
@@ -71,5 +69,5 @@ main (int argc, char *argv[])
   TEST_COUNT_TRAILING_ZEROS (count_trailing_zeros_ll, unsigned long long int,
                              ULLONG_BIT, ULLONG_MAX, 1ULL);
 
-  return 0;
+  return test_exit_status;
 }

@@ -1,7 +1,7 @@
 /* readlink wrapper to return the link name in malloc'd storage.
    Unlike xreadlink and xreadlink_with_size, don't ever call exit.
 
-   Copyright (C) 2001, 2003-2007, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2001, 2003-2007, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -65,8 +65,6 @@ areadlink_with_size (char const *file, size_t size)
 
   while (1)
     {
-      ssize_t r;
-      size_t link_length;
       char stackbuf[stackbuf_size];
       char *buf = stackbuf;
       char *buffer = NULL;
@@ -81,15 +79,14 @@ areadlink_with_size (char const *file, size_t size)
             }
         }
 
-      r = readlink (file, buf, buf_size);
-      link_length = r;
-
+      ssize_t r = readlink (file, buf, buf_size);
       if (r < 0)
         {
           free (buffer);
           return NULL;
         }
 
+      size_t link_length = r;
       if (link_length < buf_size)
         {
           buf[link_length] = 0;

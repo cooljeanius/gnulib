@@ -3,9 +3,11 @@ tests/test-hash.c
 tests/macros.h
 
 Depends-on:
-hash-pjw
+hashcode-string2
 inttostr
-stdbool
+bool
+stdcountof-h
+streq
 
 configure.ac:
 

@@ -3,7 +3,6 @@ tests/test-ldexpl.c
 tests/test-ldexp.h
 tests/minus-zero.h
 tests/infinity.h
-tests/nan.h
 tests/signature.h
 tests/macros.h
 tests/randoml.c
@@ -11,8 +10,10 @@ tests/randoml.c
 Depends-on:
 fpucw
 isnanl-nolibm
-signbit
-float
+signbit-no-c++
+float-h
+nan
+stdcountof-h
 
 configure.ac:
 

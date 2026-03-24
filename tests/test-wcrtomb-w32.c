@@ -1,5 +1,5 @@
 /* Test of conversion of wide character to multibyte character.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -97,40 +97,36 @@ test_one_locale (const char *name, int codepage)
   }
 
   /* Test single bytes.  */
-  {
-    int c;
-
-    for (c = 0; c < 0x100; c++)
-      switch (c)
-        {
-        case '\t': case '\v': case '\f':
-        case ' ': case '!': case '"': case '#': case '%':
-        case '&': case '\'': case '(': case ')': case '*':
-        case '+': case ',': case '-': case '.': case '/':
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-        case ':': case ';': case '<': case '=': case '>':
-        case '?':
-        case 'A': case 'B': case 'C': case 'D': case 'E':
-        case 'F': case 'G': case 'H': case 'I': case 'J':
-        case 'K': case 'L': case 'M': case 'N': case 'O':
-        case 'P': case 'Q': case 'R': case 'S': case 'T':
-        case 'U': case 'V': case 'W': case 'X': case 'Y':
-        case 'Z':
-        case '[': case '\\': case ']': case '^': case '_':
-        case 'a': case 'b': case 'c': case 'd': case 'e':
-        case 'f': case 'g': case 'h': case 'i': case 'j':
-        case 'k': case 'l': case 'm': case 'n': case 'o':
-        case 'p': case 'q': case 'r': case 's': case 't':
-        case 'u': case 'v': case 'w': case 'x': case 'y':
-        case 'z': case '{': case '|': case '}': case '~':
-          /* c is in the ISO C "basic character set".  */
-          ret = wcrtomb (buf, btowc (c), NULL);
-          ASSERT (ret == 1);
-          ASSERT (buf[0] == (char) c);
-          break;
-        }
-  }
+  for (int c = 0; c < 0x100; c++)
+    switch (c)
+      {
+      case '\t': case '\v': case '\f':
+      case ' ': case '!': case '"': case '#': case '%':
+      case '&': case '\'': case '(': case ')': case '*':
+      case '+': case ',': case '-': case '.': case '/':
+      case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+      case ':': case ';': case '<': case '=': case '>':
+      case '?':
+      case 'A': case 'B': case 'C': case 'D': case 'E':
+      case 'F': case 'G': case 'H': case 'I': case 'J':
+      case 'K': case 'L': case 'M': case 'N': case 'O':
+      case 'P': case 'Q': case 'R': case 'S': case 'T':
+      case 'U': case 'V': case 'W': case 'X': case 'Y':
+      case 'Z':
+      case '[': case '\\': case ']': case '^': case '_':
+      case 'a': case 'b': case 'c': case 'd': case 'e':
+      case 'f': case 'g': case 'h': case 'i': case 'j':
+      case 'k': case 'l': case 'm': case 'n': case 'o':
+      case 'p': case 'q': case 'r': case 's': case 't':
+      case 'u': case 'v': case 'w': case 'x': case 'y':
+      case 'z': case '{': case '|': case '}': case '~':
+        /* c is in the ISO C "basic character set".  */
+        ret = wcrtomb (buf, btowc (c), NULL);
+        ASSERT (ret == 1);
+        ASSERT (buf[0] == (char) c);
+        break;
+      }
 
   /* Test special calling convention, passing a NULL pointer.  */
   {
@@ -149,13 +145,13 @@ test_one_locale (const char *name, int codepage)
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x00FC, NULL);
         ASSERT (ret == 1);
-        ASSERT (memcmp (buf, "\374", 1) == 0);
+        ASSERT (memeq (buf, "\374", 1));
         ASSERT (buf[1] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x00DF, NULL);
         ASSERT (ret == 1);
-        ASSERT (memcmp (buf, "\337", 1) == 0);
+        ASSERT (memeq (buf, "\337", 1));
         ASSERT (buf[1] == 'x');
       }
       return 0;
@@ -167,39 +163,39 @@ test_one_locale (const char *name, int codepage)
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x0622, NULL);
         ASSERT (ret == 1);
-        ASSERT (memcmp (buf, "\302", 1) == 0);
+        ASSERT (memeq (buf, "\302", 1));
         ASSERT (buf[1] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x0644, NULL);
         ASSERT (ret == 1);
-        ASSERT (memcmp (buf, "\341", 1) == 0);
+        ASSERT (memeq (buf, "\341", 1));
         ASSERT (buf[1] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x0648, NULL);
         ASSERT (ret == 1);
-        ASSERT (memcmp (buf, "\346", 1) == 0);
+        ASSERT (memeq (buf, "\346", 1));
         ASSERT (buf[1] == 'x');
       }
       return 0;
 
     case 65001:
       /* Locale encoding is CP65001 = UTF-8.  */
-      if (strcmp (locale_charset (), "UTF-8") != 0)
+      if (!streq (locale_charset (), "UTF-8"))
         return 77;
       {
         /* Convert "B\303\274\303\237er": "Büßer" */
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x00FC, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\303\274", 2) == 0);
+        ASSERT (memeq (buf, "\303\274", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x00DF, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\303\237", 2) == 0);
+        ASSERT (memeq (buf, "\303\237", 2));
         ASSERT (buf[2] == 'x');
       }
       return 0;
@@ -211,19 +207,19 @@ test_one_locale (const char *name, int codepage)
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x65E5, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\223\372", 2) == 0);
+        ASSERT (memeq (buf, "\223\372", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x672C, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\226\173", 2) == 0);
+        ASSERT (memeq (buf, "\226\173", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x8A9E, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\214\352", 2) == 0);
+        ASSERT (memeq (buf, "\214\352", 2));
         ASSERT (buf[2] == 'x');
       }
       return 0;
@@ -235,19 +231,19 @@ test_one_locale (const char *name, int codepage)
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x65E5, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\244\351", 2) == 0);
+        ASSERT (memeq (buf, "\244\351", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x672C, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\245\273", 2) == 0);
+        ASSERT (memeq (buf, "\245\273", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x8A9E, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\273\171", 2) == 0);
+        ASSERT (memeq (buf, "\273\171", 2));
         ASSERT (buf[2] == 'x');
       }
       return 0;
@@ -259,39 +255,39 @@ test_one_locale (const char *name, int codepage)
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x65E5, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\310\325", 2) == 0);
+        ASSERT (memeq (buf, "\310\325", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x672C, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\261\276", 2) == 0);
+        ASSERT (memeq (buf, "\261\276", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x8A9E, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\325\132", 2) == 0);
+        ASSERT (memeq (buf, "\325\132", 2));
         ASSERT (buf[2] == 'x');
       }
       return 0;
 
     case 54936:
       /* Locale encoding is CP54936 = GB18030.  */
-      if (strcmp (locale_charset (), "GB18030") != 0)
+      if (!streq (locale_charset (), "GB18030"))
         return 77;
       {
         /* Convert "B\250\271\201\060\211\070er": "Büßer" */
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x00FC, NULL);
         ASSERT (ret == 2);
-        ASSERT (memcmp (buf, "\250\271", 2) == 0);
+        ASSERT (memeq (buf, "\250\271", 2));
         ASSERT (buf[2] == 'x');
 
         memset (buf, 'x', 8);
         ret = wcrtomb (buf, 0x00DF, NULL);
         ASSERT (ret == 4);
-        ASSERT (memcmp (buf, "\201\060\211\070", 4) == 0);
+        ASSERT (memeq (buf, "\201\060\211\070", 4));
         ASSERT (buf[4] == 'x');
       }
       return 0;
@@ -306,10 +302,9 @@ main (int argc, char *argv[])
 {
   int codepage = atoi (argv[argc - 1]);
   int result;
-  int i;
 
   result = 77;
-  for (i = 1; i < argc - 1; i++)
+  for (int i = 1; i < argc - 1; i++)
     {
       int ret = test_one_locale (argv[i], codepage);
 
@@ -319,10 +314,12 @@ main (int argc, char *argv[])
 
   if (result == 77)
     {
+      if (test_exit_status != EXIT_SUCCESS)
+        return test_exit_status;
       fprintf (stderr, "Skipping test: found no locale with codepage %d\n",
                codepage);
     }
-  return result;
+  return (result ? result : test_exit_status);
 }
 
 #else

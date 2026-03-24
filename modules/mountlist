@@ -8,30 +8,31 @@ m4/fstypename.m4
 m4/mountlist.m4
 
 Depends-on:
+c-ctype
+filesystem-remote
 fopen-gnu
 free-posix
 getline
 open
 unlocked-io-internal
-stdbool
-stdint
+bool
+stdint-h
+streq
 strstr-simple
 xalloc
 
 configure.ac:
 gl_MOUNTLIST
-gl_CONDITIONAL([GL_COND_OBJ_MOUNTLIST], [test $gl_cv_list_mounted_fs = yes])
-AM_COND_IF([GL_COND_OBJ_MOUNTLIST], [
-  gl_PREREQ_MOUNTLIST_EXTRA
-])
+gl_PREREQ_MOUNTLIST_EXTRA
 
 Makefile.am:
-if GL_COND_OBJ_MOUNTLIST
 lib_SOURCES += mountlist.c
-endif
 
 Include:
 "mountlist.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

@@ -1,7 +1,7 @@
 /*
  * Test the safe-alloc macros
  *
- * Copyright (C) 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2009-2026 Free Software Foundation, Inc.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,13 +42,8 @@ main ()
 
   ASSERT (p->a == 0 && p->b == 0);
 
-  p->a = p->b = 42;
-  r = REALLOC_N (p, 5);
-
-  ASSERT (p[0].a == 42 && p[0].b == 42);
-
   FREE (p);
   ASSERT (p == NULL);
 
-  return 0;
+  return test_exit_status;
 }

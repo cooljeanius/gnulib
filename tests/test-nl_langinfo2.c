@@ -1,5 +1,5 @@
 /* Test of nl_langinfo replacement.
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ main (int argc, char *argv[])
 {
 #if HAVE_WORKING_USELOCALE
   /* Check that nl_langinfo() uses the per-thread locale.  */
-  int pass;
   bool skipped_all = true;
 
   /* Extract a few items from the C locale.  */
@@ -52,14 +51,14 @@ main (int argc, char *argv[])
 
   /* Sanity checks.  */
   (void) c_CODESET;
-  ASSERT (strcmp (c_RADIXCHAR, ".") == 0);
+  ASSERT (streq (c_RADIXCHAR, "."));
   ASSERT (strlen (c_T_FMT_AMPM) > 0);
   ASSERT (strlen (c_AM_STR) > 0);
   ASSERT (strlen (c_PM_STR) > 0);
   ASSERT (strlen (c_CRNCYSTR) <= 1); /* "-", "+", ".", or "" */
   ASSERT (c_strcasestr (c_YESEXPR, "y" /* from "yes" */) != NULL);
 
-  for (pass = 1; pass <= 2; pass++)
+  for (int pass = 1; pass <= 2; pass++)
     {
       /* pass    locale
           1        traditional French locale
@@ -67,7 +66,7 @@ main (int argc, char *argv[])
        */
       const char *fr_locale_name =
         getenv (pass == 1 ? "LOCALE_FR" : "LOCALE_FR_UTF8");
-      if (strcmp (fr_locale_name, "none") != 0)
+      if (!streq (fr_locale_name, "none"))
         {
           /* Use a per-thread locale.  */
           locale_t fr_locale = newlocale (LC_ALL_MASK, fr_locale_name, NULL);
@@ -92,7 +91,7 @@ main (int argc, char *argv[])
 
               /* nl_langinfo items of the LC_NUMERIC category */
               const char *fr_RADIXCHAR = nl_langinfo (RADIXCHAR);
-              ASSERT (strcmp (fr_RADIXCHAR, ",") == 0);
+              ASSERT (streq (fr_RADIXCHAR, ","));
 
               /* nl_langinfo items of the LC_TIME category */
               /* macOS and Solaris 11 don't get the LC_TIME values right.
@@ -102,7 +101,7 @@ main (int argc, char *argv[])
               const char *fr_AM_STR = nl_langinfo (AM_STR);
               const char *fr_PM_STR = nl_langinfo (PM_STR);
               ASSERT (strlen (fr_T_FMT_AMPM) == 0
-                      || strcmp (fr_T_FMT_AMPM, "%I:%M:%S") == 0);
+                      || streq (fr_T_FMT_AMPM, "%I:%M:%S"));
               ASSERT (strlen (fr_AM_STR) == 0);
               ASSERT (strlen (fr_PM_STR) == 0);
               #endif
@@ -114,7 +113,7 @@ main (int argc, char *argv[])
               const char *fr_CRNCYSTR = nl_langinfo (CRNCYSTR);
               if (pass == 2)
                 ASSERT (strlen (fr_CRNCYSTR) >= 1
-                        && strcmp (fr_CRNCYSTR + 1, "€") == 0);
+                        && streq (fr_CRNCYSTR + 1, "€"));
               #endif
 
               #endif
@@ -134,11 +133,13 @@ main (int argc, char *argv[])
 
   if (skipped_all)
     {
+      if (test_exit_status != EXIT_SUCCESS)
+        return test_exit_status;
       fputs ("Skipping test: French locale is not installed\n", stderr);
       return 77;
     }
 
-  return 0;
+  return test_exit_status;
 #else
   fputs ("Skipping test: uselocale() not available\n", stderr);
   return 77;

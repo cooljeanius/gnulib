@@ -1,5 +1,5 @@
 /* Test that directory streams leave standard fds alone.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@ static FILE *myerr;
 int
 main (void)
 {
-  int i;
   DIR *dp;
   /* The dirent-safer module works without the use of fdopendir (which
      would also pull in fchdir and openat); but if those modules were
@@ -62,7 +61,7 @@ main (void)
 
   /* Four iterations, with progressively more standard descriptors
      closed.  */
-  for (i = -1; i <= STDERR_FILENO; i++)
+  for (int i = -1; i <= STDERR_FILENO; i++)
     {
       if (0 <= i)
         ASSERT (close (i) == 0);
@@ -90,5 +89,5 @@ main (void)
   ASSERT (close (dfd) == 0);
 #endif
 
-  return 0;
+  return test_exit_status;
 }

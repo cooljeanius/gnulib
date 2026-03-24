@@ -7,8 +7,9 @@ m4/freopen.m4
 
 Depends-on:
 fcntl-h        [test $REPLACE_FREOPEN = 1]
+streq          [test $REPLACE_FREOPEN = 1]
 open           [test $REPLACE_FREOPEN = 1]
-stdio
+stdio-h
 largefile
 
 configure.ac:

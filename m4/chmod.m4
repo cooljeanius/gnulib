@@ -1,8 +1,10 @@
-# chmod.m4 serial 2
-dnl Copyright (C) 2004-2023 Free Software Foundation, Inc.
+# chmod.m4
+# serial 4
+dnl Copyright (C) 2004-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl From Bruno Haible.
 
@@ -46,8 +48,8 @@ AC_DEFUN([gl_FUNC_CHMOD],
               return 1;
             /* Test whether chmod rejects a trailing slash on a non-directory,
                with error ENOTDIR.
-               This test fails on AIX 7.2, IRIX 6.5 (no error) and
-               native Windows (error EINVAL).  */
+               This test fails on AIX 7.2 (no error) and native Windows
+               (error EINVAL).  */
             errno = 0;
             if (chmod (file "/", desired) == 0)
               result |= 2;
@@ -58,8 +60,8 @@ AC_DEFUN([gl_FUNC_CHMOD],
        [gl_cv_func_chmod_works=yes],
        [gl_cv_func_chmod_works=no],
        [case "$host_os" in
-          # Guess no on AIX, IRIX, native Windows.
-          aix* | irix* | mingw*)
+          # Guess no on AIX, native Windows.
+          aix* | mingw* | windows*)
             gl_cv_func_chmod_works="guessing no" ;;
           # Guess yes on glibc, musl libc, macOS, FreeBSD, NetBSD, OpenBSD, Solaris, Haiku, Cygwin.
           *-gnu* | gnu* | *-musl* | darwin* | freebsd* | midnightbsd* | netbsd* | openbsd* | solaris* | haiku* | cygwin*)

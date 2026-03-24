@@ -1,5 +1,5 @@
 /* Base 2 logarithm.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -52,7 +52,7 @@ log2l (long double x)
       else
         {
           /* Return NaN.  */
-#if (defined _MSC_VER && !defined __clang__) || (defined __sgi && !defined __GNUC__)
+#if defined _MSC_VER && !defined __clang__
           static long double zero;
           return zero / zero;
 #else
@@ -69,9 +69,7 @@ log2l (long double x)
      Then log2(x) = e + log2(y) = e + log(y)/log(2).  */
   {
     int e;
-    long double y;
-
-    y = frexpl (x, &e);
+    long double y = frexpl (x, &e);
     if (y < SQRT_HALF)
       {
         y = 2.0L * y;

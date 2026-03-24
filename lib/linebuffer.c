@@ -1,6 +1,6 @@
 /* linebuffer.c -- read arbitrarily long lines
 
-   Copyright (C) 1986, 1991, 1998-1999, 2001, 2003-2004, 2006-2007, 2009-2023
+   Copyright (C) 1986, 1991, 1998-1999, 2001, 2003-2004, 2006-2007, 2009-2026
    Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -59,13 +59,13 @@ struct linebuffer *
 readlinebuffer_delim (struct linebuffer *linebuffer, FILE *stream,
                       char delimiter)
 {
-  int c;
+  if (feof (stream))
+    return NULL;
+
   char *buffer = linebuffer->buffer;
   char *p = linebuffer->buffer;
   char *end = buffer + linebuffer->size; /* Sentinel. */
-
-  if (feof (stream))
-    return NULL;
+  int c;
 
   do
     {

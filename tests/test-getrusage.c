@@ -1,5 +1,5 @@
 /* Test of getting resource utilization.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,9 +47,8 @@ main (void)
     for (;;)
       {
         struct timeval t;
-        int i;
 
-        for (i = 0; i < 1000000; i++)
+        for (int i = 0; i < 1000000; i++)
           counter++;
 
         ASSERT (gettimeofday (&t, NULL) == 0);
@@ -82,5 +81,5 @@ main (void)
     ASSERT (spent_utime + spent_stime > 10000U);
   }
 
-  return 0;
+  return test_exit_status;
 }

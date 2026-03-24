@@ -1,5 +1,5 @@
 /* arcfour.c --- The arcfour stream cipher
- * Copyright (C) 2000-2003, 2005-2006, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2000-2003, 2005-2006, 2009-2026 Free Software Foundation, Inc.
  *
  * This file is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -29,7 +29,8 @@
 #include "arcfour.h"
 
 void
-arcfour_stream (arcfour_context * context, const char *inbuf, char *outbuf,
+arcfour_stream (arcfour_context *restrict context,
+                char const *restrict inbuf, char *restrict outbuf,
                 size_t length)
 {
   uint8_t i = context->idx_i;
@@ -38,13 +39,13 @@ arcfour_stream (arcfour_context * context, const char *inbuf, char *outbuf,
 
   for (; length > 0; length--)
     {
-      char t;
-
       i++;
       j += sbox[i];
-      t = sbox[i];
-      sbox[i] = sbox[j];
-      sbox[j] = t;
+      {
+        char t = sbox[i];
+        sbox[i] = sbox[j];
+        sbox[j] = t;
+      }
       *outbuf++ = (*inbuf++
                    ^ sbox[(0U + sbox[i] + sbox[j]) % ARCFOUR_SBOX_SIZE]);
     }
@@ -54,21 +55,24 @@ arcfour_stream (arcfour_context * context, const char *inbuf, char *outbuf,
 }
 
 void
-arcfour_setkey (arcfour_context * context, const char *key, size_t keylen)
+arcfour_setkey (arcfour_context *restrict context,
+                char const *restrict key, size_t keylen)
 {
-  size_t i, j, k;
   char *sbox = context->sbox;
 
   context->idx_i = context->idx_j = 0;
-  for (i = 0; i < ARCFOUR_SBOX_SIZE; i++)
+  for (size_t i = 0; i < ARCFOUR_SBOX_SIZE; i++)
     sbox[i] = i;
+
+  size_t i, j, k;
   for (i = j = k = 0; i < ARCFOUR_SBOX_SIZE; i++)
     {
-      char t;
       j = (j + sbox[i] + key[k]) % ARCFOUR_SBOX_SIZE;
-      t = sbox[i];
-      sbox[i] = sbox[j];
-      sbox[j] = t;
+      {
+        char t = sbox[i];
+        sbox[i] = sbox[j];
+        sbox[j] = t;
+      }
       if (++k == keylen)
         k = 0;
     }

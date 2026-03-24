@@ -7,9 +7,9 @@ lib/str-two-way.h
 m4/strcasestr.m4
 
 Depends-on:
-string
-stdbool
-strcase
+string-h
+bool
+strncasecmp
 memchr
 memcmp
 extensions

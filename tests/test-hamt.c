@@ -1,5 +1,5 @@
 /* Test of persistent hash array mapped trie implementation.
-   Copyright (C) 2021-2023 Free Software Foundation, Inc.
+   Copyright (C) 2021-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -163,8 +163,7 @@ test_general (void)
 }
 
 static bool
-true_processor (_GL_ATTRIBUTE_MAYBE_UNUSED Hamt_entry *elt,
-                _GL_ATTRIBUTE_MAYBE_UNUSED void *data)
+true_processor (Hamt_entry *_GL_UNNAMED (elt), void *_GL_UNNAMED (data))
 {
   return true;
 }
@@ -377,5 +376,5 @@ main (void)
   test_destructive_update ();
   test_iterator ();
 
-  return 0;
+  return test_exit_status;
 }

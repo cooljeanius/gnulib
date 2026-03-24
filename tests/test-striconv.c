@@ -1,5 +1,5 @@
 /* Test of character set conversion.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ main ()
                                &result, &length);
     ASSERT (retval == 0);
     ASSERT (length == strlen (expected));
-    ASSERT (result != NULL && memcmp (result, expected, strlen (expected)) == 0);
+    ASSERT (result != NULL && memeq (result, expected, strlen (expected)));
     free (result);
   }
 
@@ -68,7 +68,7 @@ main ()
                                &result, &length);
     ASSERT (retval == 0);
     ASSERT (length == strlen (expected));
-    ASSERT (result != NULL && memcmp (result, expected, strlen (expected)) == 0);
+    ASSERT (result != NULL && memeq (result, expected, strlen (expected)));
     free (result);
   }
 
@@ -103,7 +103,7 @@ main ()
     static const char expected[] = "\303\204rger mit b\303\266sen B\303\274bchen ohne Augenma\303\237";
     char *result = str_cd_iconv (input, cd_88591_to_utf8);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, expected) == 0);
+    ASSERT (streq (result, expected));
     free (result);
   }
 
@@ -113,7 +113,7 @@ main ()
     static const char expected[] = "\304rger mit b\366sen B\374bchen ohne Augenma\337";
     char *result = str_cd_iconv (input, cd_utf8_to_88591);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, expected) == 0);
+    ASSERT (streq (result, expected));
     free (result);
   }
 
@@ -129,7 +129,7 @@ main ()
     static const char input[] = "\342";
     char *result = str_cd_iconv (input, cd_utf8_to_88591);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "") == 0);
+    ASSERT (streq (result, ""));
     free (result);
   }
 
@@ -144,7 +144,7 @@ main ()
     static const char expected[] = "\303\204rger mit b\303\266sen B\303\274bchen ohne Augenma\303\237";
     char *result = str_iconv (input, "ISO-8859-1", "UTF-8");
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, expected) == 0);
+    ASSERT (streq (result, expected));
     free (result);
   }
 
@@ -154,7 +154,7 @@ main ()
     static const char expected[] = "\304rger mit b\366sen B\374bchen ohne Augenma\337";
     char *result = str_iconv (input, "UTF-8", "ISO-8859-1");
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, expected) == 0);
+    ASSERT (streq (result, expected));
     free (result);
   }
 
@@ -170,11 +170,11 @@ main ()
     static const char input[] = "\342";
     char *result = str_iconv (input, "UTF-8", "ISO-8859-1");
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "") == 0);
+    ASSERT (streq (result, ""));
     free (result);
   }
 
 #endif
 
-  return 0;
+  return test_exit_status;
 }

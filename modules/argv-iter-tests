@@ -4,6 +4,8 @@ tests/macros.h
 
 Depends-on:
 tmpfile
+stdcountof-h
+streq
 
 configure.ac:
 

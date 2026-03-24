@@ -6,13 +6,14 @@ lib/acosf.c
 m4/acosf.m4
 
 Depends-on:
-math
+math-h
 extensions
-acos            [test $HAVE_ACOSF = 0]
+acos            [test $HAVE_ACOSF = 0 || test $REPLACE_ACOSF = 1]
 
 configure.ac:
 gl_FUNC_ACOSF
-gl_CONDITIONAL([GL_COND_OBJ_ACOSF], [test $HAVE_ACOSF = 0])
+gl_CONDITIONAL([GL_COND_OBJ_ACOSF],
+               [test $HAVE_ACOSF = 0 || test $REPLACE_ACOSF = 1])
 gl_MATH_MODULE_INDICATOR([acosf])
 
 Makefile.am:

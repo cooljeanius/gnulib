@@ -1,5 +1,5 @@
 /* Test of conversion of string to wide string.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,25 +70,20 @@ main (int argc, char *argv[])
      "C" locale.  Furthermore, when you attempt to set the "C" or "POSIX"
      locale via setlocale(), what you get is a "C" locale with UTF-8 encoding,
      that is, effectively the "C.UTF-8" locale.  */
-  if (argc > 1 && strcmp (argv[1], "1") == 0 && MB_CUR_MAX > 1)
+  if (argc > 1 && streq (argv[1], "1") && MB_CUR_MAX > 1)
     argv[1] = "3";
 #endif
 
   if (argc > 1)
     {
-      int unlimited;
-
-      for (unlimited = 0; unlimited < 2; unlimited++)
+      for (int unlimited = 0; unlimited < 2; unlimited++)
         {
           #define BUFSIZE 10
           wchar_t buf[BUFSIZE];
           const char *src;
 
-          {
-            size_t i;
-            for (i = 0; i < BUFSIZE; i++)
-              buf[i] = (wchar_t) 0xBADFACE;
-          }
+          for (size_t i = 0; i < BUFSIZE; i++)
+            buf[i] = (wchar_t) 0xBADFACE;
 
           switch (argv[1][0])
             {
@@ -116,10 +111,9 @@ main (int argc, char *argv[])
                   ASSERT (buf[1] == (wchar_t) 0xBADFACE);
               }
               {
-                int c;
                 char input[2];
 
-                for (c = 0; c < 0x100; c++)
+                for (int c = 0; c < 0x100; c++)
                   if (c != 0)
                     {
                       /* We are testing all nonnull bytes.  */
@@ -256,7 +250,7 @@ main (int argc, char *argv[])
             }
         }
 
-      return 0;
+      return test_exit_status;
     }
 
   return 1;

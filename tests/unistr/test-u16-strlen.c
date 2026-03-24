@@ -1,5 +1,5 @@
 /* Test of u16_strlen() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 #include <config.h>
 
 #include "unistr.h"
+
+#include <stdcountof.h>
 
 #include "macros.h"
 
@@ -41,7 +43,7 @@ main ()
         '-', '4', 'a', 'c', ')', ')', '/', '(', '2', 'a', ')', ' ', ' ',
         0x65E5, 0x672C, 0x8A9E, ',', 0x4E2D, 0x6587, ',', 0xD55C, 0xAE00, 0
       };
-    ASSERT (u16_strlen (input) == SIZEOF (input) - 1);
+    ASSERT (u16_strlen (input) == countof (input) - 1);
   }
 
   /* String with characters outside the BMP.  */
@@ -50,8 +52,8 @@ main ()
       { '-', '(', 0xD835, 0xDD1E, 0x00D7, 0xD835, 0xDD1F, ')', '=',
         0xD835, 0xDD1F, 0x00D7, 0xD835, 0xDD1E, 0
       };
-    ASSERT (u16_strlen (input) == SIZEOF (input) - 1);
+    ASSERT (u16_strlen (input) == countof (input) - 1);
   }
 
-  return 0;
+  return test_exit_status;
 }

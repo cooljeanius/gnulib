@@ -1,5 +1,5 @@
 /* Test that openat_safer leave standard fds alone.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,8 +40,6 @@ static FILE *myerr;
 int
 main (void)
 {
-  int i;
-  int j;
   int dfd;
   int fd;
   char buf[2];
@@ -64,14 +62,14 @@ main (void)
 
   /* Four iterations, with progressively more standard descriptors
      closed.  */
-  for (i = -1; i <= STDERR_FILENO; i++)
+  for (int i = -1; i <= STDERR_FILENO; i++)
     {
       ASSERT (fchdir (dfd) == 0);
       if (0 <= i)
         ASSERT (close (i) == 0);
 
       /* Execute once in ".", once in "..".  */
-      for (j = 0; j <= 1; j++)
+      for (int j = 0; j <= 1; j++)
         {
           if (j)
             ASSERT (chdir ("..") == 0);
@@ -84,7 +82,7 @@ main (void)
           ASSERT (openat (dfd, "", O_RDONLY) == -1);
           ASSERT (errno == ENOENT);
           errno = 0;
-          ASSERT (openat (-1, ".", O_RDONLY) == -1);
+          ASSERT (openat (AT_FDCWD == -2 ? -1 : -2, ".", O_RDONLY) == -1);
           ASSERT (errno == EBADF);
 
           /* Check for trailing slash and /dev/null handling.  */
@@ -98,7 +96,7 @@ main (void)
           ASSERT (errno == ENOTDIR || errno == EISDIR || errno == EINVAL);
 #if defined __linux__ || defined __ANDROID__
           /* Using a bad directory is okay for absolute paths.  */
-          fd = openat (-1, "/dev/null", O_WRONLY);
+          fd = openat (AT_FDCWD == -2 ? -1 : -2, "/dev/null", O_WRONLY);
           ASSERT (STDERR_FILENO < fd);
 #endif
           /* Using a non-directory is wrong for relative paths.  */
@@ -121,5 +119,5 @@ main (void)
   ASSERT (unlink (witness) == 0);
   ASSERT (close (dfd) == 0);
 
-  return 0;
+  return test_exit_status;
 }

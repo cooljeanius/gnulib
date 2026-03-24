@@ -1,5 +1,5 @@
 /* Test for finite value (zero, subnormal, or normal, and not infinite or NaN).
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -35,17 +35,17 @@ static long double zerol;
 # define zerol 0.L
 #endif
 
-int gl_isfinitef (float x)
+int _gl_isfinitef (float x)
 {
   return !isnanf (x) && x - x == zerof;
 }
 
-int gl_isfinited (double x)
+int _gl_isfinited (double x)
 {
   return !isnand (x) && x - x == zerod;
 }
 
-int gl_isfinitel (long double x)
+int _gl_isfinitel (long double x)
 {
   return !isnanl (x) && x - x == zerol;
 }

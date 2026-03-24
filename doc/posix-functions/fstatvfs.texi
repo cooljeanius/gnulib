@@ -1,8 +1,8 @@
 @node fstatvfs
-@section @code{fstatvfs}
+@subsection @code{fstatvfs}
 @findex fstatvfs
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/fstatvfs.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/fstatvfs.html}
 
 Gnulib module: ---
 
@@ -20,4 +20,7 @@ Portability problems not fixed by Gnulib:
 @item
 This function is missing on some platforms:
 OpenBSD 3.8, mingw, MSVC 14, Android 4.3.
+@item
+This function fails if the file descriptor was opened with @code{O_PATH}:
+Linux kernel 3.11.
 @end itemize

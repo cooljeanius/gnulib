@@ -1,5 +1,5 @@
 /* Base 2 logarithm.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -69,9 +69,7 @@ log2f (float x)
      Then log2(x) = e + log2(y) = e + log(y)/log(2).  */
   {
     int e;
-    float y;
-
-    y = frexpf (x, &e);
+    float y = frexpf (x, &e);
     if (y < SQRT_HALF)
       {
         y = 2.0f * y;

@@ -6,8 +6,8 @@ lib/javacomp.h
 lib/javacomp.c
 
 Depends-on:
-stdbool
-unistd
+bool
+unistd-h
 javaversion
 execute
 spawn-pipe
@@ -31,6 +31,7 @@ xvasprintf
 verify
 c-strstr
 gettext-h
+gnulib-i18n
 javacomp-script
 sh-filename
 
@@ -48,6 +49,7 @@ $(MBRTOWC_LIB)
 $(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 $(GETRANDOM_LIB)
 $(LIBTHREAD)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

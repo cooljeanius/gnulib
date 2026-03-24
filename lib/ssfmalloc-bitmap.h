@@ -1,6 +1,6 @@
 /* Simple and straight-forward malloc implementation (front end).
 
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -27,8 +27,7 @@
 static inline void
 init_bitmap_all_bits_clear (size_t num_words, uint32_t *words)
 {
-  size_t i;
-  for (i = 0; i < num_words; i++)
+  for (size_t i = 0; i < num_words; i++)
     words[i] = 0;
 }
 
@@ -36,8 +35,7 @@ init_bitmap_all_bits_clear (size_t num_words, uint32_t *words)
 static inline void
 init_bitmap_all_bits_set (size_t num_words, uint32_t *words)
 {
-  size_t i;
-  for (i = 0; i < num_words; i++)
+  for (size_t i = 0; i < num_words; i++)
     words[i] = ~(uint32_t)0;
 }
 

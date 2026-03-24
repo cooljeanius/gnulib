@@ -7,7 +7,7 @@ lib/obstack_printf.c
 
 Depends-on:
 obstack
-stdio
+stdio-h
 vasnprintf
 extensions
 
@@ -22,6 +22,9 @@ Makefile.am:
 
 Include:
 <stdio.h>
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

@@ -1,5 +1,5 @@
 /* Test of astrxfrm() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ main ()
     size_t length = 100;
     char *transform = astrxfrm (input, NULL, &length);
     ASSERT (transform != NULL);
-    ASSERT (strcmp (transform, expected_transform) == 0);
+    ASSERT (streq (transform, expected_transform));
     ASSERT (length == strlen (transform) + 1);
     free (transform);
   }
@@ -61,7 +61,7 @@ main ()
     transform = astrxfrm (input, buf, &length);
     ASSERT (transform != NULL);
     ASSERT (transform != buf);
-    ASSERT (strcmp (transform, expected_transform) == 0);
+    ASSERT (streq (transform, expected_transform));
     ASSERT (length == strlen (transform) + 1);
     ASSERT (buf[0] == '@');
     free (transform);
@@ -76,7 +76,7 @@ main ()
     transform = astrxfrm (input, buf, &length);
     ASSERT (transform != NULL);
     ASSERT (transform != buf);
-    ASSERT (strcmp (transform, expected_transform) == 0);
+    ASSERT (streq (transform, expected_transform));
     ASSERT (length == strlen (transform) + 1);
     ASSERT (buf[sizeof (buf) - 1] == '@');
     free (transform);
@@ -91,12 +91,12 @@ main ()
     transform = astrxfrm (input, buf, &length);
     ASSERT (transform != NULL);
     ASSERT (transform == buf);
-    ASSERT (strcmp (transform, expected_transform) == 0);
+    ASSERT (streq (transform, expected_transform));
     ASSERT (length == strlen (transform) + 1);
     ASSERT (buf[sizeof (buf) - 1] == '@');
   }
 
   free (expected_transform);
 
-  return 0;
+  return test_exit_status;
 }

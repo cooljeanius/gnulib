@@ -6,11 +6,14 @@ tests/test-dfa-invalid-merge.sh
 
 Depends-on:
 binary-io
-stdio
-stdlib
-string
-unistd
+stdio-h
+stdlib-h
+string-h
+unistd-h
 regex
+setlocale
+test-framework-sh
+strnul
 
 configure.ac:
 

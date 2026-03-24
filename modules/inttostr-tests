@@ -4,8 +4,9 @@ tests/test-inttostr.c
 
 Depends-on:
 intprops
-inttypes
+inttypes-h
 snprintf
+streq
 
 configure.ac:
 

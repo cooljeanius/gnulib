@@ -1,5 +1,5 @@
 /* Duplicate a wide string.
-   Copyright (C) 1999, 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 1999, 2011-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 1999.
 
    This file is free software: you can redistribute it and/or modify
@@ -23,7 +23,8 @@ wcsdup (const wchar_t *s)
   if (copy != NULL)
     return wmemcpy (copy, s, n);
   else
-    /* The glibc documentation does not say that errno should be set to ENOMEM
-       here.  */
-    return NULL;
+    {
+      errno = ENOMEM;
+      return NULL;
+    }
 }

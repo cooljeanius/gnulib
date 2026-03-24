@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005, 2007, 2009-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2007, 2009-2026 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ test_clobber ()
   lt = localtime (&t);
   saved_lt = *lt;
   gettimeofday (&tv, NULL);
-  if (memcmp (lt, &saved_lt, sizeof (struct tm)) != 0)
+  if (!memeq (lt, &saved_lt, sizeof (struct tm)))
     {
       fprintf (stderr, "gettimeofday still clobbers the localtime buffer!\n");
       exit (1);
@@ -72,7 +72,7 @@ test_consistency ()
   /* Verify that the tv_sec field of the result is the same as time(NULL).  */
   /* Note: It's here that the dependency to the 'time' module is needed.
      Without it, this assertion would sometimes fail on glibc systems, see
-     https://sourceware.org/bugzilla/show_bug.cgi?id=30200  */
+     https://sourceware.org/PR30200  */
   ASSERT (tv1.tv_sec <= tt2);
   ASSERT (tt2 <= tv3.tv_sec);
   ASSERT (tv3.tv_sec <= tt4);
@@ -84,5 +84,5 @@ main (void)
   test_clobber ();
   test_consistency ();
 
-  return 0;
+  return test_exit_status;
 }

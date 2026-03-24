@@ -6,13 +6,16 @@ lib/isnanl.c
 lib/isnan.c
 lib/float+.h
 m4/exponentl.m4
+m4/exponentd.m4
+m4/math_h.m4
 m4/isnanl.m4
 
 Depends-on:
-math
-float
+math-h
+float-h
 fpieee
 memcmp
+memeq
 
 configure.ac:
 gl_FUNC_ISNANL
@@ -34,7 +37,7 @@ Link:
 $(ISNANL_LIBM)
 
 License:
-LGPL
+LGPLv2+
 
 Maintainer:
 all

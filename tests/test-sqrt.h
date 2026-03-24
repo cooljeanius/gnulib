@@ -1,5 +1,5 @@
 /* Test of sqrt*() function family.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
 static void
 test_function (void)
 {
-  int i;
-  int j;
   const DOUBLE TWO_MANT_DIG =
     /* Assume MANT_DIG <= 5 * 31.
        Use the identity
@@ -30,7 +28,7 @@ test_function (void)
     * (DOUBLE) (1U << ((MANT_DIG - 1 + 4) / 5));
 
   /* Randomized tests.  */
-  for (i = 0; i < SIZEOF (RANDOM); i++)
+  for (int i = 0; i < countof (RANDOM); i++)
     {
       DOUBLE x = L_(16.0) * RANDOM[i]; /* 0.0 <= x <= 16.0 */
       DOUBLE y = SQRT (x);
@@ -40,8 +38,8 @@ test_function (void)
               && err < L_(16.0) / TWO_MANT_DIG);
     }
 
-  for (i = 0; i < SIZEOF (RANDOM) / 4; i++)
-    for (j = 0; j < SIZEOF (RANDOM) / 4; j++)
+  for (int i = 0; i < countof (RANDOM) / 4; i++)
+    for (int j = 0; j < countof (RANDOM) / 4; j++)
       {
         DOUBLE x = L_(16.0) * RANDOM[i]; /* 0.0 <= x <= 16.0 */
         DOUBLE y = L_(16.0) * RANDOM[j]; /* 0.0 <= y <= 16.0 */

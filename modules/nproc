@@ -10,7 +10,9 @@ Depends-on:
 c-ctype
 extensions
 minmax
-unistd
+stdcountof-h
+streq
+unistd-h
 
 configure.ac:
 gl_NPROC

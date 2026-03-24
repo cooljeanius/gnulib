@@ -8,7 +8,8 @@ lib/file-type.c
 Depends-on:
 c-file-type
 gettext-h
-sys_stat
+gnulib-i18n
+sys_stat-h
 
 configure.ac:
 
@@ -17,6 +18,9 @@ lib_SOURCES += file-type.c
 
 Include:
 "file-type.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

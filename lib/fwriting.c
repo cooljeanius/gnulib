@@ -1,5 +1,5 @@
 /* Retrieve information about a FILE stream.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -22,8 +22,8 @@
 #include "stdio-impl.h"
 
 /* This file is not used on systems that have the __fwriting function,
-   namely glibc >= 2.2, Solaris >= 7, UnixWare >= 7.1.4.MP4, Cygwin >= 1.7.34,
-   Android API >= 29, musl libc.  */
+   namely glibc >= 2.2, OpenBSD >= 7.6, Solaris >= 7, UnixWare >= 7.1.4.MP4,
+   Cygwin >= 1.7.34, Android API >= 28, musl libc, Haiku >= hrev58760.  */
 
 bool
 fwriting (FILE *fp)
@@ -35,13 +35,13 @@ fwriting (FILE *fp)
   /* GNU libc, BeOS, Haiku, Linux libc5 */
   return (fp->_flags & (_IO_NO_READS | _IO_CURRENTLY_PUTTING)) != 0;
 #elif defined __sferror || defined __DragonFly__ || defined __ANDROID__
-  /* FreeBSD, NetBSD, OpenBSD, DragonFly, Mac OS X, Cygwin < 1.7.34, Minix 3, Android */
+  /* FreeBSD, NetBSD, OpenBSD < 7.6, DragonFly, Mac OS X, Cygwin < 1.7.34, Minix 3, Android */
   return (fp_->_flags & __SWR) != 0;
 #elif defined __EMX__               /* emx+gcc */
   return (fp->_flags & _IOWRT) != 0;
 #elif defined __minix               /* Minix */
   return (fp->_flags & _IOWRITING) != 0;
-#elif defined _IOERR                /* AIX, HP-UX, IRIX, OSF/1, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
+#elif defined _IOERR                /* AIX, HP-UX, Solaris, OpenServer, UnixWare, mingw, MSVC, NonStop Kernel, OpenVMS */
   return (fp_->_flag & _IOWRT) != 0;
 #elif defined __UCLIBC__            /* uClibc */
   return (fp->__modeflags & __FLAG_WRITING) != 0;

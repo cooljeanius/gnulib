@@ -1,6 +1,6 @@
 /* Timing variables for measuring compiler performance.
 
-   Copyright (C) 2000, 2002, 2004, 2006, 2009-2015, 2018-2023 Free Software
+   Copyright (C) 2000, 2002, 2004, 2006, 2009-2015, 2018-2026 Free Software
    Foundation, Inc.
 
    Contributed by Alex Samuel <samuel@codesourcery.com>
@@ -32,7 +32,7 @@
 
 #include "gethrxtime.h"
 #include "gettext.h"
-#define _(msgid) gettext (msgid)
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 #include "xalloc.h"
 
 /* See timevar.h for an explanation of timing variables.  */
@@ -320,27 +320,27 @@ timevar_print (FILE *fp)
     {
       /* Don't print the total execution time here; that goes at the
          end.  */
-      if ((timevar_id_t) id == tv_total)
-        continue;
+      if ((timevar_id_t) id != tv_total)
+        {
+          /* Don't print timing variables that were never used.  */
+          struct timevar_def *tv = &timevars[(timevar_id_t) id];
+          if (tv->used)
+            {
+              /* Percentages.  */
+              const int usr = total->user ? tv->elapsed.user * 100 / total->user : 0;
+              const int sys = total->sys ? tv->elapsed.sys * 100 / total->sys : 0;
+              const int wall = total->wall ? tv->elapsed.wall * 100 / total->wall : 0;
 
-      /* Don't print timing variables that were never used.  */
-      struct timevar_def *tv = &timevars[(timevar_id_t) id];
-      if (!tv->used)
-        continue;
-
-      /* Percentages.  */
-      const int usr = total->user ? tv->elapsed.user * 100 / total->user : 0;
-      const int sys = total->sys ? tv->elapsed.sys * 100 / total->sys : 0;
-      const int wall = total->wall ? tv->elapsed.wall * 100 / total->wall : 0;
-
-      /* Ignore insignificant lines.  */
-      if (!usr && !sys && !wall)
-        continue;
-
-      fprintf (fp, " %-22s", tv->name);
-      fprintf (fp, "%8.3f (%2d%%)", tv->elapsed.user * 1e-9, usr);
-      fprintf (fp, "%8.3f (%2d%%)", tv->elapsed.sys * 1e-9, sys);
-      fprintf (fp, "%11.6f (%2d%%)\n", tv->elapsed.wall * 1e-9, wall);
+              /* Ignore insignificant lines.  */
+              if (usr || sys || wall)
+                {
+                  fprintf (fp, " %-22s", tv->name);
+                  fprintf (fp, "%8.3f (%2d%%)", tv->elapsed.user * 1e-9, usr);
+                  fprintf (fp, "%8.3f (%2d%%)", tv->elapsed.sys * 1e-9, sys);
+                  fprintf (fp, "%11.6f (%2d%%)\n", tv->elapsed.wall * 1e-9, wall);
+                }
+            }
+        }
     }
 
   /* Print total time.  */

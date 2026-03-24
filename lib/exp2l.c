@@ -1,5 +1,5 @@
 /* Exponential base 2 function.
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -31,8 +31,8 @@ exp2l (long double x)
 
 # include <float.h>
 
-/* gl_expl_table[i] = exp((i - 128) * log(2)/256).  */
-extern const long double gl_expl_table[257];
+/* _gl_expl_table[i] = exp((i - 128) * log(2)/256).  */
+extern const long double _gl_expl_table[257];
 
 /* Best possible approximation of log(2) as a 'long double'.  */
 #define LOG2 0.693147180559945309417232121458176568075L
@@ -129,7 +129,7 @@ exp2l (long double x)
     int n = (int) roundl (nm * (1.0L / 256.0L));
     int m = (int) nm - 256 * n;
 
-    return ldexpl (gl_expl_table[128 + m] * exp_y, n);
+    return ldexpl (_gl_expl_table[128 + m] * exp_y, n);
   }
 }
 

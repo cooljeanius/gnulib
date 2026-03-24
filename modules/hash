@@ -10,9 +10,11 @@ bitrotate
 calloc-posix
 free-posix
 malloc-posix
-stdbool
-stdint
+next-prime
+bool
+stdint-h
 xalloc-oversized
+hashcode-string1
 
 configure.ac:
 

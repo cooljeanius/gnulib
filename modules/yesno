@@ -10,7 +10,7 @@ m4/yesno.m4
 Depends-on:
 getline
 rpmatch
-stdbool
+bool
 
 configure.ac:
 gl_YESNO
@@ -23,6 +23,7 @@ Include:
 
 Link:
 $(MBRTOWC_LIB)
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

@@ -12,10 +12,12 @@ error
 extensions
 getpagesize
 gettext-h
-open
-stdlib
-xalloc
-unistd
+gnulib-i18n
+stdlib-h
+unistd-h
+stdint-h
+xmap
+hash-map
 
 configure.ac:
 gl_PAGEALIGN_ALLOC
@@ -25,6 +27,9 @@ lib_SOURCES += pagealign_alloc.c
 
 Include:
 "pagealign_alloc.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

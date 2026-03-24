@@ -1,5 +1,5 @@
 /* base32.c -- Encode binary data using printable characters.
-   Copyright (C) 1999-2001, 2004-2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 1999-2001, 2004-2006, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -37,6 +37,7 @@
  *
  */
 
+#define BASE32_INLINE _GL_EXTERN_INLINE
 #include <config.h>
 
 /* Get prototype. */
@@ -45,10 +46,7 @@
 /* Get imalloc. */
 #include <ialloc.h>
 
-#include <intprops.h>
-
-/* Get UCHAR_MAX. */
-#include <limits.h>
+#include <stdckdint.h>
 
 #include <string.h>
 
@@ -67,7 +65,7 @@ void
 base32_encode (const char *restrict in, idx_t inlen,
                char *restrict out, idx_t outlen)
 {
-  static const char b32str[32] =
+  static const char b32str[32] _GL_ATTRIBUTE_NONSTRING =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
   while (inlen && outlen)
@@ -145,7 +143,7 @@ base32_encode_alloc (const char *in, idx_t inlen, char **out)
      Treat negative INLEN as overflow, for better compatibility with
      pre-2021-08-27 API, which used size_t.  */
   idx_t in_over_5 = inlen / 5 + (inlen % 5 != 0), outlen;
-  if (! INT_MULTIPLY_OK (in_over_5, 8, &outlen) || inlen < 0)
+  if (ckd_mul (&outlen, in_over_5, 8) || inlen < 0)
     {
       *out = NULL;
       return 0;
@@ -205,7 +203,7 @@ base32_encode_alloc (const char *in, idx_t inlen, char **out)
    : (_) == '7' ? 31                            \
    : -1)
 
-static const signed char b32[0x100] = {
+signed char const base32_to_int[256] = {
   B32 (0), B32 (1), B32 (2), B32 (3),
   B32 (4), B32 (5), B32 (6), B32 (7),
   B32 (8), B32 (9), B32 (10), B32 (11),
@@ -272,28 +270,6 @@ static const signed char b32[0x100] = {
   B32 (252), B32 (253), B32 (254), B32 (255)
 };
 
-#if UCHAR_MAX == 255
-# define uchar_in_range(c) true
-#else
-# define uchar_in_range(c) ((c) <= 255)
-#endif
-
-/* Return true if CH is a character from the Base32 alphabet, and
-   false otherwise.  Note that '=' is padding and not considered to be
-   part of the alphabet.  */
-bool
-isbase32 (char ch)
-{
-  return uchar_in_range (to_uchar (ch)) && 0 <= b32[to_uchar (ch)];
-}
-
-/* Initialize decode-context buffer, CTX.  */
-void
-base32_decode_ctx_init (struct base32_decode_context *ctx)
-{
-  ctx->i = 0;
-}
-
 /* If CTX->i is 0 or 8, there are eight or more bytes in [*IN..IN_END), and
    none of those eight is a newline, then return *IN.  Otherwise, copy up to
    4 - CTX->i non-newline bytes from that range into CTX->buf, starting at
@@ -359,17 +335,18 @@ static bool
 decode_8 (char const *restrict in, idx_t inlen,
           char *restrict *outp, idx_t *outleft)
 {
-  char *out = *outp;
   if (inlen < 8)
     return false;
 
   if (!isbase32 (in[0]) || !isbase32 (in[1]))
     return false;
 
+  char *out = *outp;
+
   if (*outleft)
     {
-      *out++ = ((b32[to_uchar (in[0])] << 3)
-                | (b32[to_uchar (in[1])] >> 2));
+      *out++ = ((base32_to_int[to_uchar (in[0])] << 3)
+                | (base32_to_int[to_uchar (in[1])] >> 2));
       --*outleft;
     }
 
@@ -377,6 +354,10 @@ decode_8 (char const *restrict in, idx_t inlen,
     {
       if (in[3] != '=' || in[4] != '=' || in[5] != '='
           || in[6] != '=' || in[7] != '=')
+        return_false;
+
+      /* Reject non-canonical encodings.  */
+      if (base32_to_int[to_uchar (in[1])] & 0x03)
         return_false;
     }
   else
@@ -386,15 +367,19 @@ decode_8 (char const *restrict in, idx_t inlen,
 
       if (*outleft)
         {
-          *out++ = ((b32[to_uchar (in[1])] << 6)
-                    | (b32[to_uchar (in[2])] << 1)
-                    | (b32[to_uchar (in[3])] >> 4));
+          *out++ = ((base32_to_int[to_uchar (in[1])] << 6)
+                    | (base32_to_int[to_uchar (in[2])] << 1)
+                    | (base32_to_int[to_uchar (in[3])] >> 4));
           --*outleft;
         }
 
       if (in[4] == '=')
         {
           if (in[5] != '=' || in[6] != '=' || in[7] != '=')
+            return_false;
+
+          /* Reject non-canonical encodings.  */
+          if (base32_to_int[to_uchar (in[3])] & 0x0f)
             return_false;
         }
       else
@@ -404,14 +389,18 @@ decode_8 (char const *restrict in, idx_t inlen,
 
           if (*outleft)
             {
-              *out++ = ((b32[to_uchar (in[3])] << 4)
-                        | (b32[to_uchar (in[4])] >> 1));
+              *out++ = ((base32_to_int[to_uchar (in[3])] << 4)
+                        | (base32_to_int[to_uchar (in[4])] >> 1));
               --*outleft;
             }
 
           if (in[5] == '=')
             {
               if (in[6] != '=' || in[7] != '=')
+                return_false;
+
+              /* Reject non-canonical encodings.  */
+              if (base32_to_int[to_uchar (in[4])] & 0x01)
                 return_false;
             }
           else
@@ -421,9 +410,9 @@ decode_8 (char const *restrict in, idx_t inlen,
 
               if (*outleft)
                 {
-                  *out++ = ((b32[to_uchar (in[4])] << 7)
-                            | (b32[to_uchar (in[5])] << 2)
-                            | (b32[to_uchar (in[6])] >> 3));
+                  *out++ = ((base32_to_int[to_uchar (in[4])] << 7)
+                            | (base32_to_int[to_uchar (in[5])] << 2)
+                            | (base32_to_int[to_uchar (in[6])] >> 3));
                   --*outleft;
                 }
 
@@ -434,10 +423,16 @@ decode_8 (char const *restrict in, idx_t inlen,
 
                   if (*outleft)
                     {
-                      *out++ = ((b32[to_uchar (in[6])] << 5)
-                                | (b32[to_uchar (in[7])]));
+                      *out++ = ((base32_to_int[to_uchar (in[6])] << 5)
+                                | (base32_to_int[to_uchar (in[7])]));
                       --*outleft;
                     }
+                }
+              else
+                {
+                  /* Reject non-canonical encodings.  */
+                  if (base32_to_int[to_uchar (in[6])] & 0x07)
+                    return_false;
                 }
             }
         }
@@ -470,7 +465,6 @@ base32_decode_ctx (struct base32_decode_context *ctx,
                    const char *restrict in, idx_t inlen,
                    char *restrict out, idx_t *outlen)
 {
-  idx_t outleft = *outlen;
   bool ignore_newlines = ctx != NULL;
   bool flush_ctx = false;
   unsigned int ctx_i = 0;
@@ -481,6 +475,7 @@ base32_decode_ctx (struct base32_decode_context *ctx,
       flush_ctx = inlen == 0;
     }
 
+  idx_t outleft = *outlen;
 
   while (true)
     {
@@ -509,35 +504,36 @@ base32_decode_ctx (struct base32_decode_context *ctx,
         {
           ++in;
           --inlen;
-          continue;
         }
+      else
+        {
+          /* Restore OUT and OUTLEFT.  */
+          out -= outleft_save - outleft;
+          outleft = outleft_save;
 
-      /* Restore OUT and OUTLEFT.  */
-      out -= outleft_save - outleft;
-      outleft = outleft_save;
-
-      {
-        char const *in_end = in + inlen;
-        char const *non_nl;
-
-        if (ignore_newlines)
-          non_nl = get_8 (ctx, &in, in_end, &inlen);
-        else
-          non_nl = in;  /* Might have nl in this case. */
-
-        /* If the input is empty or consists solely of newlines (0 non-newlines),
-           then we're done.  Likewise if there are fewer than 8 bytes when not
-           flushing context and not treating newlines as garbage.  */
-        if (inlen == 0 || (inlen < 8 && !flush_ctx && ignore_newlines))
           {
-            inlen = 0;
-            break;
-          }
-        if (!decode_8 (non_nl, inlen, &out, &outleft))
-          break;
+            char const *in_end = in + inlen;
 
-        inlen = in_end - in;
-      }
+            char const *non_nl;
+            if (ignore_newlines)
+              non_nl = get_8 (ctx, &in, in_end, &inlen);
+            else
+              non_nl = in;  /* Might have nl in this case. */
+
+            /* If the input is empty or consists solely of newlines (0 non-newlines),
+               then we're done.  Likewise if there are fewer than 8 bytes when not
+               flushing context and not treating newlines as garbage.  */
+            if (inlen == 0 || (inlen < 8 && !flush_ctx && ignore_newlines))
+              {
+                inlen = 0;
+                break;
+              }
+            if (!decode_8 (non_nl, inlen, &out, &outleft))
+              break;
+
+            inlen = in_end - in;
+          }
+        }
     }
 
   *outlen -= outleft;

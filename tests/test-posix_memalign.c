@@ -1,6 +1,6 @@
 /* Test of allocating memory with given alignment.
 
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 /* Specification.  */
 #include <stdlib.h>
 
+#include <stdcountof.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -33,16 +34,19 @@ main (int argc, char *argv[])
 {
 #if HAVE_POSIX_MEMALIGN
   static size_t sizes[] =
-    { 13, 8, 17, 450, 320, 1, 99, 4, 15, 16, 2, 76, 37, 127, 2406, 641, 5781 };
-  void *aligned2_blocks[SIZEOF (sizes)];
-  void *aligned4_blocks[SIZEOF (sizes)];
-  void *aligned8_blocks[SIZEOF (sizes)];
-  void *aligned16_blocks[SIZEOF (sizes)];
-  void *aligned32_blocks[SIZEOF (sizes)];
-  void *aligned64_blocks[SIZEOF (sizes)];
-  size_t i;
+    {
+      13, 8, 17, 450, 320, 1, 99, 4, 15, 16, 2, 76, 37, 127, 2406, 641, 5781,
+      /* Test also a zero size.  */
+      0
+    };
+  void *aligned2_blocks[countof (sizes)];
+  void *aligned4_blocks[countof (sizes)];
+  void *aligned8_blocks[countof (sizes)];
+  void *aligned16_blocks[countof (sizes)];
+  void *aligned32_blocks[countof (sizes)];
+  void *aligned64_blocks[countof (sizes)];
 
-  for (i = 0; i < SIZEOF (sizes); i++)
+  for (size_t i = 0; i < countof (sizes); i++)
     {
       size_t size = sizes[i];
 
@@ -62,10 +66,13 @@ main (int argc, char *argv[])
           memset (aligned4_blocks[i], 'v', size);
         }
 
-      ASSERT (posix_memalign (&aligned8_blocks[i], 8, size) == 0);
-      ASSERT (aligned8_blocks[i] != NULL);
-      ASSERT (((uintptr_t) aligned8_blocks[i] % 8) == 0);
-      memset (aligned8_blocks[i], 'w', size);
+      if (sizeof (void *) <= 8)
+        {
+          ASSERT (posix_memalign (&aligned8_blocks[i], 8, size) == 0);
+          ASSERT (aligned8_blocks[i] != NULL);
+          ASSERT (((uintptr_t) aligned8_blocks[i] % 8) == 0);
+          memset (aligned8_blocks[i], 'w', size);
+        }
 
       ASSERT (posix_memalign (&aligned16_blocks[i], 16, size) == 0);
       ASSERT (aligned16_blocks[i] != NULL);
@@ -83,21 +90,22 @@ main (int argc, char *argv[])
       memset (aligned64_blocks[i], 'z', size);
     }
 
-  for (i = 0; i < SIZEOF (sizes); i++)
+  for (size_t i = 0; i < countof (sizes); i++)
     {
       if (sizeof (void *) <= 2)
         free (aligned2_blocks[i]);
       if (sizeof (void *) <= 4)
         free (aligned4_blocks[i]);
-      free (aligned8_blocks[i]);
+      if (sizeof (void *) <= 8)
+        free (aligned8_blocks[i]);
       free (aligned16_blocks[i]);
       free (aligned32_blocks[i]);
       free (aligned64_blocks[i]);
     }
 
-  return 0;
+  return test_exit_status;
 #else
-  fputs ("Skipping test: function 'aligned_alloc' does not exist\n", stderr);
+  fputs ("Skipping test: function 'posix_memalign' does not exist\n", stderr);
   return 77;
 #endif
 }

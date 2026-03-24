@@ -10,8 +10,8 @@ Depends-on:
 assure
 dev-ino
 same-inode
-stdbool
-stdint
+bool
+stdint-h
 
 configure.ac:
 gl_CYCLE_CHECK
@@ -23,7 +23,7 @@ Include:
 "cycle-check.h"
 
 License:
-GPL
+LGPLv2+
 
 Maintainer:
 Jim Meyering

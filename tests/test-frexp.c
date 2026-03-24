@@ -1,5 +1,5 @@
 /* Test of splitting a double into fraction and mantissa.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 SIGNATURE_CHECK (frexp, double, (double, int *));
 
 #include <float.h>
+#include <stdcountof.h>
 
 #include "isnand-nolibm.h"
 #include "minus-zero.h"
@@ -63,5 +64,5 @@ main ()
 {
   test_function ();
 
-  return 0;
+  return test_exit_status;
 }

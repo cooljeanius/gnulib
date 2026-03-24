@@ -1,5 +1,5 @@
 /* Test of POSIX compatible vasprintf() and asprintf() functions.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 
 #include <float.h>
 #include <stdarg.h>
+#include <stdcountof.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -32,6 +33,7 @@
 #include "minus-zero.h"
 #include "infinity.h"
 #include "nan.h"
+#include "snan.h"
 
 /* The SGI MIPS floating-point format does not distinguish 0.0 and -0.0.  */
 static int
@@ -39,7 +41,7 @@ have_minus_zero ()
 {
   static double plus_zero = 0.0;
   double minus_zero = minus_zerod;
-  return memcmp (&plus_zero, &minus_zero, sizeof (double)) != 0;
+  return !memeq (&plus_zero, &minus_zero, sizeof (double));
 }
 
 /* Representation of an 80-bit 'long double' as an initializer for a sequence
@@ -76,7 +78,7 @@ strisnan (const char *string, size_t start_index, size_t end_index, int uppercas
       if (string[start_index] == '-')
         start_index++;
       if (start_index + 3 <= end_index
-          && memcmp (string + start_index, uppercase ? "NAN" : "nan", 3) == 0)
+          && memeq (string + start_index, uppercase ? "NAN" : "nan", 3))
         {
           start_index += 3;
           if (start_index == end_index
@@ -90,17 +92,15 @@ strisnan (const char *string, size_t start_index, size_t end_index, int uppercas
 static void
 test_function (int (*my_asprintf) (char **, const char *, ...))
 {
-  int repeat;
-
   /* Test return value convention.  */
 
-  for (repeat = 0; repeat <= 8; repeat++)
+  for (int repeat = 0; repeat <= 8; repeat++)
     {
       char *result;
       int retval = asprintf (&result, "%d", 12345);
       ASSERT (retval == 5);
       ASSERT (result != NULL);
-      ASSERT (strcmp (result, "12345") == 0);
+      ASSERT (streq (result, "12345"));
       free (result);
     }
 
@@ -111,7 +111,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%ju %d", (uintmax_t) 12345671, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12345671 33") == 0);
+    ASSERT (streq (result, "12345671 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -121,7 +121,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%zu %d", (size_t) 12345672, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12345672 33") == 0);
+    ASSERT (streq (result, "12345672 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -131,7 +131,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%tu %d", (ptrdiff_t) 12345673, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12345673 33") == 0);
+    ASSERT (streq (result, "12345673 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -141,7 +141,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lg %d", (long double) 1.5, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.5 33") == 0);
+    ASSERT (streq (result, "1.5 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -154,10 +154,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%a %d", 3.1416015625, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.922p+1 33") == 0
-            || strcmp (result, "0x3.244p+0 33") == 0
-            || strcmp (result, "0x6.488p-1 33") == 0
-            || strcmp (result, "0xc.91p-2 33") == 0);
+    ASSERT (streq (result, "0x1.922p+1 33")
+            || streq (result, "0x3.244p+0 33")
+            || streq (result, "0x6.488p-1 33")
+            || streq (result, "0xc.91p-2 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -167,10 +167,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%A %d", -3.1416015625, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0X1.922P+1 33") == 0
-            || strcmp (result, "-0X3.244P+0 33") == 0
-            || strcmp (result, "-0X6.488P-1 33") == 0
-            || strcmp (result, "-0XC.91P-2 33") == 0);
+    ASSERT (streq (result, "-0X1.922P+1 33")
+            || streq (result, "-0X3.244P+0 33")
+            || streq (result, "-0X6.488P-1 33")
+            || streq (result, "-0XC.91P-2 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -180,7 +180,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%a %d", 0.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x0p+0 33") == 0);
+    ASSERT (streq (result, "0x0p+0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -191,7 +191,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%a %d", minus_zerod, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0x0p+0 33") == 0);
+      ASSERT (streq (result, "-0x0p+0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -201,7 +201,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%a %d", Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "inf 33") == 0);
+    ASSERT (streq (result, "inf 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -211,7 +211,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%a %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0);
+    ASSERT (streq (result, "-inf 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -223,21 +223,34 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%a %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Rounding near the decimal point.  */
     char *result;
     int retval =
       my_asprintf (&result, "%.0a %d", 1.5, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1p+0 33") == 0
-            || strcmp (result, "0x2p+0 33") == 0
-            || strcmp (result, "0x3p-1 33") == 0
-            || strcmp (result, "0x6p-2 33") == 0
-            || strcmp (result, "0xcp-3 33") == 0);
+    ASSERT (streq (result, "0x1p+0 33")
+            || streq (result, "0x2p+0 33")
+            || streq (result, "0x3p-1 33")
+            || streq (result, "0x6p-2 33")
+            || streq (result, "0xcp-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -247,11 +260,11 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.0a %d", 1.51, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1p+0 33") == 0
-            || strcmp (result, "0x2p+0 33") == 0
-            || strcmp (result, "0x3p-1 33") == 0
-            || strcmp (result, "0x6p-2 33") == 0
-            || strcmp (result, "0xcp-3 33") == 0);
+    ASSERT (streq (result, "0x1p+0 33")
+            || streq (result, "0x2p+0 33")
+            || streq (result, "0x3p-1 33")
+            || streq (result, "0x6p-2 33")
+            || streq (result, "0xcp-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -261,10 +274,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.1a %d", 1.51, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.8p+0 33") == 0
-            || strcmp (result, "0x3.0p-1 33") == 0
-            || strcmp (result, "0x6.1p-2 33") == 0
-            || strcmp (result, "0xc.1p-3 33") == 0);
+    ASSERT (streq (result, "0x1.8p+0 33")
+            || streq (result, "0x3.0p-1 33")
+            || streq (result, "0x6.1p-2 33")
+            || streq (result, "0xc.1p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -274,10 +287,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2a %d", 1.51, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.83p+0 33") == 0
-            || strcmp (result, "0x3.05p-1 33") == 0
-            || strcmp (result, "0x6.0ap-2 33") == 0
-            || strcmp (result, "0xc.14p-3 33") == 0);
+    ASSERT (streq (result, "0x1.83p+0 33")
+            || streq (result, "0x3.05p-1 33")
+            || streq (result, "0x6.0ap-2 33")
+            || streq (result, "0xc.14p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -287,10 +300,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.3a %d", 1.51, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.829p+0 33") == 0
-            || strcmp (result, "0x3.052p-1 33") == 0
-            || strcmp (result, "0x6.0a4p-2 33") == 0
-            || strcmp (result, "0xc.148p-3 33") == 0);
+    ASSERT (streq (result, "0x1.829p+0 33")
+            || streq (result, "0x3.052p-1 33")
+            || streq (result, "0x6.0a4p-2 33")
+            || streq (result, "0xc.148p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -300,10 +313,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.3a %d", 1.49999, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.800p+0 33") == 0
-            || strcmp (result, "0x3.000p-1 33") == 0
-            || strcmp (result, "0x6.000p-2 33") == 0
-            || strcmp (result, "0xc.000p-3 33") == 0);
+    ASSERT (streq (result, "0x1.800p+0 33")
+            || streq (result, "0x3.000p-1 33")
+            || streq (result, "0x6.000p-2 33")
+            || streq (result, "0xc.000p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -314,10 +327,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.1a %d", 1.999, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.0p+1 33") == 0
-            || strcmp (result, "0x2.0p+0 33") == 0
-            || strcmp (result, "0x4.0p-1 33") == 0
-            || strcmp (result, "0x8.0p-2 33") == 0);
+    ASSERT (streq (result, "0x1.0p+1 33")
+            || streq (result, "0x2.0p+0 33")
+            || streq (result, "0x4.0p-1 33")
+            || streq (result, "0x8.0p-2 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -327,10 +340,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
-            || strcmp (result, "  0x3.8p-1 33") == 0
-            || strcmp (result, "    0x7p-2 33") == 0
-            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (streq (result, "  0x1.cp+0 33")
+            || streq (result, "  0x3.8p-1 33")
+            || streq (result, "    0x7p-2 33")
+            || streq (result, "    0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -340,10 +353,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*a %d", 10, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
-            || strcmp (result, "  0x3.8p-1 33") == 0
-            || strcmp (result, "    0x7p-2 33") == 0
-            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (streq (result, "  0x1.cp+0 33")
+            || streq (result, "  0x3.8p-1 33")
+            || streq (result, "    0x7p-2 33")
+            || streq (result, "    0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -353,10 +366,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*a %d", -10, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
-            || strcmp (result, "0x3.8p-1   33") == 0
-            || strcmp (result, "0x7p-2     33") == 0
-            || strcmp (result, "0xep-3     33") == 0);
+    ASSERT (streq (result, "0x1.cp+0   33")
+            || streq (result, "0x3.8p-1   33")
+            || streq (result, "0x7p-2     33")
+            || streq (result, "0xep-3     33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -366,10 +379,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.10a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.c000000000p+0 33") == 0
-            || strcmp (result, "0x3.8000000000p-1 33") == 0
-            || strcmp (result, "0x7.0000000000p-2 33") == 0
-            || strcmp (result, "0xe.0000000000p-3 33") == 0);
+    ASSERT (streq (result, "0x1.c000000000p+0 33")
+            || streq (result, "0x3.8000000000p-1 33")
+            || streq (result, "0x7.0000000000p-2 33")
+            || streq (result, "0xe.0000000000p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -379,10 +392,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.50a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.c0000000000000000000000000000000000000000000000000p+0 33") == 0
-            || strcmp (result, "0x3.80000000000000000000000000000000000000000000000000p-1 33") == 0
-            || strcmp (result, "0x7.00000000000000000000000000000000000000000000000000p-2 33") == 0
-            || strcmp (result, "0xe.00000000000000000000000000000000000000000000000000p-3 33") == 0);
+    ASSERT (streq (result, "0x1.c0000000000000000000000000000000000000000000000000p+0 33")
+            || streq (result, "0x3.80000000000000000000000000000000000000000000000000p-1 33")
+            || streq (result, "0x7.00000000000000000000000000000000000000000000000000p-2 33")
+            || streq (result, "0xe.00000000000000000000000000000000000000000000000000p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -392,10 +405,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
-            || strcmp (result, "0x3.8p-1   33") == 0
-            || strcmp (result, "0x7p-2     33") == 0
-            || strcmp (result, "0xep-3     33") == 0);
+    ASSERT (streq (result, "0x1.cp+0   33")
+            || streq (result, "0x3.8p-1   33")
+            || streq (result, "0x7p-2     33")
+            || streq (result, "0xep-3     33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -405,10 +418,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+0x1.cp+0 33") == 0
-            || strcmp (result, "+0x3.8p-1 33") == 0
-            || strcmp (result, "+0x7p-2 33") == 0
-            || strcmp (result, "+0xep-3 33") == 0);
+    ASSERT (streq (result, "+0x1.cp+0 33")
+            || streq (result, "+0x3.8p-1 33")
+            || streq (result, "+0x7p-2 33")
+            || streq (result, "+0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -418,10 +431,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 0x1.cp+0 33") == 0
-            || strcmp (result, " 0x3.8p-1 33") == 0
-            || strcmp (result, " 0x7p-2 33") == 0
-            || strcmp (result, " 0xep-3 33") == 0);
+    ASSERT (streq (result, " 0x1.cp+0 33")
+            || streq (result, " 0x3.8p-1 33")
+            || streq (result, " 0x7p-2 33")
+            || streq (result, " 0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -431,10 +444,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.cp+0 33") == 0
-            || strcmp (result, "0x3.8p-1 33") == 0
-            || strcmp (result, "0x7.p-2 33") == 0
-            || strcmp (result, "0xe.p-3 33") == 0);
+    ASSERT (streq (result, "0x1.cp+0 33")
+            || streq (result, "0x3.8p-1 33")
+            || streq (result, "0x7.p-2 33")
+            || streq (result, "0xe.p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -444,10 +457,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#a %d", 1.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.p+0 33") == 0
-            || strcmp (result, "0x2.p-1 33") == 0
-            || strcmp (result, "0x4.p-2 33") == 0
-            || strcmp (result, "0x8.p-3 33") == 0);
+    ASSERT (streq (result, "0x1.p+0 33")
+            || streq (result, "0x2.p-1 33")
+            || streq (result, "0x4.p-2 33")
+            || streq (result, "0x8.p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -457,10 +470,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%010a %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x001.cp+0 33") == 0
-            || strcmp (result, "0x003.8p-1 33") == 0
-            || strcmp (result, "0x00007p-2 33") == 0
-            || strcmp (result, "0x0000ep-3 33") == 0);
+    ASSERT (streq (result, "0x001.cp+0 33")
+            || streq (result, "0x003.8p-1 33")
+            || streq (result, "0x00007p-2 33")
+            || streq (result, "0x0000ep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -472,7 +485,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* "0000000inf 33" is not a valid result; see
        <https://lists.gnu.org/r/bug-gnulib/2007-04/msg00107.html> */
-    ASSERT (strcmp (result, "       inf 33") == 0);
+    ASSERT (streq (result, "       inf 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -486,7 +499,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
        <https://lists.gnu.org/r/bug-gnulib/2007-04/msg00107.html> */
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -496,10 +509,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%La %d", 3.1416015625L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.922p+1 33") == 0
-            || strcmp (result, "0x3.244p+0 33") == 0
-            || strcmp (result, "0x6.488p-1 33") == 0
-            || strcmp (result, "0xc.91p-2 33") == 0);
+    ASSERT (streq (result, "0x1.922p+1 33")
+            || streq (result, "0x3.244p+0 33")
+            || streq (result, "0x6.488p-1 33")
+            || streq (result, "0xc.91p-2 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -509,10 +522,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%LA %d", -3.1416015625L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0X1.922P+1 33") == 0
-            || strcmp (result, "-0X3.244P+0 33") == 0
-            || strcmp (result, "-0X6.488P-1 33") == 0
-            || strcmp (result, "-0XC.91P-2 33") == 0);
+    ASSERT (streq (result, "-0X1.922P+1 33")
+            || streq (result, "-0X3.244P+0 33")
+            || streq (result, "-0X6.488P-1 33")
+            || streq (result, "-0XC.91P-2 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -522,7 +535,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%La %d", 0.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x0p+0 33") == 0);
+    ASSERT (streq (result, "0x0p+0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -533,7 +546,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%La %d", minus_zerol, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0x0p+0 33") == 0);
+      ASSERT (streq (result, "-0x0p+0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -545,7 +558,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* Note: This assertion fails under valgrind.
        Reported at <https://bugs.kde.org/show_bug.cgi?id=424044>.  */
-    ASSERT (strcmp (result, "inf 33") == 0);
+    ASSERT (streq (result, "inf 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -555,7 +568,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%La %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0);
+    ASSERT (streq (result, "-inf 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -567,92 +580,105 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%La %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%La %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%La %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   /* asprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%La %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%La %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%La %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%La %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%La %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
 #endif
@@ -662,10 +688,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.0La %d", 1.5L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x2p+0 33") == 0
-            || strcmp (result, "0x3p-1 33") == 0
-            || strcmp (result, "0x6p-2 33") == 0
-            || strcmp (result, "0xcp-3 33") == 0);
+    ASSERT (streq (result, "0x2p+0 33")
+            || streq (result, "0x3p-1 33")
+            || streq (result, "0x6p-2 33")
+            || streq (result, "0xcp-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -675,10 +701,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.0La %d", 1.51L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x2p+0 33") == 0
-            || strcmp (result, "0x3p-1 33") == 0
-            || strcmp (result, "0x6p-2 33") == 0
-            || strcmp (result, "0xcp-3 33") == 0);
+    ASSERT (streq (result, "0x2p+0 33")
+            || streq (result, "0x3p-1 33")
+            || streq (result, "0x6p-2 33")
+            || streq (result, "0xcp-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -688,10 +714,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.1La %d", 1.51L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.8p+0 33") == 0
-            || strcmp (result, "0x3.0p-1 33") == 0
-            || strcmp (result, "0x6.1p-2 33") == 0
-            || strcmp (result, "0xc.1p-3 33") == 0);
+    ASSERT (streq (result, "0x1.8p+0 33")
+            || streq (result, "0x3.0p-1 33")
+            || streq (result, "0x6.1p-2 33")
+            || streq (result, "0xc.1p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -701,10 +727,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2La %d", 1.51L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.83p+0 33") == 0
-            || strcmp (result, "0x3.05p-1 33") == 0
-            || strcmp (result, "0x6.0ap-2 33") == 0
-            || strcmp (result, "0xc.14p-3 33") == 0);
+    ASSERT (streq (result, "0x1.83p+0 33")
+            || streq (result, "0x3.05p-1 33")
+            || streq (result, "0x6.0ap-2 33")
+            || streq (result, "0xc.14p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -714,10 +740,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.3La %d", 1.51L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.829p+0 33") == 0
-            || strcmp (result, "0x3.052p-1 33") == 0
-            || strcmp (result, "0x6.0a4p-2 33") == 0
-            || strcmp (result, "0xc.148p-3 33") == 0);
+    ASSERT (streq (result, "0x1.829p+0 33")
+            || streq (result, "0x3.052p-1 33")
+            || streq (result, "0x6.0a4p-2 33")
+            || streq (result, "0xc.148p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -727,25 +753,25 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.3La %d", 1.49999L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.800p+0 33") == 0
-            || strcmp (result, "0x3.000p-1 33") == 0
-            || strcmp (result, "0x6.000p-2 33") == 0
-            || strcmp (result, "0xc.000p-3 33") == 0);
+    ASSERT (streq (result, "0x1.800p+0 33")
+            || streq (result, "0x3.000p-1 33")
+            || streq (result, "0x6.000p-2 33")
+            || streq (result, "0xc.000p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
 
   { /* Rounding can turn a ...FFF into a ...000.
        This shows a Mac OS X 10.3.9 (Darwin 7.9) bug and a
-       glibc 2.4 bug <https://sourceware.org/bugzilla/show_bug.cgi?id=2908>.  */
+       glibc 2.4 bug <https://sourceware.org/PR2908>.  */
     char *result;
     int retval =
       my_asprintf (&result, "%.1La %d", 1.999L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.0p+1 33") == 0
-            || strcmp (result, "0x2.0p+0 33") == 0
-            || strcmp (result, "0x4.0p-1 33") == 0
-            || strcmp (result, "0x8.0p-2 33") == 0);
+    ASSERT (streq (result, "0x1.0p+1 33")
+            || streq (result, "0x2.0p+0 33")
+            || streq (result, "0x4.0p-1 33")
+            || streq (result, "0x8.0p-2 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -755,10 +781,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
-            || strcmp (result, "  0x3.8p-1 33") == 0
-            || strcmp (result, "    0x7p-2 33") == 0
-            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (streq (result, "  0x1.cp+0 33")
+            || streq (result, "  0x3.8p-1 33")
+            || streq (result, "    0x7p-2 33")
+            || streq (result, "    0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -768,10 +794,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*La %d", 10, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
-            || strcmp (result, "  0x3.8p-1 33") == 0
-            || strcmp (result, "    0x7p-2 33") == 0
-            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (streq (result, "  0x1.cp+0 33")
+            || streq (result, "  0x3.8p-1 33")
+            || streq (result, "    0x7p-2 33")
+            || streq (result, "    0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -781,10 +807,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*La %d", -10, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
-            || strcmp (result, "0x3.8p-1   33") == 0
-            || strcmp (result, "0x7p-2     33") == 0
-            || strcmp (result, "0xep-3     33") == 0);
+    ASSERT (streq (result, "0x1.cp+0   33")
+            || streq (result, "0x3.8p-1   33")
+            || streq (result, "0x7p-2     33")
+            || streq (result, "0xep-3     33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -794,10 +820,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.10La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.c000000000p+0 33") == 0
-            || strcmp (result, "0x3.8000000000p-1 33") == 0
-            || strcmp (result, "0x7.0000000000p-2 33") == 0
-            || strcmp (result, "0xe.0000000000p-3 33") == 0);
+    ASSERT (streq (result, "0x1.c000000000p+0 33")
+            || streq (result, "0x3.8000000000p-1 33")
+            || streq (result, "0x7.0000000000p-2 33")
+            || streq (result, "0xe.0000000000p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -807,10 +833,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.50La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.c0000000000000000000000000000000000000000000000000p+0 33") == 0
-            || strcmp (result, "0x3.80000000000000000000000000000000000000000000000000p-1 33") == 0
-            || strcmp (result, "0x7.00000000000000000000000000000000000000000000000000p-2 33") == 0
-            || strcmp (result, "0xe.00000000000000000000000000000000000000000000000000p-3 33") == 0);
+    ASSERT (streq (result, "0x1.c0000000000000000000000000000000000000000000000000p+0 33")
+            || streq (result, "0x3.80000000000000000000000000000000000000000000000000p-1 33")
+            || streq (result, "0x7.00000000000000000000000000000000000000000000000000p-2 33")
+            || streq (result, "0xe.00000000000000000000000000000000000000000000000000p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -820,10 +846,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
-            || strcmp (result, "0x3.8p-1   33") == 0
-            || strcmp (result, "0x7p-2     33") == 0
-            || strcmp (result, "0xep-3     33") == 0);
+    ASSERT (streq (result, "0x1.cp+0   33")
+            || streq (result, "0x3.8p-1   33")
+            || streq (result, "0x7p-2     33")
+            || streq (result, "0xep-3     33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -833,10 +859,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+0x1.cp+0 33") == 0
-            || strcmp (result, "+0x3.8p-1 33") == 0
-            || strcmp (result, "+0x7p-2 33") == 0
-            || strcmp (result, "+0xep-3 33") == 0);
+    ASSERT (streq (result, "+0x1.cp+0 33")
+            || streq (result, "+0x3.8p-1 33")
+            || streq (result, "+0x7p-2 33")
+            || streq (result, "+0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -846,10 +872,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 0x1.cp+0 33") == 0
-            || strcmp (result, " 0x3.8p-1 33") == 0
-            || strcmp (result, " 0x7p-2 33") == 0
-            || strcmp (result, " 0xep-3 33") == 0);
+    ASSERT (streq (result, " 0x1.cp+0 33")
+            || streq (result, " 0x3.8p-1 33")
+            || streq (result, " 0x7p-2 33")
+            || streq (result, " 0xep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -859,10 +885,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.cp+0 33") == 0
-            || strcmp (result, "0x3.8p-1 33") == 0
-            || strcmp (result, "0x7.p-2 33") == 0
-            || strcmp (result, "0xe.p-3 33") == 0);
+    ASSERT (streq (result, "0x1.cp+0 33")
+            || streq (result, "0x3.8p-1 33")
+            || streq (result, "0x7.p-2 33")
+            || streq (result, "0xe.p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -872,10 +898,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#La %d", 1.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x1.p+0 33") == 0
-            || strcmp (result, "0x2.p-1 33") == 0
-            || strcmp (result, "0x4.p-2 33") == 0
-            || strcmp (result, "0x8.p-3 33") == 0);
+    ASSERT (streq (result, "0x1.p+0 33")
+            || streq (result, "0x2.p-1 33")
+            || streq (result, "0x4.p-2 33")
+            || streq (result, "0x8.p-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -885,10 +911,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%010La %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x001.cp+0 33") == 0
-            || strcmp (result, "0x003.8p-1 33") == 0
-            || strcmp (result, "0x00007p-2 33") == 0
-            || strcmp (result, "0x0000ep-3 33") == 0);
+    ASSERT (streq (result, "0x001.cp+0 33")
+            || streq (result, "0x003.8p-1 33")
+            || streq (result, "0x00007p-2 33")
+            || streq (result, "0x0000ep-3 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -900,7 +926,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* "0000000inf 33" is not a valid result; see
        <https://lists.gnu.org/r/bug-gnulib/2007-04/msg00107.html> */
-    ASSERT (strcmp (result, "       inf 33") == 0);
+    ASSERT (streq (result, "       inf 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -914,7 +940,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
        <https://lists.gnu.org/r/bug-gnulib/2007-04/msg00107.html> */
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -926,7 +952,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%f %d", 12.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12.750000 33") == 0);
+    ASSERT (streq (result, "12.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -936,7 +962,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%f %d", 1234567.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234567.000000 33") == 0);
+    ASSERT (streq (result, "1234567.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1019,8 +1045,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
         { 1.234321234321234e35, "123432123432123*********************.000000" },
         { 1.234321234321234e36, "123432123432123**********************.000000" }
       };
-    size_t k;
-    for (k = 0; k < SIZEOF (data); k++)
+    for (size_t k = 0; k < countof (data); k++)
       {
         char *result;
         int retval =
@@ -1037,7 +1062,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%f %d", -0.03125, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0.031250 33") == 0);
+    ASSERT (streq (result, "-0.031250 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1047,7 +1072,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%f %d", 0.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0.000000 33") == 0);
+    ASSERT (streq (result, "0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1058,7 +1083,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%f %d", minus_zerod, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0.000000 33") == 0);
+      ASSERT (streq (result, "-0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1068,8 +1093,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%f %d", Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "inf 33") == 0
-            || strcmp (result, "infinity 33") == 0);
+    ASSERT (streq (result, "inf 33")
+            || streq (result, "infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1079,8 +1104,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%f %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0
-            || strcmp (result, "-infinity 33") == 0);
+    ASSERT (streq (result, "-inf 33")
+            || streq (result, "-infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1092,17 +1117,30 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%f %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Width.  */
     char *result;
     int retval =
       my_asprintf (&result, "%10f %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (streq (result, "  1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1112,7 +1150,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*f %d", 10, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (streq (result, "  1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1122,7 +1160,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*f %d", -10, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000   33") == 0);
+    ASSERT (streq (result, "1.750000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1132,7 +1170,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10f %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000   33") == 0);
+    ASSERT (streq (result, "1.750000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1142,7 +1180,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+f %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+1.750000 33") == 0);
+    ASSERT (streq (result, "+1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1152,7 +1190,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% f %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 1.750000 33") == 0);
+    ASSERT (streq (result, " 1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1162,7 +1200,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#f %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000 33") == 0);
+    ASSERT (streq (result, "1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1172,7 +1210,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.f %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "2. 33") == 0);
+    ASSERT (streq (result, "2. 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1182,7 +1220,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015f %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "00001234.000000 33") == 0);
+    ASSERT (streq (result, "00001234.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1192,8 +1230,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015f %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -inf 33") == 0
-            || strcmp (result, "      -infinity 33") == 0);
+    ASSERT (streq (result, "           -inf 33")
+            || streq (result, "      -infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1205,7 +1243,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1215,7 +1253,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.f %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234 33") == 0);
+    ASSERT (streq (result, "1234 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1225,7 +1263,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2f %d", 999.951, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "999.95 33") == 0);
+    ASSERT (streq (result, "999.95 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1235,7 +1273,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2f %d", 999.996, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1000.00 33") == 0);
+    ASSERT (streq (result, "1000.00 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1245,7 +1283,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lf %d", 12.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12.750000 33") == 0);
+    ASSERT (streq (result, "12.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1255,7 +1293,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lf %d", 1234567.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234567.000000 33") == 0);
+    ASSERT (streq (result, "1234567.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1338,8 +1376,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
         { 1.234321234321234e35L, "123432123432123*********************.000000" },
         { 1.234321234321234e36L, "123432123432123**********************.000000" }
       };
-    size_t k;
-    for (k = 0; k < SIZEOF (data); k++)
+    for (size_t k = 0; k < countof (data); k++)
       {
         char *result;
         int retval =
@@ -1356,7 +1393,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lf %d", -0.03125L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0.031250 33") == 0);
+    ASSERT (streq (result, "-0.031250 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1366,7 +1403,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lf %d", 0.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0.000000 33") == 0);
+    ASSERT (streq (result, "0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1377,7 +1414,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%Lf %d", minus_zerol, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0.000000 33") == 0);
+      ASSERT (streq (result, "-0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1387,8 +1424,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lf %d", Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "inf 33") == 0
-            || strcmp (result, "infinity 33") == 0);
+    ASSERT (streq (result, "inf 33")
+            || streq (result, "infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1398,8 +1435,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lf %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0
-            || strcmp (result, "-infinity 33") == 0);
+    ASSERT (streq (result, "-inf 33")
+            || streq (result, "-infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1411,92 +1448,105 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%Lf %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   /* asprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
 #endif
@@ -1506,7 +1556,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10Lf %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (streq (result, "  1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1516,7 +1566,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*Lf %d", 10, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (streq (result, "  1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1526,7 +1576,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*Lf %d", -10, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000   33") == 0);
+    ASSERT (streq (result, "1.750000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1536,7 +1586,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10Lf %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000   33") == 0);
+    ASSERT (streq (result, "1.750000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1546,7 +1596,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+Lf %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+1.750000 33") == 0);
+    ASSERT (streq (result, "+1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1556,7 +1606,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% Lf %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 1.750000 33") == 0);
+    ASSERT (streq (result, " 1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1566,7 +1616,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#Lf %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000 33") == 0);
+    ASSERT (streq (result, "1.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1576,7 +1626,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.Lf %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "2. 33") == 0);
+    ASSERT (streq (result, "2. 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1586,7 +1636,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015Lf %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "00001234.000000 33") == 0);
+    ASSERT (streq (result, "00001234.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1596,8 +1646,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015Lf %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -inf 33") == 0
-            || strcmp (result, "      -infinity 33") == 0);
+    ASSERT (streq (result, "           -inf 33")
+            || streq (result, "      -infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1609,7 +1659,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1619,7 +1669,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.Lf %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234 33") == 0);
+    ASSERT (streq (result, "1234 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1629,7 +1679,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2Lf %d", 999.951L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "999.95 33") == 0);
+    ASSERT (streq (result, "999.95 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1639,7 +1689,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2Lf %d", 999.996L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1000.00 33") == 0);
+    ASSERT (streq (result, "1000.00 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1651,7 +1701,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%F %d", 12.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12.750000 33") == 0);
+    ASSERT (streq (result, "12.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1661,7 +1711,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%F %d", 1234567.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234567.000000 33") == 0);
+    ASSERT (streq (result, "1234567.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1671,7 +1721,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%F %d", -0.03125, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0.031250 33") == 0);
+    ASSERT (streq (result, "-0.031250 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1681,7 +1731,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%F %d", 0.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0.000000 33") == 0);
+    ASSERT (streq (result, "0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1692,7 +1742,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%F %d", minus_zerod, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0.000000 33") == 0);
+      ASSERT (streq (result, "-0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1702,8 +1752,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%F %d", Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "INF 33") == 0
-            || strcmp (result, "INFINITY 33") == 0);
+    ASSERT (streq (result, "INF 33")
+            || streq (result, "INFINITY 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1713,8 +1763,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%F %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-INF 33") == 0
-            || strcmp (result, "-INFINITY 33") == 0);
+    ASSERT (streq (result, "-INF 33")
+            || streq (result, "-INFINITY 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1726,17 +1776,30 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 1)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%F %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 1)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* FLAG_ZERO.  */
     char *result;
     int retval =
       my_asprintf (&result, "%015F %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "00001234.000000 33") == 0);
+    ASSERT (streq (result, "00001234.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1746,8 +1809,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015F %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -INF 33") == 0
-            || strcmp (result, "      -INFINITY 33") == 0);
+    ASSERT (streq (result, "           -INF 33")
+            || streq (result, "      -INFINITY 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1757,7 +1820,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.F %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234 33") == 0);
+    ASSERT (streq (result, "1234 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1767,7 +1830,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2F %d", 999.951, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "999.95 33") == 0);
+    ASSERT (streq (result, "999.95 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1777,7 +1840,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2F %d", 999.996, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1000.00 33") == 0);
+    ASSERT (streq (result, "1000.00 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1787,7 +1850,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%LF %d", 12.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12.750000 33") == 0);
+    ASSERT (streq (result, "12.750000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1797,7 +1860,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%LF %d", 1234567.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234567.000000 33") == 0);
+    ASSERT (streq (result, "1234567.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1807,7 +1870,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%LF %d", -0.03125L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0.031250 33") == 0);
+    ASSERT (streq (result, "-0.031250 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1817,7 +1880,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%LF %d", 0.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0.000000 33") == 0);
+    ASSERT (streq (result, "0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1828,7 +1891,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%LF %d", minus_zerol, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0.000000 33") == 0);
+      ASSERT (streq (result, "-0.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1838,8 +1901,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%LF %d", Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "INF 33") == 0
-            || strcmp (result, "INFINITY 33") == 0);
+    ASSERT (streq (result, "INF 33")
+            || streq (result, "INFINITY 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1849,8 +1912,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%LF %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-INF 33") == 0
-            || strcmp (result, "-INFINITY 33") == 0);
+    ASSERT (streq (result, "-INF 33")
+            || streq (result, "-INFINITY 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1862,17 +1925,30 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 1)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%LF %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 1)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* FLAG_ZERO.  */
     char *result;
     int retval =
       my_asprintf (&result, "%015LF %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "00001234.000000 33") == 0);
+    ASSERT (streq (result, "00001234.000000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1882,8 +1958,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015LF %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -INF 33") == 0
-            || strcmp (result, "      -INFINITY 33") == 0);
+    ASSERT (streq (result, "           -INF 33")
+            || streq (result, "      -INFINITY 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1893,7 +1969,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.LF %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1234 33") == 0);
+    ASSERT (streq (result, "1234 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1903,7 +1979,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2LF %d", 999.951L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "999.95 33") == 0);
+    ASSERT (streq (result, "999.95 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1913,7 +1989,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.2LF %d", 999.996L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1000.00 33") == 0);
+    ASSERT (streq (result, "1000.00 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1925,8 +2001,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%e %d", 12.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.275000e+01 33") == 0
-            || strcmp (result, "1.275000e+001 33") == 0);
+    ASSERT (streq (result, "1.275000e+01 33")
+            || streq (result, "1.275000e+001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -1936,8 +2012,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%e %d", 1234567.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.234567e+06 33") == 0
-            || strcmp (result, "1.234567e+006 33") == 0);
+    ASSERT (streq (result, "1.234567e+06 33")
+            || streq (result, "1.234567e+006 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2020,22 +2096,20 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
         { 1.234321234321234e35, "1.234321e+35" },
         { 1.234321234321234e36, "1.234321e+36" }
       };
-    size_t k;
-    for (k = 0; k < SIZEOF (data); k++)
+    for (size_t k = 0; k < countof (data); k++)
       {
         char *result;
         int retval =
           my_asprintf (&result, "%e", data[k].value);
         const char *expected = data[k].string;
         ASSERT (result != NULL);
-        ASSERT (strcmp (result, expected) == 0
+        ASSERT (streq (result, expected)
                 /* Some implementations produce exponents with 3 digits.  */
                 || (strlen (result) == strlen (expected) + 1
-                    && memcmp (result, expected, strlen (expected) - 2) == 0
+                    && memeq (result, expected, strlen (expected) - 2)
                     && result[strlen (expected) - 2] == '0'
-                    && strcmp (result + strlen (expected) - 1,
-                               expected + strlen (expected) - 2)
-                       == 0));
+                    && streq (result + strlen (expected) - 1,
+                              expected + strlen (expected) - 2)));
         ASSERT (retval == strlen (result));
         free (result);
       }
@@ -2046,8 +2120,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%e %d", -0.03125, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-3.125000e-02 33") == 0
-            || strcmp (result, "-3.125000e-002 33") == 0);
+    ASSERT (streq (result, "-3.125000e-02 33")
+            || streq (result, "-3.125000e-002 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2057,8 +2131,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%e %d", 0.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0.000000e+00 33") == 0
-            || strcmp (result, "0.000000e+000 33") == 0);
+    ASSERT (streq (result, "0.000000e+00 33")
+            || streq (result, "0.000000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2069,8 +2143,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%e %d", minus_zerod, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0.000000e+00 33") == 0
-              || strcmp (result, "-0.000000e+000 33") == 0);
+      ASSERT (streq (result, "-0.000000e+00 33")
+              || streq (result, "-0.000000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2080,8 +2154,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%e %d", Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "inf 33") == 0
-            || strcmp (result, "infinity 33") == 0);
+    ASSERT (streq (result, "inf 33")
+            || streq (result, "infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2091,8 +2165,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%e %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0
-            || strcmp (result, "-infinity 33") == 0);
+    ASSERT (streq (result, "-inf 33")
+            || streq (result, "-infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2104,18 +2178,31 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%e %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Width.  */
     char *result;
     int retval =
       my_asprintf (&result, "%15e %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
-            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (streq (result, "   1.750000e+00 33")
+            || streq (result, "  1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2125,8 +2212,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*e %d", 15, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
-            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (streq (result, "   1.750000e+00 33")
+            || streq (result, "  1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2136,8 +2223,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*e %d", -15, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000e+00    33") == 0
-            || strcmp (result, "1.750000e+000   33") == 0);
+    ASSERT (streq (result, "1.750000e+00    33")
+            || streq (result, "1.750000e+000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2147,8 +2234,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-15e %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000e+00    33") == 0
-            || strcmp (result, "1.750000e+000   33") == 0);
+    ASSERT (streq (result, "1.750000e+00    33")
+            || streq (result, "1.750000e+000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2158,8 +2245,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+e %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+1.750000e+00 33") == 0
-            || strcmp (result, "+1.750000e+000 33") == 0);
+    ASSERT (streq (result, "+1.750000e+00 33")
+            || streq (result, "+1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2169,8 +2256,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% e %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 1.750000e+00 33") == 0
-            || strcmp (result, " 1.750000e+000 33") == 0);
+    ASSERT (streq (result, " 1.750000e+00 33")
+            || streq (result, " 1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2180,8 +2267,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#e %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000e+00 33") == 0
-            || strcmp (result, "1.750000e+000 33") == 0);
+    ASSERT (streq (result, "1.750000e+00 33")
+            || streq (result, "1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2191,8 +2278,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.e %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "2.e+00 33") == 0
-            || strcmp (result, "2.e+000 33") == 0);
+    ASSERT (streq (result, "2.e+00 33")
+            || streq (result, "2.e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2202,8 +2289,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.e %d", 9.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.e+01 33") == 0
-            || strcmp (result, "1.e+001 33") == 0);
+    ASSERT (streq (result, "1.e+01 33")
+            || streq (result, "1.e+001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2213,8 +2300,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015e %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0001.234000e+03 33") == 0
-            || strcmp (result, "001.234000e+003 33") == 0);
+    ASSERT (streq (result, "0001.234000e+03 33")
+            || streq (result, "001.234000e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2224,8 +2311,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015e %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -inf 33") == 0
-            || strcmp (result, "      -infinity 33") == 0);
+    ASSERT (streq (result, "           -inf 33")
+            || streq (result, "      -infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2237,7 +2324,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2247,8 +2334,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.e %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1e+03 33") == 0
-            || strcmp (result, "1e+003 33") == 0);
+    ASSERT (streq (result, "1e+03 33")
+            || streq (result, "1e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2258,8 +2345,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.4e %d", 999.951, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "9.9995e+02 33") == 0
-            || strcmp (result, "9.9995e+002 33") == 0);
+    ASSERT (streq (result, "9.9995e+02 33")
+            || streq (result, "9.9995e+002 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2269,8 +2356,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.4e %d", 999.996, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.0000e+03 33") == 0
-            || strcmp (result, "1.0000e+003 33") == 0);
+    ASSERT (streq (result, "1.0000e+03 33")
+            || streq (result, "1.0000e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2280,8 +2367,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Le %d", 12.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.275000e+01 33") == 0
-            || strcmp (result, "1.275000e+001 33") == 0);
+    ASSERT (streq (result, "1.275000e+01 33")
+            || streq (result, "1.275000e+001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2291,8 +2378,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Le %d", 1234567.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.234567e+06 33") == 0
-            || strcmp (result, "1.234567e+006 33") == 0);
+    ASSERT (streq (result, "1.234567e+06 33")
+            || streq (result, "1.234567e+006 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2375,22 +2462,20 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
         { 1.234321234321234e35L, "1.234321e+35" },
         { 1.234321234321234e36L, "1.234321e+36" }
       };
-    size_t k;
-    for (k = 0; k < SIZEOF (data); k++)
+    for (size_t k = 0; k < countof (data); k++)
       {
         char *result;
         int retval =
           my_asprintf (&result, "%Le", data[k].value);
         const char *expected = data[k].string;
         ASSERT (result != NULL);
-        ASSERT (strcmp (result, expected) == 0
+        ASSERT (streq (result, expected)
                 /* Some implementations produce exponents with 3 digits.  */
                 || (strlen (result) == strlen (expected) + 1
-                    && memcmp (result, expected, strlen (expected) - 2) == 0
+                    && memeq (result, expected, strlen (expected) - 2)
                     && result[strlen (expected) - 2] == '0'
-                    && strcmp (result + strlen (expected) - 1,
-                               expected + strlen (expected) - 2)
-                       == 0));
+                    && streq (result + strlen (expected) - 1,
+                              expected + strlen (expected) - 2)));
         ASSERT (retval == strlen (result));
         free (result);
       }
@@ -2401,8 +2486,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Le %d", -0.03125L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-3.125000e-02 33") == 0
-            || strcmp (result, "-3.125000e-002 33") == 0);
+    ASSERT (streq (result, "-3.125000e-02 33")
+            || streq (result, "-3.125000e-002 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2412,8 +2497,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Le %d", 0.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0.000000e+00 33") == 0
-            || strcmp (result, "0.000000e+000 33") == 0);
+    ASSERT (streq (result, "0.000000e+00 33")
+            || streq (result, "0.000000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2424,8 +2509,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%Le %d", minus_zerol, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0.000000e+00 33") == 0
-              || strcmp (result, "-0.000000e+000 33") == 0);
+      ASSERT (streq (result, "-0.000000e+00 33")
+              || streq (result, "-0.000000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2435,8 +2520,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Le %d", Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "inf 33") == 0
-            || strcmp (result, "infinity 33") == 0);
+    ASSERT (streq (result, "inf 33")
+            || streq (result, "infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2446,8 +2531,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Le %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0
-            || strcmp (result, "-infinity 33") == 0);
+    ASSERT (streq (result, "-inf 33")
+            || streq (result, "-infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2459,92 +2544,105 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%Le %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   /* asprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
 #endif
@@ -2554,8 +2652,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%15Le %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
-            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (streq (result, "   1.750000e+00 33")
+            || streq (result, "  1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2565,8 +2663,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*Le %d", 15, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
-            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (streq (result, "   1.750000e+00 33")
+            || streq (result, "  1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2576,8 +2674,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*Le %d", -15, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000e+00    33") == 0
-            || strcmp (result, "1.750000e+000   33") == 0);
+    ASSERT (streq (result, "1.750000e+00    33")
+            || streq (result, "1.750000e+000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2587,8 +2685,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-15Le %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000e+00    33") == 0
-            || strcmp (result, "1.750000e+000   33") == 0);
+    ASSERT (streq (result, "1.750000e+00    33")
+            || streq (result, "1.750000e+000   33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2598,8 +2696,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+Le %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+1.750000e+00 33") == 0
-            || strcmp (result, "+1.750000e+000 33") == 0);
+    ASSERT (streq (result, "+1.750000e+00 33")
+            || streq (result, "+1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2609,8 +2707,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% Le %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 1.750000e+00 33") == 0
-            || strcmp (result, " 1.750000e+000 33") == 0);
+    ASSERT (streq (result, " 1.750000e+00 33")
+            || streq (result, " 1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2620,8 +2718,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#Le %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.750000e+00 33") == 0
-            || strcmp (result, "1.750000e+000 33") == 0);
+    ASSERT (streq (result, "1.750000e+00 33")
+            || streq (result, "1.750000e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2631,8 +2729,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.Le %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "2.e+00 33") == 0
-            || strcmp (result, "2.e+000 33") == 0);
+    ASSERT (streq (result, "2.e+00 33")
+            || streq (result, "2.e+000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2642,8 +2740,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.Le %d", 9.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.e+01 33") == 0
-            || strcmp (result, "1.e+001 33") == 0);
+    ASSERT (streq (result, "1.e+01 33")
+            || streq (result, "1.e+001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2653,8 +2751,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015Le %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0001.234000e+03 33") == 0
-            || strcmp (result, "001.234000e+003 33") == 0);
+    ASSERT (streq (result, "0001.234000e+03 33")
+            || streq (result, "001.234000e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2664,8 +2762,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015Le %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -inf 33") == 0
-            || strcmp (result, "      -infinity 33") == 0);
+    ASSERT (streq (result, "           -inf 33")
+            || streq (result, "      -infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2677,7 +2775,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2687,8 +2785,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.Le %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1e+03 33") == 0
-            || strcmp (result, "1e+003 33") == 0);
+    ASSERT (streq (result, "1e+03 33")
+            || streq (result, "1e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2698,8 +2796,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.4Le %d", 999.951L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "9.9995e+02 33") == 0
-            || strcmp (result, "9.9995e+002 33") == 0);
+    ASSERT (streq (result, "9.9995e+02 33")
+            || streq (result, "9.9995e+002 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2709,8 +2807,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.4Le %d", 999.996L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.0000e+03 33") == 0
-            || strcmp (result, "1.0000e+003 33") == 0);
+    ASSERT (streq (result, "1.0000e+03 33")
+            || streq (result, "1.0000e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2722,7 +2820,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%g %d", 12.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12.75 33") == 0);
+    ASSERT (streq (result, "12.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2732,8 +2830,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%g %d", 1234567.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.23457e+06 33") == 0
-            || strcmp (result, "1.23457e+006 33") == 0);
+    ASSERT (streq (result, "1.23457e+06 33")
+            || streq (result, "1.23457e+006 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2816,23 +2914,21 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
         { 1.234321234321234e35, "1.23432e+35" },
         { 1.234321234321234e36, "1.23432e+36" }
       };
-    size_t k;
-    for (k = 0; k < SIZEOF (data); k++)
+    for (size_t k = 0; k < countof (data); k++)
       {
         char *result;
         int retval =
           my_asprintf (&result, "%g", data[k].value);
         const char *expected = data[k].string;
         ASSERT (result != NULL);
-        ASSERT (strcmp (result, expected) == 0
+        ASSERT (streq (result, expected)
                 /* Some implementations produce exponents with 3 digits.  */
                 || (expected[strlen (expected) - 4] == 'e'
                     && strlen (result) == strlen (expected) + 1
-                    && memcmp (result, expected, strlen (expected) - 2) == 0
+                    && memeq (result, expected, strlen (expected) - 2)
                     && result[strlen (expected) - 2] == '0'
-                    && strcmp (result + strlen (expected) - 1,
-                               expected + strlen (expected) - 2)
-                       == 0));
+                    && streq (result + strlen (expected) - 1,
+                              expected + strlen (expected) - 2)));
         ASSERT (retval == strlen (result));
         free (result);
       }
@@ -2843,7 +2939,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%g %d", -0.03125, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0.03125 33") == 0);
+    ASSERT (streq (result, "-0.03125 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2853,7 +2949,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%g %d", 0.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (streq (result, "0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2864,7 +2960,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%g %d", minus_zerod, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0 33") == 0);
+      ASSERT (streq (result, "-0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2874,8 +2970,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%g %d", Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "inf 33") == 0
-            || strcmp (result, "infinity 33") == 0);
+    ASSERT (streq (result, "inf 33")
+            || streq (result, "infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2885,8 +2981,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%g %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0
-            || strcmp (result, "-infinity 33") == 0);
+    ASSERT (streq (result, "-inf 33")
+            || streq (result, "-infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2898,17 +2994,30 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%g %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Width.  */
     char *result;
     int retval =
       my_asprintf (&result, "%10g %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (streq (result, "      1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2918,7 +3027,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*g %d", 10, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (streq (result, "      1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2928,7 +3037,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*g %d", -10, 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.75       33") == 0);
+    ASSERT (streq (result, "1.75       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2938,7 +3047,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10g %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.75       33") == 0);
+    ASSERT (streq (result, "1.75       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2948,7 +3057,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+g %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+1.75 33") == 0);
+    ASSERT (streq (result, "+1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2958,7 +3067,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% g %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 1.75 33") == 0);
+    ASSERT (streq (result, " 1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2968,7 +3077,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#g %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.75000 33") == 0);
+    ASSERT (streq (result, "1.75000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2978,7 +3087,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.g %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "2. 33") == 0);
+    ASSERT (streq (result, "2. 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2988,8 +3097,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.g %d", 9.75, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.e+01 33") == 0
-            || strcmp (result, "1.e+001 33") == 0);
+    ASSERT (streq (result, "1.e+01 33")
+            || streq (result, "1.e+001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -2999,7 +3108,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%010g %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0000001234 33") == 0);
+    ASSERT (streq (result, "0000001234 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3009,8 +3118,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015g %d", - Infinityd (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -inf 33") == 0
-            || strcmp (result, "      -infinity 33") == 0);
+    ASSERT (streq (result, "           -inf 33")
+            || streq (result, "      -infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3022,7 +3131,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3032,8 +3141,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.g %d", 1234.0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1e+03 33") == 0
-            || strcmp (result, "1e+003 33") == 0);
+    ASSERT (streq (result, "1e+03 33")
+            || streq (result, "1e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3043,7 +3152,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.5g %d", 999.951, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "999.95 33") == 0);
+    ASSERT (streq (result, "999.95 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3053,7 +3162,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.5g %d", 999.996, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1000 33") == 0);
+    ASSERT (streq (result, "1000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3063,7 +3172,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lg %d", 12.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "12.75 33") == 0);
+    ASSERT (streq (result, "12.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3073,8 +3182,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lg %d", 1234567.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.23457e+06 33") == 0
-            || strcmp (result, "1.23457e+006 33") == 0);
+    ASSERT (streq (result, "1.23457e+06 33")
+            || streq (result, "1.23457e+006 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3157,23 +3266,21 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
         { 1.234321234321234e35L, "1.23432e+35" },
         { 1.234321234321234e36L, "1.23432e+36" }
       };
-    size_t k;
-    for (k = 0; k < SIZEOF (data); k++)
+    for (size_t k = 0; k < countof (data); k++)
       {
         char *result;
         int retval =
           my_asprintf (&result, "%Lg", data[k].value);
         const char *expected = data[k].string;
         ASSERT (result != NULL);
-        ASSERT (strcmp (result, expected) == 0
+        ASSERT (streq (result, expected)
                 /* Some implementations produce exponents with 3 digits.  */
                 || (expected[strlen (expected) - 4] == 'e'
                     && strlen (result) == strlen (expected) + 1
-                    && memcmp (result, expected, strlen (expected) - 2) == 0
+                    && memeq (result, expected, strlen (expected) - 2)
                     && result[strlen (expected) - 2] == '0'
-                    && strcmp (result + strlen (expected) - 1,
-                               expected + strlen (expected) - 2)
-                       == 0));
+                    && streq (result + strlen (expected) - 1,
+                              expected + strlen (expected) - 2)));
         ASSERT (retval == strlen (result));
         free (result);
       }
@@ -3184,7 +3291,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lg %d", -0.03125L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-0.03125 33") == 0);
+    ASSERT (streq (result, "-0.03125 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3194,7 +3301,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lg %d", 0.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (streq (result, "0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3205,7 +3312,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
       my_asprintf (&result, "%Lg %d", minus_zerol, 33, 44, 55);
     ASSERT (result != NULL);
     if (have_minus_zero ())
-      ASSERT (strcmp (result, "-0 33") == 0);
+      ASSERT (streq (result, "-0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3215,8 +3322,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lg %d", Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "inf 33") == 0
-            || strcmp (result, "infinity 33") == 0);
+    ASSERT (streq (result, "inf 33")
+            || streq (result, "infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3226,8 +3333,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%Lg %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "-inf 33") == 0
-            || strcmp (result, "-infinity 33") == 0);
+    ASSERT (streq (result, "-inf 33")
+            || streq (result, "-infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3239,92 +3346,105 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    char *result;
+    int retval =
+      my_asprintf (&result, "%Lg %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && streq (result + strlen (result) - 3, " 33"));
+    ASSERT (retval == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strlen (result) >= 3 + 3
             && strisnan (result, 0, strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
   /* asprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     char *result;
     int retval =
       my_asprintf (&result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (retval == strlen (result));
-    ASSERT (3 < retval && strcmp (result + retval - 3, " 33") == 0);
+    ASSERT (3 < retval && streq (result + retval - 3, " 33"));
     free (result);
   }
 #endif
@@ -3334,7 +3454,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10Lg %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (streq (result, "      1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3344,7 +3464,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*Lg %d", 10, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (streq (result, "      1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3354,7 +3474,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*Lg %d", -10, 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.75       33") == 0);
+    ASSERT (streq (result, "1.75       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3364,7 +3484,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10Lg %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.75       33") == 0);
+    ASSERT (streq (result, "1.75       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3374,7 +3494,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%+Lg %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "+1.75 33") == 0);
+    ASSERT (streq (result, "+1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3384,7 +3504,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "% Lg %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, " 1.75 33") == 0);
+    ASSERT (streq (result, " 1.75 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3394,7 +3514,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#Lg %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.75000 33") == 0);
+    ASSERT (streq (result, "1.75000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3404,7 +3524,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.Lg %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "2. 33") == 0);
+    ASSERT (streq (result, "2. 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3414,8 +3534,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#.Lg %d", 9.75L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1.e+01 33") == 0
-            || strcmp (result, "1.e+001 33") == 0);
+    ASSERT (streq (result, "1.e+01 33")
+            || streq (result, "1.e+001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3425,7 +3545,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%010Lg %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0000001234 33") == 0);
+    ASSERT (streq (result, "0000001234 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3435,8 +3555,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%015Lg %d", - Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "           -inf 33") == 0
-            || strcmp (result, "      -infinity 33") == 0);
+    ASSERT (streq (result, "           -inf 33")
+            || streq (result, "      -infinity 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3448,7 +3568,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strlen (result) == 50 + 3
             && strisnan (result, strspn (result, " "), strlen (result) - 3, 0)
-            && strcmp (result + strlen (result) - 3, " 33") == 0);
+            && streq (result + strlen (result) - 3, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3458,8 +3578,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.Lg %d", 1234.0L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1e+03 33") == 0
-            || strcmp (result, "1e+003 33") == 0);
+    ASSERT (streq (result, "1e+03 33")
+            || streq (result, "1e+003 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3469,7 +3589,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.5Lg %d", 999.951L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "999.95 33") == 0);
+    ASSERT (streq (result, "999.95 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3479,11 +3599,12 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.5Lg %d", 999.996L, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "1000 33") == 0);
+    ASSERT (streq (result, "1000 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
 
+#if NEED_PRINTF_WITH_N_DIRECTIVE
   /* Test the support of the %n format directive.  */
 
   {
@@ -3492,11 +3613,12 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%d %n", 123, &count, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "123 ") == 0);
+    ASSERT (streq (result, "123 "));
     ASSERT (retval == strlen (result));
     ASSERT (count == 4);
     free (result);
   }
+#endif
 
   /* Test the support of the POSIX/XSI format strings with positions.  */
 
@@ -3505,7 +3627,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%2$d %1$d", 33, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "55 33") == 0);
+    ASSERT (streq (result, "55 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3529,7 +3651,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "a%*sc", -3, "b");
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "ab  c") == 0);
+    ASSERT (streq (result, "ab  c"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3539,7 +3661,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "a%-*sc", 3, "b");
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "ab  c") == 0);
+    ASSERT (streq (result, "ab  c"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3549,7 +3671,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "a%-*sc", -3, "b");
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "ab  c") == 0);
+    ASSERT (streq (result, "ab  c"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3560,11 +3682,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.4000d %d", 1234567, 99);
-    size_t i;
     ASSERT (result != NULL);
-    for (i = 0; i < 4000 - 7; i++)
+    for (size_t i = 0; i < 4000 - 7; i++)
       ASSERT (result[i] == '0');
-    ASSERT (strcmp (result + 4000 - 7, "1234567 99") == 0);
+    ASSERT (streq (result + 4000 - 7, "1234567 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3573,11 +3694,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.*d %d", 4000, 1234567, 99);
-    size_t i;
     ASSERT (result != NULL);
-    for (i = 0; i < 4000 - 7; i++)
+    for (size_t i = 0; i < 4000 - 7; i++)
       ASSERT (result[i] == '0');
-    ASSERT (strcmp (result + 4000 - 7, "1234567 99") == 0);
+    ASSERT (streq (result + 4000 - 7, "1234567 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3586,12 +3706,11 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.4000d %d", -1234567, 99);
-    size_t i;
     ASSERT (result != NULL);
     ASSERT (result[0] == '-');
-    for (i = 0; i < 4000 - 7; i++)
+    for (size_t i = 0; i < 4000 - 7; i++)
       ASSERT (result[1 + i] == '0');
-    ASSERT (strcmp (result + 1 + 4000 - 7, "1234567 99") == 0);
+    ASSERT (streq (result + 1 + 4000 - 7, "1234567 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3600,11 +3719,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.4000u %d", 1234567, 99);
-    size_t i;
     ASSERT (result != NULL);
-    for (i = 0; i < 4000 - 7; i++)
+    for (size_t i = 0; i < 4000 - 7; i++)
       ASSERT (result[i] == '0');
-    ASSERT (strcmp (result + 4000 - 7, "1234567 99") == 0);
+    ASSERT (streq (result + 4000 - 7, "1234567 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3613,11 +3731,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.4000o %d", 1234567, 99);
-    size_t i;
     ASSERT (result != NULL);
-    for (i = 0; i < 4000 - 7; i++)
+    for (size_t i = 0; i < 4000 - 7; i++)
       ASSERT (result[i] == '0');
-    ASSERT (strcmp (result + 4000 - 7, "4553207 99") == 0);
+    ASSERT (streq (result + 4000 - 7, "4553207 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3626,11 +3743,10 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.4000x %d", 1234567, 99);
-    size_t i;
     ASSERT (result != NULL);
-    for (i = 0; i < 4000 - 6; i++)
+    for (size_t i = 0; i < 4000 - 6; i++)
       ASSERT (result[i] == '0');
-    ASSERT (strcmp (result + 4000 - 6, "12d687 99") == 0);
+    ASSERT (streq (result + 4000 - 6, "12d687 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3639,13 +3755,12 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%#.4000x %d", 1234567, 99);
-    size_t i;
     ASSERT (result != NULL);
     ASSERT (result[0] == '0');
     ASSERT (result[1] == 'x');
-    for (i = 0; i < 4000 - 6; i++)
+    for (size_t i = 0; i < 4000 - 6; i++)
       ASSERT (result[2 + i] == '0');
-    ASSERT (strcmp (result + 2 + 4000 - 6, "12d687 99") == 0);
+    ASSERT (streq (result + 2 + 4000 - 6, "12d687 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3654,13 +3769,12 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.4000f %d", 1.0, 99);
-    size_t i;
     ASSERT (result != NULL);
     ASSERT (result[0] == '1');
     ASSERT (result[1] == '.');
-    for (i = 0; i < 4000; i++)
+    for (size_t i = 0; i < 4000; i++)
       ASSERT (result[2 + i] == '0');
-    ASSERT (strcmp (result + 2 + 4000, " 99") == 0);
+    ASSERT (streq (result + 2 + 4000, " 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3669,13 +3783,12 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.511f %d", 1.0, 99);
-    size_t i;
     ASSERT (result != NULL);
     ASSERT (result[0] == '1');
     ASSERT (result[1] == '.');
-    for (i = 0; i < 511; i++)
+    for (size_t i = 0; i < 511; i++)
       ASSERT (result[2 + i] == '0');
-    ASSERT (strcmp (result + 2 + 511, " 99") == 0);
+    ASSERT (streq (result + 2 + 511, " 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3691,8 +3804,8 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     input[i] = '\0';
     retval = my_asprintf (&result, "%.4000s %d", input, 99);
     ASSERT (result != NULL);
-    ASSERT (memcmp (result, input, 4000) == 0);
-    ASSERT (strcmp (result + 4000, " 99") == 0);
+    ASSERT (memeq (result, input, 4000));
+    ASSERT (streq (result + 4000, " 99"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3704,7 +3817,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10s %d", "xyz", 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (streq (result, "       xyz 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3714,7 +3827,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*s %d", 10, "xyz", 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (streq (result, "       xyz 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3724,7 +3837,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*s %d", -10, "xyz", 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (streq (result, "xyz        33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3734,12 +3847,11 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10s %d", "xyz", 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (streq (result, "xyz        33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
 
-#if HAVE_WCHAR_T
   static wchar_t L_xyz[4] = { 'x', 'y', 'z', 0 };
 
   { /* Width.  */
@@ -3747,7 +3859,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10ls %d", L_xyz, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (streq (result, "       xyz 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3757,7 +3869,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*ls %d", 10, L_xyz, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (streq (result, "       xyz 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3767,7 +3879,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*ls %d", -10, L_xyz, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (streq (result, "xyz        33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3777,59 +3889,47 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10ls %d", L_xyz, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (streq (result, "xyz        33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
-#endif
 
   /* To verify that these tests succeed, it is necessary to run them under
      a tool that checks against invalid memory accesses, such as ElectricFence
      or "valgrind --tool=memcheck".  */
-  {
-    size_t i;
+  for (size_t i = 1; i <= 8; i++)
+    {
+      char *block;
+      char *result;
+      int retval;
 
-    for (i = 1; i <= 8; i++)
-      {
-        char *block;
-        char *result;
-        int retval;
+      block = (char *) malloc (i);
+      memcpy (block, "abcdefgh", i);
+      retval = my_asprintf (&result, "%.*s", (int) i, block);
+      ASSERT (result != NULL);
+      ASSERT (memeq (result, block, i));
+      ASSERT (result[i] == '\0');
+      ASSERT (retval == strlen (result));
+      free (result);
+      free (block);
+    }
+  for (size_t i = 1; i <= 8; i++)
+    {
+      wchar_t *block;
+      char *result;
+      int retval;
 
-        block = (char *) malloc (i);
-        memcpy (block, "abcdefgh", i);
-        retval = my_asprintf (&result, "%.*s", (int) i, block);
-        ASSERT (result != NULL);
-        ASSERT (memcmp (result, block, i) == 0);
-        ASSERT (result[i] == '\0');
-        ASSERT (retval == strlen (result));
-        free (result);
-        free (block);
-      }
-  }
-#if HAVE_WCHAR_T
-  {
-    size_t i;
-
-    for (i = 1; i <= 8; i++)
-      {
-        wchar_t *block;
-        size_t j;
-        char *result;
-        int retval;
-
-        block = (wchar_t *) malloc (i * sizeof (wchar_t));
-        for (j = 0; j < i; j++)
-          block[j] = "abcdefgh"[j];
-        retval = my_asprintf (&result, "%.*ls", (int) i, block);
-        ASSERT (result != NULL);
-        ASSERT (memcmp (result, "abcdefgh", i) == 0);
-        ASSERT (result[i] == '\0');
-        ASSERT (retval == strlen (result));
-        free (result);
-        free (block);
-      }
-  }
-#endif
+      block = (wchar_t *) malloc (i * sizeof (wchar_t));
+      for (size_t j = 0; j < i; j++)
+        block[j] = "abcdefgh"[j];
+      retval = my_asprintf (&result, "%.*ls", (int) i, block);
+      ASSERT (result != NULL);
+      ASSERT (memeq (result, "abcdefgh", i));
+      ASSERT (result[i] == '\0');
+      ASSERT (retval == strlen (result));
+      free (result);
+      free (block);
+    }
 
   /* Test the support of the %c format directive.  */
 
@@ -3838,7 +3938,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10c %d", (unsigned char) 'x', 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (streq (result, "         x 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3848,7 +3948,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*c %d", 10, (unsigned char) 'x', 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (streq (result, "         x 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3858,7 +3958,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*c %d", -10, (unsigned char) 'x', 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (streq (result, "x          33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3868,7 +3968,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10c %d", (unsigned char) 'x', 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (streq (result, "x          33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3877,7 +3977,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.0c %d", (unsigned char) 'x', 33, 44, 55);
-    ASSERT (strcmp (result, "x 33") == 0);
+    ASSERT (streq (result, "x 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3886,12 +3986,11 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "a%cz %d", '\0', 33, 44, 55);
-    ASSERT (memcmp (result, "a\0z 33\0", 6 + 1) == 0);
+    ASSERT (memeq (result, "a\0z 33\0", 6 + 1));
     ASSERT (retval == 6);
     free (result);
   }
 
-#if HAVE_WCHAR_T
   static wint_t L_x = (wchar_t) 'x';
 
   { /* Width.  */
@@ -3899,7 +3998,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10lc %d", L_x, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (streq (result, "         x 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3909,7 +4008,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*lc %d", 10, L_x, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (streq (result, "         x 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3919,7 +4018,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*lc %d", -10, L_x, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (streq (result, "x          33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3929,7 +4028,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10lc %d", L_x, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (streq (result, "x          33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3938,7 +4037,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%.0lc %d", L_x, 33, 44, 55);
-    ASSERT (strcmp (result, "x 33") == 0);
+    ASSERT (streq (result, "x 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3947,11 +4046,14 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "a%lcz %d", (wint_t) L'\0', 33, 44, 55);
-    /* No NUL byte between 'a' and 'z'.  This is surprising, but is a
-       consequence of how POSIX:2018 and ISO C 23 specify the handling
-       of %lc.  */
-    ASSERT (memcmp (result, "az 33\0", 5 + 1) == 0);
-    ASSERT (retval == 5);
+    /* ISO C had this wrong for decades.  ISO C 23 now corrects it, through
+       this wording:
+       "If an l length modifier is present, the wint_t argument is converted
+        as if by a call to the wcrtomb function with a pointer to storage of
+        at least MB_CUR_MAX bytes, the wint_t argument converted to wchar_t,
+        and an initial shift state."  */
+    ASSERT (memeq (result, "a\0z 33\0", 6 + 1));
+    ASSERT (retval == 6);
     free (result);
   }
 
@@ -3974,7 +4076,6 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     if (retval >= 0)
       free (result);
   }
-#endif
 
   /* Test the support of the 'x' conversion specifier for hexadecimal output of
      integers.  */
@@ -3984,7 +4085,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%x %d", 0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (streq (result, "0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -3994,7 +4095,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "303c 33") == 0);
+    ASSERT (streq (result, "303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4004,7 +4105,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%x %d", 0xFFFFFFFEU, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "fffffffe 33") == 0);
+    ASSERT (streq (result, "fffffffe 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4014,7 +4115,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      303c 33") == 0);
+    ASSERT (streq (result, "      303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4024,7 +4125,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*x %d", 10, 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      303c 33") == 0);
+    ASSERT (streq (result, "      303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4034,7 +4135,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*x %d", -10, 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "303c       33") == 0);
+    ASSERT (streq (result, "303c       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4044,7 +4145,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "000000303c 33") == 0);
+    ASSERT (streq (result, "000000303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4054,7 +4155,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.0x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "303c 33") == 0);
+    ASSERT (streq (result, "303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4066,7 +4167,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* ISO C and POSIX specify that "The result of converting a zero value
        with a precision of zero is no characters."  */
-    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (streq (result, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4076,7 +4177,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%15.10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "     000000303c 33") == 0);
+    ASSERT (streq (result, "     000000303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4088,7 +4189,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* ISO C 99 § 7.19.6.1.(6) says: "For d, i, o, u, x, and X conversions, if a
        precision is specified, the 0 flag is ignored."  */
-    ASSERT (strcmp (result, "     000000303c 33") == 0);
+    ASSERT (streq (result, "     000000303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4098,7 +4199,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "303c       33") == 0);
+    ASSERT (streq (result, "303c       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4108,7 +4209,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#x %d", 0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (streq (result, "0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4118,7 +4219,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x303c 33") == 0);
+    ASSERT (streq (result, "0x303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4128,7 +4229,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "    0x303c 33") == 0);
+    ASSERT (streq (result, "    0x303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4138,7 +4239,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%0#10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x0000303c 33") == 0);
+    ASSERT (streq (result, "0x0000303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4148,7 +4249,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%0#.10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0x000000303c 33") == 0);
+    ASSERT (streq (result, "0x000000303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4158,7 +4259,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#15.10x %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "   0x000000303c 33") == 0);
+    ASSERT (streq (result, "   0x000000303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4170,7 +4271,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* ISO C 99 § 7.19.6.1.(6) says: "For d, i, o, u, x, and X conversions, if a
        precision is specified, the 0 flag is ignored."  */
-    ASSERT (strcmp (result, "   0x000000303c 33") == 0);
+    ASSERT (streq (result, "   0x000000303c 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4183,7 +4284,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     /* ISO C and POSIX specify that "The result of converting a zero value
        with a precision of zero is no characters.", and the prefix is added
        only for non-zero values.  */
-    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (streq (result, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4193,7 +4294,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%X %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "303C 33") == 0);
+    ASSERT (streq (result, "303C 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4203,7 +4304,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#X %d", 12348, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0X303C 33") == 0);
+    ASSERT (streq (result, "0X303C 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4216,7 +4317,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     /* ISO C and POSIX specify that "The result of converting a zero value
        with a precision of zero is no characters.", and the prefix is added
        only for non-zero values.  */
-    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (streq (result, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4229,7 +4330,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%b %d", 0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (streq (result, "0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4239,7 +4340,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4249,7 +4350,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%b %d", 0xFFFFFFFEU, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "11111111111111111111111111111110 33") == 0);
+    ASSERT (streq (result, "11111111111111111111111111111110 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4259,7 +4360,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      11000000111001 33") == 0);
+    ASSERT (streq (result, "      11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4269,7 +4370,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*b %d", 20, 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "      11000000111001 33") == 0);
+    ASSERT (streq (result, "      11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4279,7 +4380,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%*b %d", -20, 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "11000000111001       33") == 0);
+    ASSERT (streq (result, "11000000111001       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4289,7 +4390,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "00000011000000111001 33") == 0);
+    ASSERT (streq (result, "00000011000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4299,7 +4400,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%.0b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4311,7 +4412,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* ISO C and POSIX specify that "The result of converting a zero value
        with a precision of zero is no characters."  */
-    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (streq (result, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4321,7 +4422,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%25.20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "     00000011000000111001 33") == 0);
+    ASSERT (streq (result, "     00000011000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4333,7 +4434,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* Neither ISO C nor POSIX specify that the '0' flag is ignored when
        a width and a precision are both present.  But implementations do so.  */
-    ASSERT (strcmp (result, "     00000011000000111001 33") == 0);
+    ASSERT (streq (result, "     00000011000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4343,7 +4444,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%-20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "11000000111001       33") == 0);
+    ASSERT (streq (result, "11000000111001       33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4353,7 +4454,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#b %d", 0, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (streq (result, "0 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4363,7 +4464,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0b11000000111001 33") == 0);
+    ASSERT (streq (result, "0b11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4373,7 +4474,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "    0b11000000111001 33") == 0);
+    ASSERT (streq (result, "    0b11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4383,7 +4484,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%0#20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0b000011000000111001 33") == 0);
+    ASSERT (streq (result, "0b000011000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4393,7 +4494,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%0#.20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "0b00000011000000111001 33") == 0);
+    ASSERT (streq (result, "0b00000011000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4403,7 +4504,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     int retval =
       my_asprintf (&result, "%#25.20b %d", 12345, 33, 44, 55);
     ASSERT (result != NULL);
-    ASSERT (strcmp (result, "   0b00000011000000111001 33") == 0);
+    ASSERT (streq (result, "   0b00000011000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4415,7 +4516,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     ASSERT (result != NULL);
     /* Neither ISO C nor POSIX specify that the '0' flag is ignored when
        a width and a precision are both present.  But implementations do so.  */
-    ASSERT (strcmp (result, "   0b00000011000000111001 33") == 0);
+    ASSERT (streq (result, "   0b00000011000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4428,7 +4529,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     /* ISO C and POSIX specify that "The result of converting a zero value
        with a precision of zero is no characters.", and the prefix is added
        only for non-zero values.  */
-    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (streq (result, " 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4440,7 +4541,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hhd %d", (signed char) -42, 33, 44, 55);
-    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (streq (result, "-42 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4449,7 +4550,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hd %d", (short) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4458,7 +4559,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%d %d", -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4467,7 +4568,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%ld %d", (long int) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4476,7 +4577,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%lld %d", (long long int) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4485,7 +4586,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w8d %d", (int8_t) -42, 33, 44, 55);
-    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (streq (result, "-42 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4494,7 +4595,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w16d %d", (int16_t) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4503,7 +4604,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w32d %d", (int32_t) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4512,7 +4613,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w64d %d", (int64_t) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4521,7 +4622,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf8d %d", (int_fast8_t) -42, 33, 44, 55);
-    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (streq (result, "-42 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4530,7 +4631,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf16d %d", (int_fast16_t) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4539,7 +4640,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf32d %d", (int_fast32_t) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4548,7 +4649,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf64d %d", (int_fast64_t) -12345, 33, 44, 55);
-    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (streq (result, "-12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4560,7 +4661,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hhu %d", (unsigned char) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (streq (result, "42 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4569,7 +4670,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hu %d", (unsigned short) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4578,7 +4679,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%u %d", (unsigned int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4587,7 +4688,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%lu %d", (unsigned long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4596,7 +4697,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%llu %d", (unsigned long long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4605,7 +4706,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w8u %d", (uint8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (streq (result, "42 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4614,7 +4715,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w16u %d", (uint16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4623,7 +4724,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w32u %d", (uint32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4632,7 +4733,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w64u %d", (uint64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4641,7 +4742,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf8u %d", (uint_fast8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (streq (result, "42 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4650,7 +4751,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf16u %d", (uint_fast16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4659,7 +4760,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf32u %d", (uint_fast32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4668,7 +4769,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf64u %d", (uint_fast64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (streq (result, "12345 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4680,7 +4781,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hhb %d", (unsigned char) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (streq (result, "101010 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4689,7 +4790,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hb %d", (unsigned short) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4698,7 +4799,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%b %d", (unsigned int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4707,7 +4808,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%lb %d", (unsigned long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4716,7 +4817,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%llb %d", (unsigned long long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4725,7 +4826,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w8b %d", (uint8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (streq (result, "101010 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4734,7 +4835,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w16b %d", (uint16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4743,7 +4844,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w32b %d", (uint32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4752,7 +4853,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w64b %d", (uint64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4761,7 +4862,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf8b %d", (uint_fast8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (streq (result, "101010 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4770,7 +4871,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf16b %d", (uint_fast16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4779,7 +4880,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf32b %d", (uint_fast32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4788,7 +4889,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf64b %d", (uint_fast64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (streq (result, "11000000111001 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4800,7 +4901,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hho %d", (unsigned char) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (streq (result, "52 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4809,7 +4910,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%ho %d", (unsigned short) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4818,7 +4919,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%o %d", (unsigned int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4827,7 +4928,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%lo %d", (unsigned long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4836,7 +4937,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%llo %d", (unsigned long long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4845,7 +4946,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w8o %d", (uint8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (streq (result, "52 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4854,7 +4955,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w16o %d", (uint16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4863,7 +4964,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w32o %d", (uint32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4872,7 +4973,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w64o %d", (uint64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4881,7 +4982,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf8o %d", (uint_fast8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (streq (result, "52 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4890,7 +4991,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf16o %d", (uint_fast16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4899,7 +5000,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf32o %d", (uint_fast32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4908,7 +5009,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf64o %d", (uint_fast64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (streq (result, "30071 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4920,7 +5021,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hhX %d", (unsigned char) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (streq (result, "2A 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4929,7 +5030,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%hX %d", (unsigned short) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4938,7 +5039,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%X %d", (unsigned int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4947,7 +5048,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%lX %d", (unsigned long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4956,7 +5057,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%llX %d", (unsigned long long int) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4965,7 +5066,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w8X %d", (uint8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (streq (result, "2A 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4974,7 +5075,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w16X %d", (uint16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4983,7 +5084,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w32X %d", (uint32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -4992,7 +5093,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%w64X %d", (uint64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -5001,7 +5102,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf8X %d", (uint_fast8_t) 42, 33, 44, 55);
-    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (streq (result, "2A 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -5010,7 +5111,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf16X %d", (uint_fast16_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -5019,7 +5120,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf32X %d", (uint_fast32_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -5028,7 +5129,7 @@ test_function (int (*my_asprintf) (char **, const char *, ...))
     char *result;
     int retval =
       my_asprintf (&result, "%wf64X %d", (uint_fast64_t) 12345, 33, 44, 55);
-    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (streq (result, "3039 33"));
     ASSERT (retval == strlen (result));
     free (result);
   }
@@ -5063,5 +5164,5 @@ main (int argc, char *argv[])
 {
   test_vasprintf ();
   test_asprintf ();
-  return 0;
+  return test_exit_status;
 }

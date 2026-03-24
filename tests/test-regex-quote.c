@@ -1,5 +1,5 @@
 /* Test of constructing a regular expression from a literal string.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ check (const char *literal, int cflags, const char *expected)
 
   spec = regex_quote_spec_posix (cflags, false);
   result = regex_quote (literal, &spec);
-  ASSERT (strcmp (result, expected) == 0);
+  ASSERT (streq (result, expected));
   length = regex_quote_length (literal, &spec);
   ASSERT (length == strlen (result));
   free (result);
@@ -95,5 +95,5 @@ main ()
 {
   test_bre ();
   test_ere ();
-  return 0;
+  return test_exit_status;
 }

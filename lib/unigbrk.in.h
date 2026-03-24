@@ -1,5 +1,5 @@
 /* Grapheme cluster breaks in Unicode strings.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
    Written by Ben Pfaff <blp@cs.stanford.edu>, 2010.
 
    This file is free software.
@@ -88,6 +88,9 @@ extern int
    Implements extended (not legacy) grapheme cluster rules, because UAX #29
    indicates that they are preferred.
 
+   Note: This function does not work right with syllables in Indic scripts or
+   emojis, because it does not look at the characters before A and after B.
+
    Use A == 0 or B == 0 to indicate start of text or end of text,
    respectively. */
 extern bool
@@ -95,7 +98,9 @@ extern bool
        _UC_ATTRIBUTE_CONST;
 
 /* Returns the start of the next grapheme cluster following S, or NULL if the
-   end of the string has been reached. */
+   end of the string has been reached.
+   Note: These functions do not work right with syllables in Indic scripts or
+   emojis, because they do not consider the characters before S. */
 extern const uint8_t *
        u8_grapheme_next (const uint8_t *s, const uint8_t *end)
        _UC_ATTRIBUTE_PURE;
@@ -105,9 +110,84 @@ extern const uint16_t *
 extern const uint32_t *
        u32_grapheme_next (const uint32_t *s, const uint32_t *end)
        _UC_ATTRIBUTE_PURE;
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_grapheme_next_template (T* s, const uint8_t *end);
+template <>
+  inline uint8_t * u8_grapheme_next_template (uint8_t *s, const uint8_t *end)
+  { return const_cast<uint8_t *>(u8_grapheme_next (s, end)); }
+template <>
+  inline const uint8_t * u8_grapheme_next_template (const uint8_t *s, const uint8_t *end)
+  { return u8_grapheme_next (s, end); }
+#  undef u8_grapheme_next
+#  define u8_grapheme_next u8_grapheme_next_template
+# elif !defined u8_grapheme_next
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_grapheme_next(s,end) \
+      _Generic ((s), \
+                uint8_t *: (uint8_t *) u8_grapheme_next ((s), (end)), \
+                default  :             u8_grapheme_next ((s), (end)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_grapheme_next_template (T* s, const uint16_t *end);
+template <>
+  inline uint16_t * u16_grapheme_next_template (uint16_t *s, const uint16_t *end)
+  { return const_cast<uint16_t *>(u16_grapheme_next (s, end)); }
+template <>
+  inline const uint16_t * u16_grapheme_next_template (const uint16_t *s, const uint16_t *end)
+  { return u16_grapheme_next (s, end); }
+#  undef u16_grapheme_next
+#  define u16_grapheme_next u16_grapheme_next_template
+# elif !defined u16_grapheme_next
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_grapheme_next(s,end) \
+      _Generic ((s), \
+                uint16_t *: (uint16_t *) u16_grapheme_next ((s), (end)), \
+                default   :              u16_grapheme_next ((s), (end)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_grapheme_next_template (T* s, const uint32_t *end);
+template <>
+  inline uint32_t * u32_grapheme_next_template (uint32_t *s, const uint32_t *end)
+  { return const_cast<uint32_t *>(u32_grapheme_next (s, end)); }
+template <>
+  inline const uint32_t * u32_grapheme_next_template (const uint32_t *s, const uint32_t *end)
+  { return u32_grapheme_next (s, end); }
+#  undef u32_grapheme_next
+#  define u32_grapheme_next u32_grapheme_next_template
+# elif !defined u32_grapheme_next
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_grapheme_next(s,end) \
+      _Generic ((s), \
+                uint32_t *: (uint32_t *) u32_grapheme_next ((s), (end)), \
+                default   :              u32_grapheme_next ((s), (end)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Returns the start of the previous grapheme cluster before S, or NULL if the
-   start of the string has been reached. */
+   start of the string has been reached.
+   Note: These functions do not work right with syllables in Indic scripts or
+   emojis, because they do not consider the characters at or after S. */
 extern const uint8_t *
        u8_grapheme_prev (const uint8_t *s, const uint8_t *start)
        _UC_ATTRIBUTE_PURE;
@@ -117,6 +197,79 @@ extern const uint16_t *
 extern const uint32_t *
        u32_grapheme_prev (const uint32_t *s, const uint32_t *start)
        _UC_ATTRIBUTE_PURE;
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_grapheme_prev_template (T* s, const uint8_t *start);
+template <>
+  inline uint8_t * u8_grapheme_prev_template (uint8_t *s, const uint8_t *start)
+  { return const_cast<uint8_t *>(u8_grapheme_prev (s, start)); }
+template <>
+  inline const uint8_t * u8_grapheme_prev_template (const uint8_t *s, const uint8_t *start)
+  { return u8_grapheme_prev (s, start); }
+#  undef u8_grapheme_prev
+#  define u8_grapheme_prev u8_grapheme_prev_template
+# elif !defined u8_grapheme_prev
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_grapheme_prev(s,start) \
+      _Generic ((s), \
+                uint8_t *: (uint8_t *) u8_grapheme_prev ((s), (start)), \
+                default  :             u8_grapheme_prev ((s), (start)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_grapheme_prev_template (T* s, const uint16_t *start);
+template <>
+  inline uint16_t * u16_grapheme_prev_template (uint16_t *s, const uint16_t *start)
+  { return const_cast<uint16_t *>(u16_grapheme_prev (s, start)); }
+template <>
+  inline const uint16_t * u16_grapheme_prev_template (const uint16_t *s, const uint16_t *start)
+  { return u16_grapheme_prev (s, start); }
+#  undef u16_grapheme_prev
+#  define u16_grapheme_prev u16_grapheme_prev_template
+# elif !defined u16_grapheme_prev
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_grapheme_prev(s,start) \
+      _Generic ((s), \
+                uint16_t *: (uint16_t *) u16_grapheme_prev ((s), (start)), \
+                default   :              u16_grapheme_prev ((s), (start)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_grapheme_prev_template (T* s, const uint32_t *start);
+template <>
+  inline uint32_t * u32_grapheme_prev_template (uint32_t *s, const uint32_t *start)
+  { return const_cast<uint32_t *>(u32_grapheme_prev (s, start)); }
+template <>
+  inline const uint32_t * u32_grapheme_prev_template (const uint32_t *s, const uint32_t *start)
+  { return u32_grapheme_prev (s, start); }
+#  undef u32_grapheme_prev
+#  define u32_grapheme_prev u32_grapheme_prev_template
+# elif !defined u32_grapheme_prev
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_grapheme_prev(s,start) \
+      _Generic ((s), \
+                uint32_t *: (uint32_t *) u32_grapheme_prev ((s), (start)), \
+                default   :              u32_grapheme_prev ((s), (start)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Determine the grapheme cluster boundaries in S, and store the result at
    p[0..n-1].  p[i] = 1 means that a new grapheme cluster begins at s[i].  p[i]

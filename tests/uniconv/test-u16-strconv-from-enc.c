@@ -1,5 +1,5 @@
 /* Test of conversion to UTF-16 from legacy encodings.
-   Copyright (C) 2007-2023 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include "uniconv.h"
 
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "unistr.h"
@@ -32,13 +33,12 @@ main ()
 #if HAVE_ICONV
   static enum iconv_ilseq_handler handlers[] =
     { iconveh_error, iconveh_question_mark, iconveh_escape_sequence };
-  size_t h;
 
   /* Assume that iconv() supports at least the encodings ASCII, ISO-8859-1,
      ISO-8859-2, and UTF-8.  */
 
   /* Test conversion from ISO-8859-1 to UTF-16 with no errors.  */
-  for (h = 0; h < SIZEOF (handlers); h++)
+  for (size_t h = 0; h < countof (handlers); h++)
     {
       enum iconv_ilseq_handler handler = handlers[h];
       static const char input[] = "\304rger mit b\366sen B\374bchen ohne Augenma\337";
@@ -55,7 +55,7 @@ main ()
     }
 
   /* Test conversion from ISO-8859-2 to UTF-16 with no errors.  */
-  for (h = 0; h < SIZEOF (handlers); h++)
+  for (size_t h = 0; h < countof (handlers); h++)
     {
       enum iconv_ilseq_handler handler = handlers[h];
       static const char input[] = "Rafa\263 Maszkowski"; /* Rafał Maszkowski */
@@ -71,11 +71,12 @@ main ()
     }
 
   /* autodetect_jp is only supported when iconv() support ISO-2022-JP-2.  */
-# if defined _LIBICONV_VERSION || !(defined _AIX || defined __sgi || defined __hpux || defined __osf__ || defined __sun)
+# if (defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+     || !(defined _AIX || defined __hpux || defined __sun)
   if (iconv_supports_encoding ("ISO-2022-JP-2"))
     {
       /* Test conversions from autodetect_jp to UTF-16.  */
-      for (h = 0; h < SIZEOF (handlers); h++)
+      for (size_t h = 0; h < countof (handlers); h++)
         {
           enum iconv_ilseq_handler handler = handlers[h];
           static const char input[] = "\244\263\244\363\244\313\244\301\244\317"; /* こんにちは in EUC-JP */
@@ -88,7 +89,7 @@ main ()
           ASSERT (u16_strcmp (result, expected) == 0);
           free (result);
         }
-      for (h = 0; h < SIZEOF (handlers); h++)
+      for (size_t h = 0; h < countof (handlers); h++)
         {
           enum iconv_ilseq_handler handler = handlers[h];
           static const char input[] = "\202\261\202\361\202\311\202\277\202\315"; /* こんにちは in Shift_JIS */
@@ -101,7 +102,7 @@ main ()
           ASSERT (u16_strcmp (result, expected) == 0);
           free (result);
         }
-      for (h = 0; h < SIZEOF (handlers); h++)
+      for (size_t h = 0; h < countof (handlers); h++)
         {
           enum iconv_ilseq_handler handler = handlers[h];
           static const char input[] = "\033$B$3$s$K$A$O\033(B"; /* こんにちは in ISO-2022-JP-2 */
@@ -119,5 +120,5 @@ main ()
 
 #endif
 
-  return 0;
+  return test_exit_status;
 }

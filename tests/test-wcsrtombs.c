@@ -1,5 +1,5 @@
 /* Test of conversion of wide string to string.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,17 +40,13 @@ main (int argc, char *argv[])
   if (argc > 1)
     {
       wchar_t input[10];
-      size_t n;
       const wchar_t *src;
       #define BUFSIZE 20
       char buf[BUFSIZE];
       size_t ret;
 
-      {
-        size_t i;
-        for (i = 0; i < BUFSIZE; i++)
-          buf[i] = '_';
-      }
+      for (size_t i = 0; i < BUFSIZE; i++)
+        buf[i] = '_';
 
       switch (argv[1][0])
         {
@@ -62,7 +58,7 @@ main (int argc, char *argv[])
             ret = mbstowcs (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 10; n++)
+            for (size_t n = 0; n < 10; n++)
               {
                 src = input;
                 ret = wcsrtombs (NULL, &src, n, NULL);
@@ -73,7 +69,7 @@ main (int argc, char *argv[])
                 ret = wcsrtombs (buf, &src, n, NULL);
                 ASSERT (ret == (n <= 5 ? n : 5));
                 ASSERT (src == (n <= 5 ? input + n : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -91,7 +87,7 @@ main (int argc, char *argv[])
             ret = mbstowcs (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 10; n++)
+            for (size_t n = 0; n < 10; n++)
               {
                 src = input;
                 ret = wcsrtombs (NULL, &src, n, NULL);
@@ -108,7 +104,7 @@ main (int argc, char *argv[])
                                 n < 3 ? input + 1 :
                                 n < 5 ? input + 2 :
                                 n <= 7 ? input + (n - 2) : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -126,7 +122,7 @@ main (int argc, char *argv[])
             ret = mbstowcs (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 10; n++)
+            for (size_t n = 0; n < 10; n++)
               {
                 src = input;
                 ret = wcsrtombs (NULL, &src, n, NULL);
@@ -145,7 +141,7 @@ main (int argc, char *argv[])
                                 n < 5 ? input + 2 :
                                 n < 7 ? input + 3 :
                                 n <= 8 ? input + (n - 3) : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -164,7 +160,7 @@ main (int argc, char *argv[])
             ret = mbstowcs (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 10; n++)
+            for (size_t n = 0; n < 10; n++)
               {
                 src = input;
                 ret = wcsrtombs (NULL, &src, n, NULL);
@@ -181,7 +177,7 @@ main (int argc, char *argv[])
                                 n < 3 ? input + 1 :
                                 n < 7 ? input + 2 :
                                 n <= 9 ? input + (n - 4) : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -195,7 +191,7 @@ main (int argc, char *argv[])
           return 1;
         }
 
-      return 0;
+      return test_exit_status;
     }
 
   return 1;

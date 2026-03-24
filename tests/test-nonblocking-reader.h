@@ -1,6 +1,6 @@
 /* The reader part of a test program for non-blocking communication.
 
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@ full_read (size_t fd, void *buf, size_t count)
       END_TIMING
       dbgfprintf (stderr, "%s: << read -> %ld%s\n", PROG_ROLE,
                   (long) ret, dbgstrerror (ret < 0, saved_errno));
+      (void) spent_time;
       if (ret < 0)
         return -1;
       else
@@ -146,7 +147,7 @@ main_reader_loop (int test, size_t data_block_size, int fd)
       ret = full_read (fd, data, data_block_size);
       END_TIMING
       ASSERT (ret == data_block_size);
-      ASSERT (memcmp (data, expected, data_block_size) == 0);
+      ASSERT (memeq (data, expected, data_block_size));
       ASSERT (spent_time > 0.5);
       /* This assertion fails if data_block_size is very large and
          ENABLE_DEBUGGING is 1.  */
@@ -158,7 +159,7 @@ main_reader_loop (int test, size_t data_block_size, int fd)
       ret = full_read (fd, data, data_block_size);
       END_TIMING
       ASSERT (ret == data_block_size);
-      ASSERT (memcmp (data, expected + data_block_size, data_block_size) == 0);
+      ASSERT (memeq (data, expected + data_block_size, data_block_size));
       /* This assertion fails if data_block_size is much larger than needed
          and SMALL_DELAY is too large.  */
       ASSERT (spent_time < 0.5);
@@ -171,7 +172,7 @@ main_reader_loop (int test, size_t data_block_size, int fd)
       ret = full_read_from_nonblocking_fd (fd, data, data_block_size);
       END_TIMING
       ASSERT (ret == data_block_size);
-      ASSERT (memcmp (data, expected, data_block_size) == 0);
+      ASSERT (memeq (data, expected, data_block_size));
       ASSERT (spent_time > 0.5);
       /* This assertion fails if data_block_size is much larger than needed
          and SMALL_DELAY is too large, or if data_block_size is very large and
@@ -184,7 +185,7 @@ main_reader_loop (int test, size_t data_block_size, int fd)
       ret = full_read_from_nonblocking_fd (fd, data, data_block_size);
       END_TIMING
       ASSERT (ret == data_block_size);
-      ASSERT (memcmp (data, expected + data_block_size, data_block_size) == 0);
+      ASSERT (memeq (data, expected + data_block_size, data_block_size));
       /* This assertion fails if data_block_size is much larger than needed
          and SMALL_DELAY is too large.  */
       ASSERT (spent_time < 0.5);

@@ -1,5 +1,5 @@
 /* Test of system-quote module.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -39,8 +39,6 @@
 
 #define EXPECTED_DATA_FILE "t-sq-data.tmp"
 
-static int failed;
-
 static void
 check_one (enum system_command_interpreter interpreter, const char *prog,
            const char *input)
@@ -60,7 +58,7 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
   buf[output_len + 1] = '%';
   bufend = system_quote_copy (buf, interpreter, input);
   ASSERT (bufend == buf + output_len);
-  ASSERT (memcmp (buf, output, output_len + 1) == 0);
+  ASSERT (memeq (buf, output, output_len + 1));
   ASSERT (buf[output_len + 1] == '%');
 
   /* Store INPUT in EXPECTED_DATA_FILE, for verification by the child
@@ -93,7 +91,7 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
             {
               fprintf (stderr, "for input = |%s|: system() command failed with status %d: %s\n",
                        input, exitcode, command);
-              failed = 1;
+              test_exit_status = EXIT_FAILURE;
             }
         }
         {
@@ -103,7 +101,7 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
             {
               fprintf (stderr, "for input = |%s|: popen() command failed with status %d: %s\n",
                        input, exitcode, command);
-              failed = 1;
+              test_exit_status = EXIT_FAILURE;
             }
         }
         break;
@@ -136,21 +134,21 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
                         {
                           fprintf (stderr, "for input = |%s|: CreateProcess() command failed with status %d: %s\n",
                                    input, exitcode, command);
-                          failed = 1;
+                          test_exit_status = EXIT_FAILURE;
                         }
                     }
                   else
                     {
                       fprintf (stderr, "for input = |%s|: GetExitCodeProcess failed, GetLastError() = %u\n",
                                input, GetLastError ());
-                      failed = 1;
+                      test_exit_status = EXIT_FAILURE;
                     }
                 }
               else
                 {
                   fprintf (stderr, "for input = |%s|: WaitForSingleObject failed\n",
                            input);
-                  failed = 1;
+                  test_exit_status = EXIT_FAILURE;
                 }
               CloseHandle (pinfo.hProcess);
             }
@@ -158,7 +156,7 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
             {
               fprintf (stderr, "for input = |%s|: CreateProcess failed, GetLastError() = %u\n",
                        input, GetLastError ());
-              failed = 1;
+              test_exit_status = EXIT_FAILURE;
             }
         }
         break;
@@ -179,8 +177,6 @@ check_all (enum system_command_interpreter interpreter,
   /* Check the system_quote_length, system_quote_copy, system_quote
      functions.  */
   {
-    int c;
-
     /* Empty argument.  */
     check_one (interpreter, prog, "");
 
@@ -296,7 +292,7 @@ check_all (enum system_command_interpreter interpreter,
     check_one (interpreter, prog, "%PATH%");
 
     /* All other characters don't need quoting.  */
-    for (c = 1; c <= UCHAR_MAX; c++)
+    for (int c = 1; c <= UCHAR_MAX; c++)
       if (strchr ("\t\n\r !\"#$&'()*;<=>?^[\\]`{|}~", c) == NULL)
         {
           char s[5];
@@ -326,12 +322,9 @@ main (int argc, char *argv[])
 #ifdef WINDOWS_NATIVE
   /* Make PROG suitable for native Windows system calls and cmd.exe:
      Replace '/' with '\\'.  */
-  {
-    char *p;
-    for (p = prog; *p != '\0'; p++)
-      if (*p == '/')
-        *p = '\\';
-  }
+  for (char *p = prog; *p != '\0'; p++)
+    if (*p == '/')
+      *p = '\\';
 #endif
 
 #ifdef WINDOWS_NATIVE
@@ -345,5 +338,5 @@ main (int argc, char *argv[])
   /* Clean up.  */
   unlink (EXPECTED_DATA_FILE);
 
-  return failed;
+  return test_exit_status;
 }

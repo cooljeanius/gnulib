@@ -1,5 +1,5 @@
 /* Test of 32-bit wide character mappings.
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -56,5 +56,5 @@ main (int argc, char *argv[])
   ASSERT (c32_apply_mapping ((char32_t) 0, desc) == 0);
   ASSERT (c32_apply_mapping (WEOF, desc) == WEOF);
 
-  return 0;
+  return test_exit_status;
 }

@@ -1,8 +1,10 @@
-# cbrtl.m4 serial 11
-dnl Copyright (C) 2012-2023 Free Software Foundation, Inc.
+# cbrtl.m4
+# serial 14
+dnl Copyright (C) 2012-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_CBRTL],
 [
@@ -16,83 +18,23 @@ AC_DEFUN([gl_FUNC_CBRTL],
 
   dnl Test whether cbrtl() exists. Assume that cbrtl(), if it exists, is
   dnl defined in the same library as cbrt().
-  save_LIBS="$LIBS"
+  saved_LIBS="$LIBS"
   LIBS="$LIBS $CBRT_LIBM"
   AC_CHECK_FUNCS([cbrtl])
-  LIBS="$save_LIBS"
+  LIBS="$saved_LIBS"
   if test $ac_cv_func_cbrtl = yes; then
     CBRTL_LIBM="$CBRT_LIBM"
-    dnl Also check whether it's declared.
-    dnl IRIX 6.5 has cbrtl() in libm but doesn't declare it in <math.h>.
-    AC_CHECK_DECL([cbrtl], , [HAVE_DECL_CBRTL=0], [[#include <math.h>]])
 
-    save_LIBS="$LIBS"
+    saved_LIBS="$LIBS"
     LIBS="$LIBS $CBRTL_LIBM"
     gl_FUNC_CBRTL_WORKS
-    LIBS="$save_LIBS"
+    LIBS="$saved_LIBS"
     case "$gl_cv_func_cbrtl_works" in
       *yes) ;;
       *) REPLACE_CBRTL=1 ;;
     esac
-
-    m4_ifdef([gl_FUNC_CBRTL_IEEE], [
-      if test $gl_cbrtl_required = ieee && test $REPLACE_CBRTL = 0; then
-        AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
-        AC_CACHE_CHECK([whether cbrtl works according to ISO C 99 with IEC 60559],
-          [gl_cv_func_cbrtl_ieee],
-          [
-            save_LIBS="$LIBS"
-            LIBS="$LIBS $CBRTL_LIBM"
-            AC_RUN_IFELSE(
-              [AC_LANG_SOURCE([[
-#ifndef __NO_MATH_INLINES
-# define __NO_MATH_INLINES 1 /* for glibc */
-#endif
-#include <math.h>
-]gl_LONG_DOUBLE_MINUS_ZERO_CODE[
-]gl_LONG_DOUBLE_SIGNBIT_CODE[
-static long double dummy (long double x) { return 0; }
-int main (int argc, char *argv[])
-{
-  extern
-  #ifdef __cplusplus
-  "C"
-  #endif
-  long double cbrtl (long double);
-  long double (* volatile my_cbrtl) (long double) = argc ? cbrtl : dummy;
-  long double f;
-  /* Test cbrtl(-0.0).
-     This test fails on IRIX 6.5.  */
-  f = my_cbrtl (minus_zerol);
-  if (!(f == 0.0L) || (signbitl (minus_zerol) && !signbitl (f)))
-    return 1;
-  return 0;
-}
-              ]])],
-              [gl_cv_func_cbrtl_ieee=yes],
-              [gl_cv_func_cbrtl_ieee=no],
-              [case "$host_os" in
-                                     # Guess yes on glibc systems.
-                 *-gnu* | gnu*)      gl_cv_func_cbrtl_ieee="guessing yes" ;;
-                                     # Guess yes on musl systems.
-                 *-musl* | midipix*) gl_cv_func_cbrtl_ieee="guessing yes" ;;
-                                     # Guess yes on native Windows.
-                 mingw*)             gl_cv_func_cbrtl_ieee="guessing yes" ;;
-                                     # If we don't know, obey --enable-cross-guesses.
-                 *)                  gl_cv_func_cbrtl_ieee="$gl_cross_guess_normal" ;;
-               esac
-              ])
-            LIBS="$save_LIBS"
-          ])
-        case "$gl_cv_func_cbrtl_ieee" in
-          *yes) ;;
-          *) REPLACE_CBRTL=1 ;;
-        esac
-      fi
-    ])
   else
     HAVE_CBRTL=0
-    HAVE_DECL_CBRTL=0
   fi
   if test $HAVE_CBRTL = 0 || test $REPLACE_CBRTL = 1; then
     dnl Find libraries needed to link lib/cbrtl.c.
@@ -147,10 +89,10 @@ int main ()
         [gl_cv_func_cbrtl_works=yes],
         [gl_cv_func_cbrtl_works=no],
         [case "$host_os" in
-           openbsd*) gl_cv_func_cbrtl_works="guessing no";;
-                     # Guess yes on native Windows.
-           mingw*)   gl_cv_func_cbrtl_works="guessing yes";;
-           *)        gl_cv_func_cbrtl_works="guessing yes";;
+           openbsd*)          gl_cv_func_cbrtl_works="guessing no";;
+                              # Guess yes on native Windows.
+           mingw* | windows*) gl_cv_func_cbrtl_works="guessing yes";;
+           *)                 gl_cv_func_cbrtl_works="guessing yes";;
          esac
         ])
     ])

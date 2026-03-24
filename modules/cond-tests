@@ -1,5 +1,6 @@
 Files:
 tests/test-cond.c
+tests/virtualbox.h
 
 Depends-on:
 lock
@@ -7,6 +8,10 @@ thread
 yield
 gettimeofday
 sleep
+streq
+memeq
+
+configure.ac:
 
 Makefile.am:
 TESTS += test-cond

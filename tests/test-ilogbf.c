@@ -1,5 +1,5 @@
 /* Test of ilogbf() function.
-   Copyright (C) 2012-2023 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ SIGNATURE_CHECK (ilogbf, int, (float));
 
 #include <float.h>
 #include <limits.h>
+#include <stdcountof.h>
 
 #include "minus-zero.h"
 #include "infinity.h"
@@ -52,5 +53,5 @@ main ()
 {
   test_function ();
 
-  return 0;
+  return test_exit_status;
 }

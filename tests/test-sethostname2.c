@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2011-2026 Free Software Foundation, Inc.
  * Written by Ben Walton.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -45,8 +45,7 @@ main (int argc, _GL_UNUSED char *argv[])
 {
   char origname[HOST_NAME_MAX];
   char newname[HOST_NAME_MAX];
-  char longname[HOST_NAME_MAX + 2];
-  int rcs, i;
+  int rcs;
 
   /* skip the tests if we don't have root privilege.  this does not
      consider things like CAP_SYS_ADMIN (linux) or PRIV_SYS_ADMIN
@@ -100,7 +99,7 @@ main (int argc, _GL_UNUSED char *argv[])
       /* if we don't get back what we put in, there is no need to
          restore the original name as we will assume it was not
          properly changed. */
-      if (strcmp (newname, TESTHOSTNAME) != 0)
+      if (!streq (newname, TESTHOSTNAME))
         {
           fprintf (stderr, "set/get comparison failed.\n");
           return 1;
@@ -108,26 +107,36 @@ main (int argc, _GL_UNUSED char *argv[])
 #endif
     }
 
-  /* glibc does allow setting a zero length name, so the lower bound
-     needs no test. validate that we are constrained by
-     HOST_NAME_MAX */
-  for (i = 0; i < (HOST_NAME_MAX + 1); i++)
-    longname[i] = 'a';
+  /* Known bug on Cygwin and Haiku:
+     <https://cygwin.com/pipermail/cygwin/2024-May/255986.html>
+     <https://dev.haiku-os.org/ticket/19692>.  */
+#if !(defined __CYGWIN__ || defined __HAIKU__)
+  {
+    char longname[HOST_NAME_MAX + 2];
+    int i;
 
-  longname[i] = '\0';
+    /* glibc does allow setting a zero length name, so the lower bound
+       needs no test. validate that we are constrained by
+       HOST_NAME_MAX */
+    for (i = 0; i < (HOST_NAME_MAX + 1); i++)
+      longname[i] = 'a';
 
-  rcs = sethostname (longname, (HOST_NAME_MAX + 1));
+    longname[i] = '\0';
 
-  if (rcs != -1)
-    {
-      /* attempt to restore the original name. */
-      ASSERT (sethostname (origname, strlen (origname)) == 0);
-      fprintf (stderr, "setting a too long hostname succeeded.\n");
-      return 1;
-    }
+    rcs = sethostname (longname, (HOST_NAME_MAX + 1));
+
+    if (rcs != -1)
+      {
+        /* attempt to restore the original name. */
+        ASSERT (sethostname (origname, strlen (origname)) == 0);
+        fprintf (stderr, "setting a too long hostname succeeded.\n");
+        return 1;
+      }
+  }
+#endif
 
   /* restore the original name. */
   ASSERT (sethostname (origname, strlen (origname)) == 0);
 
-  return 0;
+  return test_exit_status;
 }

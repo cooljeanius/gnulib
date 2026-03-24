@@ -1,5 +1,5 @@
 /* hmac.c -- hashed message authentication codes
-   Copyright (C) 2005-2006, 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2005-2006, 2009-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -43,12 +43,12 @@ hmac_hash (const void *key, size_t keylen,
            const void *in, size_t inlen,
            int pad, void *resbuf)
 {
-  struct GL_HMAC_CTX hmac_ctx;
   char block[GL_HMAC_BLOCKSIZE];
 
   memset (block, pad, sizeof block);
   memxor (block, key, keylen);
 
+  struct GL_HMAC_CTX hmac_ctx;
   GL_HMAC_FN_INIT (&hmac_ctx);
   GL_HMAC_FN_BLOC (block, sizeof block, &hmac_ctx);
   GL_HMAC_FN_PROC (in, inlen, &hmac_ctx);
@@ -60,7 +60,6 @@ GL_HMAC_FN (const void *key, size_t keylen,
             const void *in, size_t inlen, void *resbuf)
 {
   char optkeybuf[GL_HMAC_HASHSIZE];
-  char innerhash[GL_HMAC_HASHSIZE];
 
   /* Ensure key size is <= block size.  */
   if (keylen > GL_HMAC_BLOCKSIZE)
@@ -78,6 +77,7 @@ GL_HMAC_FN (const void *key, size_t keylen,
     }
 
   /* Compute INNERHASH from KEY and IN.  */
+  char innerhash[GL_HMAC_HASHSIZE];
   hmac_hash (key, keylen, in, inlen, IPAD, innerhash);
 
   /* Compute result from KEY and INNERHASH.  */

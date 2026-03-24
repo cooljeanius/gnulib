@@ -1,5 +1,5 @@
 /* Test of word breaks in strings.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "uniwbrk.h"
 
 #include <locale.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 
 #include "macros.h"
@@ -37,15 +38,14 @@ main ()
 
 #if HAVE_ICONV
   {
-    static const char input[36] =
+    static const char input[36] _GL_ATTRIBUTE_NONSTRING =
       /* "Grüß Gott. x=(-b±sqrt(b²-4ac))/(2a)" */
       "Gr\374\337 Gott. x=(-b\261sqrt(b\262-4ac))/(2a)\n";
-    char *p = (char *) malloc (SIZEOF (input));
-    size_t i;
+    char *p = (char *) malloc (countof (input));
 
-    ulc_wordbreaks (input, SIZEOF (input), p);
+    ulc_wordbreaks (input, countof (input), p);
 
-    for (i = 0; i < 36; i++)
+    for (size_t i = 0; i < 36; i++)
       {
         ASSERT (p[i] == ((i >= 4 && i <= 5)
                          || (i >= 9 && i <= 17)
@@ -58,5 +58,5 @@ main ()
   }
 #endif
 
-  return 0;
+  return test_exit_status;
 }

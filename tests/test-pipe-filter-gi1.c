@@ -1,5 +1,5 @@
 /* Test of filtering of data through a subprocess.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify
@@ -50,9 +50,8 @@ done_read (void *data_read, size_t num_bytes_read, void *private_data)
   struct locals *l = (struct locals *) private_data;
   const char *p = l->input + l->nread;
   const char *q = (const char *) data_read;
-  size_t i;
 
-  for (i = 0; i < num_bytes_read; i++, q++)
+  for (size_t i = 0; i < num_bytes_read; i++, q++)
     {
       /* Handle conversion NL -> CRLF possibly done by the child process.  */
       if (!(O_BINARY && *q == '\r'))
@@ -85,7 +84,7 @@ main (int argc, char *argv[])
 
   /* Convert it to uppercase, line by line.  */
   {
-    const char *argv[4];
+    const char *tr_argv[4];
     struct locals l;
     struct pipe_filter_gi *f;
     int result;
@@ -93,12 +92,12 @@ main (int argc, char *argv[])
     l.input = input;
     l.nread = 0;
 
-    argv[0] = tr_program;
-    argv[1] = "abcdefghijklmnopqrstuvwxyz";
-    argv[2] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    argv[3] = NULL;
+    tr_argv[0] = tr_program;
+    tr_argv[1] = "abcdefghijklmnopqrstuvwxyz";
+    tr_argv[2] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    tr_argv[3] = NULL;
 
-    f = pipe_filter_gi_create ("tr", tr_program, argv, false, true,
+    f = pipe_filter_gi_create ("tr", tr_program, tr_argv, false, true,
                                prepare_read, done_read, &l);
     ASSERT (f != NULL);
     result = pipe_filter_gi_write (f, input, input_size);
@@ -110,5 +109,5 @@ main (int argc, char *argv[])
 
   free (input);
 
-  return 0;
+  return test_exit_status;
 }

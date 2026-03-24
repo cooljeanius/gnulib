@@ -1,5 +1,5 @@
 /* Test whether __func__ is available
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -33,8 +33,8 @@ main ()
   ASSERT (strlen (__func__) + 1 == sizeof __func__);
 #endif
 
-  ASSERT (strcmp (__func__, "main") == 0
-          || strcmp (__func__, "<unknown function>") == 0);
+  ASSERT (streq (__func__, "main")
+          || streq (__func__, "<unknown function>"));
 
-  return 0;
+  return test_exit_status;
 }

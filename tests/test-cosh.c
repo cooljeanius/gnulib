@@ -1,5 +1,5 @@
 /* Test of cosh() function.
-   Copyright (C) 2010-2023 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +23,9 @@
 #include "signature.h"
 SIGNATURE_CHECK (cosh, double, (double));
 
+#include <stdio.h>
+#include <string.h>
+
 #include "macros.h"
 
 volatile double x;
@@ -36,5 +39,14 @@ main ()
   y = cosh (x);
   ASSERT (y >= 1.185465218 && y <= 1.185465219);
 
-  return 0;
+  /* Another particular value.  */
+  {
+    char buf[80];
+    x = 5.152911276257581641;
+    y = cosh (x);
+    sprintf (buf, "%.2f", y);
+    ASSERT (streq (buf, "86.47"));
+  }
+
+  return test_exit_status;
 }

@@ -1,6 +1,6 @@
 /* Functions to compute MD4 message digest of files or memory blocks.
    according to the definition of MD4 in RFC 1320 from April 1992.
-   Copyright (C) 1995-1997, 1999-2003, 2005-2006, 2008-2023 Free Software
+   Copyright (C) 1995-1997, 1999-2003, 2005-2006, 2008-2026 Free Software
    Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
@@ -66,7 +66,7 @@ set_uint32 (char *cp, uint32_t v)
 /* Put result from CTX in first 16 bytes following RESBUF.  The result
    must be in little endian byte order.  */
 void *
-md4_read_ctx (const struct md4_ctx *ctx, void *resbuf)
+md4_read_ctx (struct md4_ctx const *restrict ctx, void *restrict resbuf)
 {
   char *r = resbuf;
   set_uint32 (r + 0 * sizeof ctx->A, SWAP (ctx->A));
@@ -80,18 +80,17 @@ md4_read_ctx (const struct md4_ctx *ctx, void *resbuf)
 /* Process the remaining bytes in the internal buffer and the usual
    prolog according to the standard and write the result to RESBUF.  */
 void *
-md4_finish_ctx (struct md4_ctx *ctx, void *resbuf)
+md4_finish_ctx (struct md4_ctx *restrict ctx, void *restrict resbuf)
 {
   /* Take yet unprocessed bytes into account.  */
   uint32_t bytes = ctx->buflen;
-  size_t pad;
 
   /* Now count remaining bytes.  */
   ctx->total[0] += bytes;
   if (ctx->total[0] < bytes)
     ++ctx->total[1];
 
-  pad = bytes >= 56 ? 64 + 56 - bytes : 56 - bytes;
+  size_t pad = bytes >= 56 ? 64 + 56 - bytes : 56 - bytes;
   memcpy (&((char*)ctx->buffer)[bytes], fillbuf, pad);
 
   /* Put the 64-bit file length in *bits* at the end of the buffer.  */
@@ -110,7 +109,7 @@ md4_finish_ctx (struct md4_ctx *ctx, void *resbuf)
    output yields to the wanted ASCII representation of the message
    digest.  */
 void *
-md4_buffer (const char *buffer, size_t len, void *resblock)
+md4_buffer (char const *restrict buffer, size_t len, void *restrict resblock)
 {
   struct md4_ctx ctx;
 
@@ -125,7 +124,8 @@ md4_buffer (const char *buffer, size_t len, void *resblock)
 }
 
 void
-md4_process_bytes (const void *buffer, size_t len, struct md4_ctx *ctx)
+md4_process_bytes (void const *restrict buffer, size_t len,
+                   struct md4_ctx *restrict ctx)
 {
   /* When we already have some bits in our internal buffer concatenate
      both inputs first.  */
@@ -208,12 +208,12 @@ md4_process_bytes (const void *buffer, size_t len, struct md4_ctx *ctx)
    It is assumed that LEN % 64 == 0.  */
 
 void
-md4_process_block (const void *buffer, size_t len, struct md4_ctx *ctx)
+md4_process_block (void const *restrict buffer, size_t len,
+                   struct md4_ctx *restrict ctx)
 {
   const uint32_t *words = buffer;
   size_t nwords = len / sizeof (uint32_t);
   const uint32_t *endp = words + nwords;
-  uint32_t x[16];
   uint32_t A = ctx->A;
   uint32_t B = ctx->B;
   uint32_t C = ctx->C;
@@ -230,8 +230,8 @@ md4_process_block (const void *buffer, size_t len, struct md4_ctx *ctx)
      the loop.  */
   while (words < endp)
     {
-      int t;
-      for (t = 0; t < 16; t++)
+      uint32_t x[16];
+      for (int t = 0; t < 16; t++)
         {
           x[t] = SWAP (*words);
           words++;

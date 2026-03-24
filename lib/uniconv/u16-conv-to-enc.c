@@ -1,5 +1,5 @@
 /* Conversion from UTF-16 to legacy encodings.
-   Copyright (C) 2002, 2006-2023 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2006-2026 Free Software Foundation, Inc.
 
    This file is free software.
    It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
@@ -30,16 +30,16 @@
 #include "uniconv.h"
 
 #include <errno.h>
+#include <stdcountof.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "striconveha.h"
 #include "unistr.h"
 
-#define SIZEOF(array) (sizeof (array) / sizeof (array[0]))
-
 /* Name of UTF-16 encoding with machine dependent endianness and alignment.  */
-#if defined _LIBICONV_VERSION || (((__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)) && !defined __UCLIBC__)
+#if (defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+    || (((__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)) && !defined __UCLIBC__)
 # ifdef WORDS_BIGENDIAN
 #  define UTF16_NAME "UTF-16BE"
 # else
@@ -61,11 +61,10 @@ static DST_UNIT *
 FUNC (const SRC_UNIT *s, size_t n, DST_UNIT *resultbuf, size_t *lengthp)
 {
   const SRC_UNIT *s_end = s + n;
+
   /* Output string accumulator.  */
   DST_UNIT *result;
   size_t allocated;
-  size_t length;
-
   if (resultbuf != NULL)
     {
       result = resultbuf;
@@ -76,18 +75,16 @@ FUNC (const SRC_UNIT *s, size_t n, DST_UNIT *resultbuf, size_t *lengthp)
       result = NULL;
       allocated = 0;
     }
-  length = 0;
+  size_t length = 0;
   /* Invariants:
      result is either == resultbuf or == NULL or malloc-allocated.
      If length > 0, then result != NULL.  */
 
   while (s < s_end)
     {
-      ucs4_t uc;
-      int count;
-
       /* Fetch a Unicode character from the input string.  */
-      count = u16_mbtoucr (&uc, s, s_end - s);
+      ucs4_t uc;
+      int count = u16_mbtoucr (&uc, s, s_end - s);
       if (count < 0)
         {
           if (count == -2)
@@ -111,11 +108,11 @@ FUNC (const SRC_UNIT *s, size_t n, DST_UNIT *resultbuf, size_t *lengthp)
         }
       if (count == -2)
         {
-          DST_UNIT *memory;
-
           allocated = (allocated > 0 ? 2 * allocated : 12);
           if (length + 6 > allocated)
             allocated = length + 6;
+
+          DST_UNIT *memory;
           if (result == resultbuf || result == NULL)
             memory = (DST_UNIT *) malloc (allocated * sizeof (DST_UNIT));
           else
@@ -156,9 +153,8 @@ FUNC (const SRC_UNIT *s, size_t n, DST_UNIT *resultbuf, size_t *lengthp)
   else if (result != resultbuf && length < allocated)
     {
       /* Shrink the allocated memory if possible.  */
-      DST_UNIT *memory;
-
-      memory = (DST_UNIT *) realloc (result, length * sizeof (DST_UNIT));
+      DST_UNIT *memory =
+        (DST_UNIT *) realloc (result, length * sizeof (DST_UNIT));
       if (memory != NULL)
         result = memory;
     }

@@ -3,6 +3,8 @@ tests/test-userspec.c
 
 Depends-on:
 xalloc
+stdcountof-h
+streq
 
 configure.ac:
 

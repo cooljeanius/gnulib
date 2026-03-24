@@ -9,8 +9,8 @@ Depends-on:
 c99
 exitfail
 getopt-gnu
-stdbool
-stdlib
+bool
+stdlib-h
 version-etc
 
 configure.ac:
@@ -20,6 +20,9 @@ lib_SOURCES += long-options.c
 
 Include:
 "long-options.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 GPL

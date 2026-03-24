@@ -5,8 +5,9 @@ tests/macros.h
 
 Depends-on:
 ignore-value
-stdbool
+bool
 symlink
+streq
 
 configure.ac:
 

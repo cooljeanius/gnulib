@@ -24,16 +24,17 @@ basename-lgpl
 extern-inline
 getopt-gnu
 strchrnul
-sysexits
+streq
+sysexits-h
 malloc-gnu
 mempcpy
 strndup
-strcase
+strcasecmp
 extensions
 vsnprintf
 sleep
-stdbool
-stdio
+bool
+stdio-h
 strerror
 memchr
 memmove
@@ -52,6 +53,9 @@ lib_SOURCES += argp.h argp-ba.c argp-eexst.c \
 
 Include:
 "argp.h"
+
+Link:
+$(LTLIBINTL) when linking with libtool, $(LIBINTL) otherwise
 
 License:
 LGPL

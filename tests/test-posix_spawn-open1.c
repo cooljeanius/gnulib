@@ -1,5 +1,5 @@
 /* Test of posix_spawn() function with 'open' action.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,7 +50,9 @@ static int
 parent_main (void)
 {
   FILE *fp;
-  char *argv[3] = { CHILD_PROGRAM_FILENAME, "-child", NULL };
+  char argv0[] = CHILD_PROGRAM_FILENAME;
+  char argv1[] = "-child";
+  char *argv[] = { argv0, argv1, NULL };
   posix_spawn_file_actions_t actions;
   bool actions_allocated;
   int err;
@@ -118,7 +120,7 @@ child_main (void)
 
   /* See if reading from STDIN_FILENO yields the expected contents.  */
   if (fread (buf, 1, sizeof (buf), stdin) == 11
-      && memcmp (buf, "Halle Potta", 11) == 0)
+      && memeq (buf, "Halle Potta", 11))
     return 0;
   else
     return 2;
@@ -140,7 +142,7 @@ main (int argc, char *argv[])
 {
   int exitstatus;
 
-  if (!(argc > 1 && strcmp (argv[1], "-child") == 0))
+  if (!(argc > 1 && streq (argv[1], "-child")))
     {
       /* This is the parent process.  */
       signal (SIGINT, cleanup_then_die);

@@ -1,6 +1,6 @@
 /* Test for nonblocking read and write.
 
-   Copyright (C) 2011-2023 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,19 +27,17 @@
      FreeBSD, OpenBSD, Mac OS X      >= 65537
      AIX                             >= 32769
      HP-UX                           >= 8193
-     IRIX                            >= 10241
-     OSF/1                           >= 262145
      Solaris <= 7                    >= 10241
      Solaris >= 8                    >= 20481
      z/OS                            >= 131073
      Cygwin                          >= 65537
      native Windows                  >= 4097 (depends on the _pipe argument)
  */
-#if defined __MVS__ || defined __osf__ || (defined __linux__ && (defined __ia64__ || defined __mips__))
+#if defined __MVS__ || (defined __linux__ && (defined __ia64__ || defined __mips__))
 # define PIPE_DATA_BLOCK_SIZE 270000
-#elif defined __linux__ && defined __sparc__
+#elif defined __linux__ && defined __sparc
 # define PIPE_DATA_BLOCK_SIZE 140000
-#elif defined __linux__ && defined __powerpc__
+#elif defined __linux__ && defined _ARCH_PPC
 # define PIPE_DATA_BLOCK_SIZE 1100000
 #elif defined _WIN32 && !defined __CYGWIN__
 # define PIPE_DATA_BLOCK_SIZE 10000

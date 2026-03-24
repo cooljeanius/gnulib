@@ -1,5 +1,5 @@
 # GNU Makefile for gnulib central.
-# Copyright (C) 2006, 2009-2023 Free Software Foundation, Inc.
+# Copyright (C) 2006, 2009-2026 Free Software Foundation, Inc.
 #
 # Copying and distribution of this file, with or without modification,
 # in any medium, are permitted without royalty provided the copyright
@@ -14,9 +14,15 @@ SHELL=bash
 # Produce some files that are not stored in the repository.
 all:
 
+# ==============================================================================
+# Documentation
+
 # Produce the documentation in readable form.
 info html dvi pdf:
 	cd doc && $(MAKE) $@ && $(MAKE) mostlyclean
+
+# ==============================================================================
+# Various checks
 
 # Collect the names of rules starting with 'sc_'.
 syntax-check-rules := $(sort $(shell sed -n 's/^\(sc_[a-zA-Z0-9_-]*\):.*/\1/p'\
@@ -26,23 +32,108 @@ syntax-check-rules := $(sort $(shell sed -n 's/^\(sc_[a-zA-Z0-9_-]*\):.*/\1/p'\
 check: $(syntax-check-rules)
 
 sc_prefer_ac_check_funcs_once:
-	@if test -d .git; then						\
-	  git grep -w -l AC_CHECK_FUNCS modules				\
+	if test -d .git; then						\
+	  git grep -l -w AC_CHECK_FUNCS modules				\
+	    | grep -Ev '$(exclude_file_name_regexp--sc_prefer_ac_check_funcs_once)' \
+	    | grep .							\
 	    && { echo use AC_CHECK_FUNCS_ONCE, not AC_CHECK_FUNCS	\
 		   in modules/ 1>&2; exit 1; } || :			\
 	else :; fi
+exclude_file_name_regexp--sc_prefer_ac_check_funcs_once = \
+  ^modules/(jit/cache)
 
 sc_prohibit_leading_TABs:
-	@if test -d .git; then						\
+	if test -d .git; then						\
 	  git grep -l '^ *	' lib m4 tests				\
-	    | grep -Ev '^lib/reg|Makefile|test-update-copyright'	\
+	    | grep -Ev '$(exclude_file_name_regexp--sc_prohibit_leading_TABs)' \
 	    | grep .							\
 	    && { printf '*** %s\n' 'indent with spaces, not TABs;'	\
 		 1>&2; exit 1; } || :					\
 	else :; fi
+exclude_file_name_regexp--sc_prohibit_leading_TABs = \
+  ^(lib/(cdefs\.h|getopt|ieee754|malloc/|mini-|mktime\.c|qsort\.c|reg|strverscmp\.c)|m4/(largefile|std-gnu)|m4/libgcrypt|tests/from-glibc/|tests/test-update-copyright|Makefile|.*/Makefile)
+
+# Cf. <https://github.com/cpredef/predef/blob/master/Compilers.md>
+sc_prohibit_misspelled_compiler_predefs:
+	if test -d .git; then						\
+	  git ls-files m4 lib tests					\
+	    | xargs grep -Ew '($(misspelled_compiler_predefs_or))'		\
+	    && { printf '*** %s\n' 'misspelled predefs' 1>&2; exit 1; }	\
+	    || :							\
+	else :; fi
+misspelled_compiler_predefs_or = $(shell echo $(misspelled_compiler_predefs) | tr -s ' ' '|')
+misspelled_compiler_predefs =\
+  __clang_major		\
+  __clang_minor		\
+  __GNUC		\
+  __GNUC_MAJOR		\
+  __GNUC_MAJOR__	\
+  __GNUC_MINOR		\
+
+# Cf. <https://github.com/cpredef/predef/blob/master/Architectures.md>
+# Only the users of module 'host-cpu-c-abi' are allowed to use __${arch}__
+# for all architectures.
+sc_prohibit_misspelled_cpu_predefs:
+	if test -d .git; then						\
+	  git ls-files m4 lib tests					\
+	    | grep -Ev '^(m4/host-cpu-c-abi\.m4|lib/sigsegv\.(in\.h|c)|tests/test-sigsegv.*|tests/jit/test-cache\.c)$$' \
+	    | xargs grep -Ew '($(misspelled_cpu_predefs_or))'		\
+	    && { printf '*** %s\n' 'misspelled predefs' 1>&2; exit 1; }	\
+	    || :							\
+	else :; fi
+misspelled_cpu_predefs_or = $(shell echo $(misspelled_cpu_predefs) | tr -s ' ' '|')
+misspelled_cpu_predefs =\
+  __alpha__		\
+  __amd64		\
+  __x86_64		\
+  __arm			\
+  __arm64		\
+  __arm64__		\
+  __aarch64		\
+  __hppa__		\
+  __loongarch64__	\
+  __m68k		\
+  __riscv__		\
+  __riscv64		\
+  __riscv64__		\
+  __sparc__		\
+  __sparc64		\
+  __sparc64__		\
+
+# Cf. <https://github.com/cpredef/predef/blob/master/OperatingSystems.md>
+sc_prohibit_misspelled_os_predefs:
+	if test -d .git; then						\
+	  git ls-files m4 lib tests					\
+	    | xargs grep -Ew '($(misspelled_os_predefs_or))'		\
+	    && { printf '*** %s\n' 'misspelled predefs' 1>&2; exit 1; }	\
+	    || :							\
+	else :; fi
+misspelled_os_predefs_or = $(shell echo $(misspelled_os_predefs) | tr -s ' ' '|')
+misspelled_os_predefs =	\
+  __AIX__		\
+  __FreeBSD		\
+  __NetBSD		\
+  __OpenBSD		\
+  __CYGWIN		\
+  __CYGWIN32__		\
+  __MINGW__		\
+  __WIN32__		\
+  __WIN64__		\
+  __GNU__		\
+  __HAIKU		\
+  __hpux__		\
+  __IRIX__		\
+  __sgi__		\
+  __linux		\
+  __minix__		\
+  __sun__		\
+  __unix		\
+  __unix__		\
+  __ZOS__		\
+  __zOS__		\
 
 sc_prohibit_augmenting_PATH_via_TESTS_ENVIRONMENT:
-	@if test -d .git; then						\
+	if test -d .git; then						\
 	  url=https://lists.gnu.org/r/bug-gnulib/2010-09/msg00064.html; \
 	  git grep '^[	 ]*TESTS_ENVIRONMENT += PATH=' modules		\
 	    && { printf '%s\n' 'Do not augment PATH via TESTS_ENVIRONMENT;' \
@@ -50,40 +141,43 @@ sc_prohibit_augmenting_PATH_via_TESTS_ENVIRONMENT:
 	else :; fi
 
 # It's easy to forget the noise-suppressing "@" at the beginning
-# of each sc_ rule.  Check for it both in maint.mk and in this file.
+# of each sc_ rule.  Check for it in maint.mk.
 sc_prohibit_sc_omitted_at:
-	@if test -d .git; then						\
-	  git grep -n -A1 '^sc_[[:alnum:]_-]*:' top/maint.mk Makefile	\
-            | grep -vE ':sc_|[0-9][-]	@|--$$'				\
-            | sed 's/-\([0-9][0-9]*\)-/:\1:/'				\
+	if test -d .git; then						\
+	  git grep -n -A1 '^sc_[[:alnum:]_-]*:' top/maint.mk		\
+	    | grep -vE ':sc_|[0-9][-]	@|--$$'				\
+	    | sed 's/-\([0-9][0-9]*\)-/:\1:/'				\
 	    | grep .							\
 	    && { printf '*** %s\n' 'oops; missing "@"'			\
 		 1>&2; exit 1; } || :					\
 	else :; fi
 
-# Run all maint.mk syntax-check tests on gnulib's sources.
-sc_maint:
-	@rm -f maint.mk; ln -s top/maint.mk maint.mk
-	$(MAKE) -s srcdir=. gnulib_dir=. _build-aux=build-aux \
-	        -f cfg.mk -f maint.mk syntax-check
-	rm -f maint.mk
+## Unmaintained. When removing this rule, also remove cfg.mk.
+## # Run all maint.mk syntax-check tests on gnulib's sources.
+## sc_maint:
+## 	@rm -f maint.mk; ln -s top/maint.mk maint.mk
+## 	$(MAKE) -s srcdir=. gnulib_dir=. _build-aux=build-aux \
+## 	        -f cfg.mk -f maint.mk syntax-check
+## 	rm -f maint.mk
 
-# Files in m4/ that (exceptionally) may use AC_LIBOBJ.
-# Do not include their ".m4" suffix.
+sc_prohibit_AC_LIBOBJ_in_m4:
+	url=https://lists.gnu.org/r/bug-gnulib/2011-06/msg00051.html; \
+	if test -d .git; then						\
+	  git ls-files m4						\
+	     | grep -Ev '^m4/($(allow_AC_LIBOBJ_or))\.m4$$'		\
+	     | xargs grep '^ *AC_LIBOBJ('				\
+	    && { printf '%s\n' 'Do not use AC_LIBOBJ in m4/*.m4;'	\
+		 "see <$$url>"; exit 1; } || :;				\
+	else :; fi
+allow_AC_LIBOBJ_or = $(shell echo $(allow_AC_LIBOBJ) | tr -s ' ' '|')
+# Files in m4/ that (exceptionally) may use AC_LIBOBJ, without their ".m4"
+# suffix.
 allow_AC_LIBOBJ =	\
-  close			\
   dprintf		\
-  dup2			\
-  faccessat		\
-  fchdir		\
-  fclose		\
-  fcntl			\
   fprintf-posix		\
-  open			\
   printf-posix		\
   snprintf		\
   sprintf-posix		\
-  stdio_h		\
   termcap		\
   terminfo		\
   vasnprintf		\
@@ -94,20 +188,8 @@ allow_AC_LIBOBJ =	\
   vsnprintf		\
   vsprintf-posix
 
-allow_AC_LIBOBJ_or := $(shell echo $(allow_AC_LIBOBJ) | tr -s ' ' '|')
-
-sc_prohibit_AC_LIBOBJ_in_m4:
-	@url=https://lists.gnu.org/r/bug-gnulib/2011-06/msg00051.html; \
-	if test -d .git; then						\
-	  git ls-files m4						\
-	     | grep -Ev '^m4/($(allow_AC_LIBOBJ_or))\.m4$$'		\
-	     | xargs grep '^ *AC_LIBOBJ('				\
-	    && { printf '%s\n' 'Do not use AC_LIBOBJ in m4/*.m4;'	\
-		 "see <$$url>"; exit 1; } || :;				\
-	else :; fi
-
 sc_pragma_columns:
-	@if test -d .git; then						\
+	if test -d .git; then						\
 	  git ls-files|grep '\.in\.h$$'					\
 	      | xargs grep -l '^@PRAGMA_SYSTEM_HEADER@'			\
 	      | xargs grep -L '^@PRAGMA_COLUMNS@'			\
@@ -117,26 +199,6 @@ sc_pragma_columns:
 		   'without also using @PRAGMA_COLUMNS@' 1>&2;		\
 		 exit 1; } || :;					\
 	else :; fi
-
-# Verify that certain (for now, only Jim Meyering and Eric Blake's)
-# *.c files are consistently cpp indented.
-sc_cpp_indent_check:
-	@./gnulib-tool --extract-filelist \
-	    $$(cd ./modules; grep -ilrE '(meyering|blake)' .) \
-	  | sort -u \
-	  | grep '\.c$$' \
-	  | grep -vE '/(stdio-(read|write)|getloadavg)\.c$$' \
-	  | xargs cppi -c
-
-# Ensure that the list of symbols checked for by the
-# sc_prohibit_intprops_without_use rule match those in the actual file.
-# Extract the symbols from the .h file and compare with the list of
-# symbols extracted from the rule in maint.mk.
-sc_check_sym_list:
-	@i=lib/intprops.h; \
-	diff -u <(perl -lne '/^# *define ([A-Z]\w+)\(/ and print $$1' $$i|fmt) \
-	  <(sed -n /^_intprops_name/,/^_intprops_syms_re/p top/maint.mk \
-	    |sed '/^_/d;s/^  //;s/	*\\$$//')
 
 
 # List of C macros defined through AH_VERBATIM in m4/extern-inline.m4:
@@ -155,6 +217,7 @@ config_h_MACROS2 = \
   _GL_ATTRIBUTE_COLD \
   _GL_ATTRIBUTE_CONST \
   _GL_ATTRIBUTE_DEALLOC \
+  _GL_ATTRIBUTE_DEALLOC_FREE \
   _GL_ATTRIBUTE_DEPRECATED \
   _GL_ATTRIBUTE_ERROR \
   _GL_ATTRIBUTE_WARNING \
@@ -169,14 +232,21 @@ config_h_MACROS2 = \
   _GL_ATTRIBUTE_NODISCARD \
   _GL_ATTRIBUTE_NOINLINE \
   _GL_ATTRIBUTE_NONNULL \
+  _GL_ATTRIBUTE_NONNULL_IF_NONZERO \
   _GL_ATTRIBUTE_NONSTRING \
   _GL_ATTRIBUTE_NOTHROW \
   _GL_ATTRIBUTE_PACKED \
   _GL_ATTRIBUTE_PURE \
+  _GL_ATTRIBUTE_REPRODUCIBLE \
   _GL_ATTRIBUTE_RETURNS_NONNULL \
   _GL_ATTRIBUTE_SENTINEL \
+  _GL_ATTRIBUTE_UNSEQUENCED \
   _GL_ATTRIBUTE_UNUSED \
   _GL_UNUSED_LABEL \
+  _GL_UNNAMED \
+  _GL_ATTRIBUTE_CAPABILITY_TYPE \
+  _GL_ATTRIBUTE_ACQUIRE_CAPABILITY \
+  _GL_ATTRIBUTE_RELEASE_CAPABILITY \
   _GL_BEGIN_C_LINKAGE \
   _GL_END_C_LINKAGE \
   _GL_ASYNC_SAFE \
@@ -210,7 +280,8 @@ config_h_MACROS = \
 # include <config.h>.
 sc_check_config_h_reminder:
 	fail=0; \
-	for file in `grep -l -F -w -f <(for macro in $(config_h_MACROS); do echo $$macro; done) lib/*.h lib/*/*.h`; do \
+	for file in `grep -l -F -w -f <(for macro in $(config_h_MACROS); do echo $$macro; done) lib/*.h lib/*/*.h \
+	             | grep -vE '$(exclude_file_name_regexp--sc_check_config_h_reminder)'`; do \
 	  : "Filter out .h files that are not public header files of their respective module."; \
 	  include_pattern='[<"]'`echo $$file | sed -e 's,^lib/,,' -e 's,[.]in[.]h,.h,' -e 's,_,[/_],g' -e 's,[.],[.],g'`'[>"]' ; \
 	  if ./gnulib-tool --extract-include-directive `./gnulib-tool --find $$file` | grep "$$include_pattern" >/dev/null; then \
@@ -226,6 +297,8 @@ sc_check_config_h_reminder:
 	  fi; \
 	done; \
 	exit $$fail
+exclude_file_name_regexp--sc_check_config_h_reminder = \
+  ^lib/(noreturn\.h|(uninorm|unistr)\.in\.h)
 
 
 # Ensure that .h files that invoke _GL_INLINE_HEADER_BEGIN also invoke
@@ -246,6 +319,9 @@ sc_check_GL_INLINE_HEADER_use:
 sc_check_copyright:
 	@./check-copyright
 
+# ==============================================================================
+# Regenerating some files
+
 # Regenerate some files that are stored in the repository.
 regen: build-aux/bootstrap MODULES.html
 
@@ -260,6 +336,9 @@ build-aux/bootstrap: top/gen-bootstrap.sed top/bootstrap top/bootstrap-funclib.s
 # where it then appears at <https://www.gnu.org/software/gnulib/MODULES.html>.
 MODULES.html: MODULES.html.sh
 	./MODULES.html.sh > MODULES.html
+
+# ==============================================================================
+# Updating copyright notices
 
 # A perl BEGIN block to set Y to the current year number and W to Y-1.
 _year_and_prev = BEGIN{@t=localtime(time); $$y=$$t[5]+1900; $$w=$$y-1}
@@ -286,7 +365,6 @@ update-copyright:
 	      test -d "$$dst" || continue;				\
 	      echo "$$dst"/$$(basename "$$src");			\
 	    done > $$exempt;						\
-	git ls-files tests/unictype >> $$exempt;			\
 	git ls-files doc/INSTALL* >> $$exempt;				\
 	for file in $$(git ls-files); do				\
 	  test ! -h $$file || echo $$file;				\
@@ -306,3 +384,63 @@ update-copyright:
 	perl -pi -e							\
 	  '$(_year_and_prev) s/^(scriptversion=)$$w.*/$$1$$y-01-01.00/i' \
 	  build-aux/gendocs.sh
+
+# ==============================================================================
+# Maintaining localizations
+
+# Creates an up-to-date POT file (in the po/ directory).
+gnulib.pot:
+	cd po && make
+
+# Creates a snapshot tarball for the Translation Project. Once created,
+# 1. upload it to alpha.gnu.org via
+#    $ build-aux/gnupload --to alpha.gnu.org:gnulib gnulib-????????.tar.gz
+# 2. notify <coordinator@translationproject.org>
+gnulib-tp-snapshot: gnulib.pot
+	version=`date -u +"%Y%m%d"`; \
+	dir=gnulib-$$version; \
+	mkdir $$dir \
+	&& for file in `find lib -type f` `find po -type f` COPYING; do \
+	     case $$file in \
+	       *.orig | *.rej | *~ | '.#'* | '#'*'#' ) ;; \
+	       *) \
+	         mkdir -p $$dir/`dirname $$file` || exit 1; \
+	         ln $$file $$dir/$$file || exit 1; \
+	     esac; \
+	   done \
+	&& { echo 'This tarball contains the GNU gnulib sources relevant for translators.'; \
+	     echo 'It is only meant for use by the translators and the translation coordinator.'; \
+	     echo 'If you are a developer, use a git checkout of the GNU gnulib project instead.'; \
+	   } > $$dir/README \
+	&& tar --owner=root --group=root -cf $$dir.tar $$dir \
+	&& gzip -9 --force $$dir.tar \
+	&& rm -rf $$dir \
+	&& ls -l $$dir.tar.gz
+
+# Creates a tarball with the gnulib localizations. Once created,
+# 1. upload it to ftp.gnu.org via
+#    $ build-aux/gnupload --to ftp.gnu.org:gnulib gnulib-l10n-????????.tar.gz
+# 2. notify your preferred distros so that they pick it up.
+gnulib-l10n-release: gnulib.pot
+	cp doc/COPYING.LESSERv2 gnulib-l10n/COPYING
+	mkdir -p gnulib-l10n/po \
+	&& cp po/Makevars gnulib-l10n/po/Makevars \
+	&& cp po/gnulib.pot gnulib-l10n/po/gnulib.pot
+	cd gnulib-l10n \
+	&& ./autogen.sh \
+	&& (cd po \
+	    && rm -f *.po \
+	    && wget --mirror --level=1 -nd -nv -A.po https://translationproject.org/latest/gnulib/ \
+	    && touch POTFILES.in \
+	    && ls -1 *.po | LC_ALL=C sort | sed -e 's/\.po$$//' > LINGUAS \
+	    && for file in *.po; do msgmerge --update --lang=$${file%.po} --previous $$file gnulib.pot || exit 1; done \
+	    && for file in *.po; do msgfmt -c -o $${file%.po}.gmo $$file || exit 1; done \
+	   ) \
+	&& ./configure \
+	&& make distcheck \
+	&& mv gnulib-l10n-????????.tar.gz .. \
+	&& make distclean \
+	&& ./autoclean.sh
+	ls -l gnulib-l10n-????????.tar.gz
+
+# ==============================================================================

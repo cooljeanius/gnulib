@@ -1,5 +1,5 @@
 /* Tests of mkfifoat and mknodat.
-   Copyright (C) 2009-2023 Free Software Foundation, Inc.
+   Copyright (C) 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -67,7 +67,6 @@ do_mknodat (char const *name, mode_t mode)
 int
 main (void)
 {
-  int i;
   test_func funcs[2] = { mkfifoat, test_mknodat };
   int result;
 
@@ -83,7 +82,7 @@ main (void)
   ASSERT (test_mkfifo (do_mknodat, false) == result);
 
   /* Test directory-relative handling of both functions.  */
-  for (i = 0; i < 2; i++)
+  for (int i = 0; i < 2; i++)
     {
       struct stat st;
       test_func func = funcs[i];
@@ -91,7 +90,7 @@ main (void)
       /* Test behaviour for invalid file descriptors.  */
       {
         errno = 0;
-        ASSERT (func (-1, "foo", 0600) == -1);
+        ASSERT (func (AT_FDCWD == -2 ? -1 : -2, "foo", 0600) == -1);
         ASSERT (errno == EBADF
                 || errno == ENOSYS /* seen on mingw */
                );
@@ -145,5 +144,5 @@ main (void)
 
   ASSERT (close (dfd) == 0);
 
-  return 0;
+  return test_exit_status;
 }

@@ -1,5 +1,5 @@
 /* Callee program for the tests of the exec*() functions.
-   Copyright (C) 2020-2023 Free Software Foundation, Inc.
+   Copyright (C) 2020-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,9 +27,8 @@ int
 main (int argc, char* argv[])
 {
   /* Print the arguments.  */
-  int i;
   printf ("argc = %d\n", argc);
-  for (i = 1; i < argc; i++)
+  for (int i = 1; i < argc; i++)
     printf ("argv[%d] = |%s|\n", i, argv[i]);
 
   /* Print a particular environment variable.  */

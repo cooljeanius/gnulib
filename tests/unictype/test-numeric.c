@@ -1,5 +1,5 @@
 /* Test the Unicode character type functions.
-   Copyright (C) 2007-2009 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 #include "unictype.h"
 
+#include <stdcountof.h>
 #include <string.h>
 
 #include "macros.h"
@@ -33,10 +34,9 @@ main ()
 {
   unsigned int c;
   uc_fraction_t value;
-  size_t i;
 
   c = 0;
-  for (i = 0; i < SIZEOF (mapping); i++)
+  for (size_t i = 0; i < countof (mapping); i++)
     {
       for (; c < mapping[i].ch; c++)
         {
@@ -55,5 +55,5 @@ main ()
       ASSERT (value.numerator == 0 && value.denominator == 0);
     }
 
-  return 0;
+  return test_exit_status;
 }

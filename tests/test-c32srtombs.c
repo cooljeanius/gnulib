@@ -1,5 +1,5 @@
 /* Test of conversion of 32-bit wide string to string.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,17 +40,13 @@ main (int argc, char *argv[])
   if (argc > 1)
     {
       char32_t input[10];
-      size_t n;
       const char32_t *src;
       #define BUFSIZE 20
       char buf[BUFSIZE];
       size_t ret;
 
-      {
-        size_t i;
-        for (i = 0; i < BUFSIZE; i++)
-          buf[i] = '_';
-      }
+      for (size_t i = 0; i < BUFSIZE; i++)
+        buf[i] = '_';
 
       switch (argv[1][0])
         {
@@ -62,7 +58,7 @@ main (int argc, char *argv[])
             ret = mbstoc32s (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 10; n++)
+            for (size_t n = 0; n < 10; n++)
               {
                 src = input;
                 ret = c32srtombs (NULL, &src, n, NULL);
@@ -73,7 +69,7 @@ main (int argc, char *argv[])
                 ret = c32srtombs (buf, &src, n, NULL);
                 ASSERT (ret == (n <= 5 ? n : 5));
                 ASSERT (src == (n <= 5 ? input + n : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -91,7 +87,7 @@ main (int argc, char *argv[])
             ret = mbstoc32s (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 15; n++)
+            for (size_t n = 0; n < 15; n++)
               {
                 src = input;
                 ret = c32srtombs (NULL, &src, n, NULL);
@@ -110,7 +106,7 @@ main (int argc, char *argv[])
                                 n < 5 ? input + 2 :
                                 n < 9 ? input + 3 :
                                 n <= 10 ? input + (n - 5) : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -128,7 +124,7 @@ main (int argc, char *argv[])
             ret = mbstoc32s (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 10; n++)
+            for (size_t n = 0; n < 10; n++)
               {
                 src = input;
                 ret = c32srtombs (NULL, &src, n, NULL);
@@ -147,7 +143,7 @@ main (int argc, char *argv[])
                                 n < 5 ? input + 2 :
                                 n < 7 ? input + 3 :
                                 n <= 8 ? input + (n - 3) : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -160,7 +156,9 @@ main (int argc, char *argv[])
 
         case '5':
           /* Locale encoding is GB18030.  */
-          #if GL_CHAR32_T_IS_UNICODE && (defined __NetBSD__ || defined __sun)
+          #if (defined __GLIBC__ && __GLIBC__ == 2 && __GLIBC_MINOR__ >= 13 && __GLIBC_MINOR__ <= 15) || (GL_CHAR32_T_IS_UNICODE && (defined __FreeBSD__ || defined __NetBSD__ || defined __sun))
+          if (test_exit_status != EXIT_SUCCESS)
+            return test_exit_status;
           fputs ("Skipping test: The GB18030 converter in this system's iconv is broken.\n", stderr);
           return 77;
           #endif
@@ -170,7 +168,7 @@ main (int argc, char *argv[])
             ret = mbstoc32s (input, original, 10);
             ASSERT (ret == 5);
 
-            for (n = 0; n < 15; n++)
+            for (size_t n = 0; n < 15; n++)
               {
                 src = input;
                 ret = c32srtombs (NULL, &src, n, NULL);
@@ -189,7 +187,7 @@ main (int argc, char *argv[])
                                 n < 7 ? input + 2 :
                                 n < 11 ? input + 3 :
                                 n <= 12 ? input + (n - 7) : NULL));
-                ASSERT (memcmp (buf, original, ret) == 0);
+                ASSERT (memeq (buf, original, ret));
                 if (src == NULL)
                   ASSERT (buf[ret] == '\0');
                 ASSERT (buf[ret + (src == NULL) + 0] == '_');
@@ -203,7 +201,7 @@ main (int argc, char *argv[])
           return 1;
         }
 
-      return 0;
+      return test_exit_status;
     }
 
   return 1;

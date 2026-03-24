@@ -1,5 +1,5 @@
 /* Test of getndelim2() function.
-   Copyright (C) 2008-2023 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ main (void)
   /* Test initial allocation, which must include trailing NUL.  */
   result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, '\n', '\n', f);
   ASSERT (result == 2);
-  ASSERT (strcmp (line, "a\n") == 0);
+  ASSERT (streq (line, "a\n"));
   ASSERT (2 < len);
 
   /* Test growth of buffer, must not leak.  */
@@ -58,13 +58,13 @@ main (void)
   len = 0;
   result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, EOF, '\n', f);
   ASSERT (result == 3);
-  ASSERT (strcmp (line, "bc\n") == 0);
+  ASSERT (streq (line, "bc\n"));
   ASSERT (3 < len);
 
   /* Test embedded NULs and EOF behavior.  */
   result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, '\n', EOF, f);
   ASSERT (result == 3);
-  ASSERT (memcmp (line, "d\0f", 4) == 0);
+  ASSERT (memeq (line, "d\0f", 4));
   ASSERT (3 < len);
 
   result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, '\n', EOF, f);
@@ -81,30 +81,27 @@ main (void)
   result = getndelim2 (&line, &len, 6, 10, 'd', 'd', f);
   ASSERT (result == 3);
   ASSERT (10 == len);
-  ASSERT (strcmp (line, "eeeeeea\nb") == 0);
+  ASSERT (streq (line, "eeeeeea\nb"));
 
   /* No change if offset larger than limit.  */
   result = getndelim2 (&line, &len, len, 1, EOF, EOF, f);
   ASSERT (result == -1);
   ASSERT (10 == len);
-  ASSERT (strcmp (line, "eeeeeea\nb") == 0);
+  ASSERT (streq (line, "eeeeeea\nb"));
 
   /* Consume to end of file, including embedded NUL.  */
   result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, EOF, EOF, f);
   ASSERT (result == 2);
   ASSERT (10 == len);
-  ASSERT (memcmp (line, "\0f\0eeea\nb", 10) == 0);
+  ASSERT (memeq (line, "\0f\0eeea\nb", 10));
 
   result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, '\n', '\r', f);
   ASSERT (result == -1);
 
   /* Larger file size.  */
   rewind (f);
-  {
-    int i;
-    for (i = 0; i < 16; i++)
-      fprintf (f, "%500x%c", i + 0u, i % 2 ? '\n' : '\r');
-  }
+  for (int i = 0; i < 16; i++)
+    fprintf (f, "%500x%c", i + 0u, i % 2 ? '\n' : '\r');
   rewind (f);
   {
     char buffer[502];
@@ -116,36 +113,36 @@ main (void)
     buffer[499] = '0';
     buffer[500] = '\r';
     buffer[501] = '\0';
-    ASSERT (strcmp (buffer, line) == 0);
+    ASSERT (streq (buffer, line));
 
     result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, '\n', '\r', f);
     ASSERT (result == 501);
     ASSERT (501 < len);
     buffer[499] = '1';
     buffer[500] = '\n';
-    ASSERT (strcmp (buffer, line) == 0);
+    ASSERT (streq (buffer, line));
 
     result = getndelim2 (&line, &len, 0, GETNLINE_NO_LIMIT, 'g', 'f', f);
     ASSERT (result == 501 * 14 - 1);
     ASSERT (501 * 14 <= len);
     buffer[499] = 'f';
     buffer[500] = '\0';
-    ASSERT (strcmp (buffer, line + 501 * 13) == 0);
+    ASSERT (streq (buffer, line + 501 * 13));
 
     result = getndelim2 (&line, &len, 501 * 14 - 1, GETNLINE_NO_LIMIT,
                          EOF, EOF, f);
     ASSERT (result == 1);
     buffer[500] = '\n';
-    ASSERT (strcmp (buffer, line + 501 * 13) == 0);
+    ASSERT (streq (buffer, line + 501 * 13));
 
     result = getndelim2 (&line, &len, 501 * 14 - 1, GETNLINE_NO_LIMIT,
                          EOF, EOF, f);
     buffer[500] = '\0';
-    ASSERT (strcmp (buffer, line + 501 * 13) == 0);
+    ASSERT (streq (buffer, line + 501 * 13));
     ASSERT (result == -1);
   }
 
   fclose (f);
   remove ("test-getndelim2.txt");
-  return 0;
+  return test_exit_status;
 }

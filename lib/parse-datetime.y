@@ -1,7 +1,7 @@
 %{
 /* Parse a string into an internal timestamp.
 
-   Copyright (C) 1999-2000, 2002-2023 Free Software Foundation, Inc.
+   Copyright (C) 1999-2000, 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -38,7 +38,6 @@
 #include "idx.h"
 #include "intprops.h"
 #include "timespec.h"
-#include "strftime.h"
 
 /* There's no need to extend the stack, so there's no need to involve
    alloca.  */
@@ -61,7 +60,7 @@
 
 #include "gettext.h"
 
-#define _(str) gettext (str)
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 
 /* Bison's skeleton tests _STDLIB_H, while some stdlib.h headers
    use _STDLIB_H_ as witness.  Map the latter to the one bison uses.  */
@@ -89,8 +88,6 @@
 
 #define HOUR(x) (60 * 60 * (x))
 
-#define STREQ(a, b) (strcmp (a, b) == 0)
-
 /* Verify that time_t is an integer as POSIX requires, and that every
    time_t value fits in intmax_t.  Please file a bug report if these
    assumptions are false on your platform.  */
@@ -102,8 +99,8 @@ static_assert (TYPE_MAXIMUM (time_t) <= INTMAX_MAX);
 static bool
 time_overflow (intmax_t n)
 {
-  return ! ((TYPE_SIGNED (time_t) ? TYPE_MINIMUM (time_t) <= n : 0 <= n)
-            && n <= TYPE_MAXIMUM (time_t));
+  time_t t;
+  return ckd_add (&t, n, 0);
 }
 
 /* Convert a possibly-signed character to an unsigned character.  This is
@@ -111,16 +108,28 @@ time_overflow (intmax_t n)
    errors that the cast doesn't.  */
 static unsigned char to_uchar (char ch) { return ch; }
 
-static void _GL_ATTRIBUTE_FORMAT ((__printf__, 1, 2))
-dbg_printf (char const *msg, ...)
+static void
+dbg_herald (void)
 {
-  va_list args;
   /* TODO: use gnulib's 'program_name' instead?  */
   fputs ("date: ", stderr);
+}
 
-  va_start (args, msg);
-  vfprintf (stderr, msg, args);
+static void _GL_ATTRIBUTE_FORMAT ((__printf__, 1, 2))
+dbg_printf (char const *msgid, ...)
+{
+  dbg_herald ();
+  va_list args;
+  va_start (args, msgid);
+  vfprintf (stderr, msgid, args);
   va_end (args);
+}
+
+static void
+dbg_fputs (char const *msgid)
+{
+  dbg_herald ();
+  fputs (msgid, stderr);
 }
 
 
@@ -143,6 +152,9 @@ typedef struct
 
 /* Meridian: am, pm, or 24-hour style.  */
 enum { MERam, MERpm, MER24 };
+
+/* Maximum length of a time zone abbreviation, plus 1.  */
+enum { TIME_ZONE_BUFSIZE = INT_STRLEN_BOUND (intmax_t) + sizeof ":MM:SS" };
 
 /* A reasonable upper bound for the buffer used in debug output.  */
 enum { DBGBUFSIZE = 100 };
@@ -212,6 +224,8 @@ typedef struct
   idx_t zones_seen;
   bool year_seen;
 
+  bool not_decimal;
+
 #ifdef GNULIB_PARSE_DATETIME2
   /* Print debugging output to stderr.  */
   bool parse_datetime_debug;
@@ -230,6 +244,11 @@ typedef struct
 
   /* Table of local time zone abbreviations, terminated by a null entry.  */
   table local_time_zone_table[3];
+
+#if !HAVE_STRUCT_TM_TM_ZONE
+  /* The abbreviations in LOCAL_TIME_ZONE_TABLE.  */
+  char tz_abbr[2][TIME_ZONE_BUFSIZE];
+#endif
 } parser_control;
 
 static bool
@@ -244,7 +263,7 @@ debugging (parser_control const *pc)
 
 union YYSTYPE;
 static int yylex (union YYSTYPE *, parser_control *);
-static int yyerror (parser_control const *, char const *);
+static void yyerror (parser_control const *, char const *);
 static bool time_zone_hhmm (parser_control *, textint, intmax_t);
 
 /* Extract into *PC any date and time info from a string of digits
@@ -385,8 +404,6 @@ str_days (parser_control *pc, char *buffer, int n)
 }
 
 /* Convert a time zone to its string representation.  */
-
-enum { TIME_ZONE_BUFSIZE = INT_STRLEN_BOUND (intmax_t) + sizeof ":MM:SS" } ;
 
 static char const *
 time_zone_str (int time_zone, char time_zone_buf[TIME_ZONE_BUFSIZE])
@@ -578,7 +595,7 @@ debug_print_relative_time (char const *item, parser_control const *pc)
 %token <intval> tDAY tDAYZONE tLOCAL_ZONE tMERIDIAN
 %token <intval> tMONTH tORDINAL tZONE
 
-%token <textintval> tSNUMBER tUNUMBER
+%token <textintval> tSNUMBER tUNUMBER tUNUMBER_DOTTED
 %token <timespec> tSDECIMAL_NUMBER tUDECIMAL_NUMBER
 
 %type <intval> o_colon_minutes
@@ -831,6 +848,19 @@ date:
             pc->day = $3.value;
             pc->year = $5;
           }
+      }
+  | tUNUMBER '.' tUNUMBER '.'
+      {
+        /* E.g., 17.6.  */
+        pc->day = $1.value;
+        pc->month = $3.value;
+      }
+  | tUNUMBER '.' tUNUMBER_DOTTED '.' tUNUMBER
+      {
+        /* E.g., 17.6.1992  */
+        pc->day = $1.value;
+        pc->month = $3.value;
+        pc->year = $5;
       }
   | tUNUMBER tMONTH tSNUMBER
       {
@@ -1086,7 +1116,7 @@ static table const relative_time_table[] =
 
 /* The universal time zone table.  These labels can be used even for
    timestamps that would not otherwise be valid, e.g., GMT timestamps
-   oin London during summer.  */
+   in London during summer.  */
 static table const universal_time_zone_table[] =
 {
   { "GMT",      tZONE,     HOUR ( 0) }, /* Greenwich Mean */
@@ -1295,23 +1325,23 @@ lookup_zone (parser_control const *pc, char const *name)
   table const *tp;
 
   for (tp = universal_time_zone_table; tp->name; tp++)
-    if (strcmp (name, tp->name) == 0)
+    if (streq (name, tp->name))
       return tp;
 
   /* Try local zone abbreviations before those in time_zone_table, as
      the local ones are more likely to be right.  */
   for (tp = pc->local_time_zone_table; tp->name; tp++)
-    if (strcmp (name, tp->name) == 0)
+    if (streq (name, tp->name))
       return tp;
 
   for (tp = time_zone_table; tp->name; tp++)
-    if (strcmp (name, tp->name) == 0)
+    if (streq (name, tp->name))
       return tp;
 
   return NULL;
 }
 
-#if ! HAVE_TM_GMTOFF
+#if ! HAVE_STRUCT_TM_TM_GMTOFF
 /* Yield the difference between *A and *B,
    measured in seconds, ignoring leap seconds.
    The body of this function is taken directly from the GNU C Library;
@@ -1336,7 +1366,7 @@ tm_diff (const struct tm *a, const struct tm *b)
                 + (a->tm_min - b->tm_min))
           + (a->tm_sec - b->tm_sec));
 }
-#endif /* ! HAVE_TM_GMTOFF */
+#endif
 
 static table const *
 lookup_word (parser_control const *pc, char *word)
@@ -1353,7 +1383,7 @@ lookup_word (parser_control const *pc, char *word)
     *p = c_toupper (to_uchar (*p));
 
   for (tp = meridian_table; tp->name; tp++)
-    if (strcmp (word, tp->name) == 0)
+    if (streq (word, tp->name))
       return tp;
 
   /* See if we have an abbreviation for a month.  */
@@ -1367,11 +1397,11 @@ lookup_word (parser_control const *pc, char *word)
   if ((tp = lookup_zone (pc, word)))
     return tp;
 
-  if (strcmp (word, dst_table[0].name) == 0)
+  if (streq (word, dst_table[0].name))
     return dst_table;
 
   for (tp = time_units_table; tp->name; tp++)
-    if (strcmp (word, tp->name) == 0)
+    if (streq (word, tp->name))
       return tp;
 
   /* Strip off any plural and try the units table again.  */
@@ -1379,13 +1409,13 @@ lookup_word (parser_control const *pc, char *word)
     {
       word[wordlen - 1] = '\0';
       for (tp = time_units_table; tp->name; tp++)
-        if (strcmp (word, tp->name) == 0)
+        if (streq (word, tp->name))
           return tp;
       word[wordlen - 1] = 'S';  /* For "this" in relative_time_table.  */
     }
 
   for (tp = relative_time_table; tp->name; tp++)
-    if (strcmp (word, tp->name) == 0)
+    if (streq (word, tp->name))
       return tp;
 
   /* Military time zones.  */
@@ -1445,8 +1475,19 @@ yylex (union YYSTYPE *lvalp, parser_control *pc)
 
           if ((c == '.' || c == ',') && c_isdigit (p[1]))
             {
+              /* We are at the second period in a DD.MM.YYYY date */
+              if (pc->not_decimal)
+                {
+                  pc->not_decimal = false;
+                  lvalp->textintval.negative = sign < 0;
+                  lvalp->textintval.value = value;
+                  lvalp->textintval.digits = p - pc->input;
+                  pc->input = p;
+                  return tUNUMBER_DOTTED;
+                }
               time_t s = value;
               int digits;
+              char const *old_p = p;
 
               /* Accumulate fraction, to ns precision.  */
               p++;
@@ -1454,6 +1495,13 @@ yylex (union YYSTYPE *lvalp, parser_control *pc)
               for (digits = 2; digits <= LOG10_BILLION; digits++)
                 {
                   ns *= 10;
+                  /* Don't parse DD.MM.YYYY dates as a decimal  */
+                  if (*p == '.')
+                    {
+                      p = old_p;
+                      pc->not_decimal = true;
+                      goto normal_value;
+                    }
                   if (c_isdigit (*p))
                     ns += *p++ - '0';
                 }
@@ -1486,6 +1534,8 @@ yylex (union YYSTYPE *lvalp, parser_control *pc)
             }
           else
             {
+              pc->not_decimal = false;
+             normal_value:
               lvalp->textintval.negative = sign < 0;
               lvalp->textintval.value = value;
               lvalp->textintval.digits = p - pc->input;
@@ -1539,11 +1589,10 @@ yylex (union YYSTYPE *lvalp, parser_control *pc)
 }
 
 /* Do nothing if the parser reports an error.  */
-static int
+static void
 yyerror (_GL_UNUSED parser_control const *pc,
          _GL_UNUSED char const *s)
 {
-  return 0;
 }
 
 /* If *TM0 is the old and *TM1 is the new value of a struct tm after
@@ -1566,6 +1615,33 @@ mktime_ok (struct tm const *tm0, struct tm const *tm1)
             | (tm0->tm_year ^ tm1->tm_year));
 }
 
+/* Populate PC's local time zone table with information from TM.  */
+
+static void
+populate_local_time_zone_table (parser_control *pc, struct tm const *tm)
+{
+  bool first_entry_exists = !!pc->local_time_zone_table[0].name;
+
+  /* The table entry to be filled in.  There are only two, so this is
+     the first entry if it is missing, the second entry otherwise.  */
+  table *e = &pc->local_time_zone_table[first_entry_exists];
+
+  e->type = tLOCAL_ZONE;
+  e->value = tm->tm_isdst;
+
+  char const *zone = NULL;
+#if HAVE_STRUCT_TM_TM_ZONE
+  if (tm->tm_zone[0])
+    zone = tm->tm_zone;
+#else
+  char *tz_abbr = pc->tz_abbr[first_entry_exists];
+  if (strftime (tz_abbr, TIME_ZONE_BUFSIZE, "%Z", tm))
+    zone = tz_abbr;
+#endif
+  e->name = zone;
+  e[1].name = NULL;
+}
+
 /* Debugging: format a 'struct tm' into a buffer, taking the parser's
    timezone information into account (if pc != NULL).  */
 static char const *
@@ -1581,21 +1657,18 @@ debug_strfdatetime (struct tm const *tm, parser_control const *pc,
         issues with the parsing - better to avoid formats that could
         be mis-interpreted (e.g., just YYYY-MM-DD).
 
-     2. Can strftime be used instead?
-        depends if it is portable and can print invalid dates on all systems.
+     2. Print timezone information ?
 
-     3. Print timezone information ?
+     3. Print DST information ?
 
-     4. Print DST information ?
-
-     5. Print nanosecond information ?
+     4. Print nanosecond information ?
 
      NOTE:
      Printed date/time values might not be valid, e.g., '2016-02-31'
      or '2016-19-2016' .  These are the values as parsed from the user
      string, before validation.
   */
-  int m = nstrftime (buf, n, "(Y-M-D) %Y-%m-%d %H:%M:%S", tm, 0, 0);
+  int m = strftime (buf, n, "(Y-M-D) %Y-%m-%d %H:%M:%S", tm);
 
   /* If parser_control information was provided (for timezone),
      and there's enough space in the buffer, add timezone info.  */
@@ -1646,54 +1719,41 @@ static void
 debug_mktime_not_ok (struct tm const *tm0, struct tm const *tm1,
                      parser_control const *pc, bool time_zone_seen)
 {
-  /* TODO: handle t == -1 (as in 'mktime_ok').  */
   char tmp[DBGBUFSIZE];
-  int i;
-  const bool eq_sec   = (tm0->tm_sec  == tm1->tm_sec);
-  const bool eq_min   = (tm0->tm_min  == tm1->tm_min);
-  const bool eq_hour  = (tm0->tm_hour == tm1->tm_hour);
-  const bool eq_mday  = (tm0->tm_mday == tm1->tm_mday);
-  const bool eq_month = (tm0->tm_mon  == tm1->tm_mon);
-  const bool eq_year  = (tm0->tm_year == tm1->tm_year);
-
-  const bool dst_shift = eq_sec && eq_min && !eq_hour
-                         && eq_mday && eq_month && eq_year;
 
   if (!debugging (pc))
     return;
 
-  dbg_printf (_("error: invalid date/time value:\n"));
+  dbg_fputs (_("error: invalid date/time value:\n"));
   dbg_printf (_("    user provided time: '%s'\n"),
               debug_strfdatetime (tm0, pc, tmp, sizeof tmp));
-  dbg_printf (_("       normalized time: '%s'\n"),
-              debug_strfdatetime (tm1, pc, tmp, sizeof tmp));
-  /* The format must be aligned with debug_strfdatetime and the two
-     DEBUG statements above.  This string is not translated.  */
-  i = snprintf (tmp, sizeof tmp,
-                "                                 %4s %2s %2s %2s %2s %2s",
-                eq_year ? "" : "----",
-                eq_month ? "" : "--",
-                eq_mday ? "" : "--",
-                eq_hour ? "" : "--",
-                eq_min ? "" : "--",
-                eq_sec ? "" : "--");
-  /* Trim trailing whitespace.  */
-  if (0 <= i)
+  bool mktime_failed = tm1->tm_wday < 0;
+  if (mktime_failed)
+    dbg_fputs (_("    time could not be normalized\n"));
+  else
     {
-      if (sizeof tmp - 1 < i)
-        i = sizeof tmp - 1;
+      dbg_printf (_("       normalized time: '%s'\n"),
+                  debug_strfdatetime (tm1, pc, tmp, sizeof tmp));
+      /* The format must be aligned with debug_strfdatetime and the
+         dbg_printf statements above.  This string is not translated.  */
+      int i = sprintf (tmp, "%37s %2s %2s %2s %2s %2s",
+                       tm0->tm_year == tm1->tm_year ? "" : "----",
+                       tm0->tm_mon  == tm1->tm_mon  ? "" : "--",
+                       tm0->tm_mday == tm1->tm_mday ? "" : "--",
+                       tm0->tm_hour == tm1->tm_hour ? "" : "--",
+                       tm0->tm_min  == tm1->tm_min  ? "" : "--",
+                       tm0->tm_sec  == tm1->tm_sec  ? "" : "--");
+      /* Trim trailing whitespace.  */
       while (0 < i && tmp[i - 1] == ' ')
-        --i;
-      tmp[i] = '\0';
+        i--;
+      dbg_printf ("%.*s\n", i, tmp);
     }
-  dbg_printf ("%s\n", tmp);
 
-  dbg_printf (_("     possible reasons:\n"));
-  if (dst_shift)
-    dbg_printf (_("       nonexistent due to daylight-saving time;\n"));
-  if (!eq_mday && !eq_month)
-    dbg_printf (_("       invalid day/month combination;\n"));
-  dbg_printf (_("       numeric values overflow;\n"));
+  dbg_fputs (_("     possible reasons:\n"));
+  dbg_fputs (_("       nonexistent due to daylight-saving time;\n"));
+  dbg_fputs (_("       invalid day/month combination;\n"));
+  if (mktime_failed)
+    dbg_fputs (_("       numeric values overflow;\n"));
   dbg_printf ("       %s\n", (time_zone_seen ? _("incorrect timezone")
                               : _("missing timezone")));
 }
@@ -1803,7 +1863,7 @@ parse_datetime_body (struct timespec *result, char const *p,
   if (ckd_add (&pc.year.value, tmp.tm_year, TM_YEAR_BASE))
     {
       if (debugging (&pc))
-        dbg_printf (_("error: initial year out of range\n"));
+        dbg_fputs (_("error: initial year out of range\n"));
       goto fail;
     }
   pc.year.digits = 0;
@@ -1826,6 +1886,7 @@ parse_datetime_body (struct timespec *result, char const *p,
   pc.dsts_seen = 0;
   pc.zones_seen = 0;
   pc.year_seen = false;
+  pc.not_decimal = false;
   pc.debug_dates_seen = false;
   pc.debug_days_seen = false;
   pc.debug_times_seen = false;
@@ -1834,64 +1895,37 @@ parse_datetime_body (struct timespec *result, char const *p,
   pc.debug_year_seen = false;
   pc.debug_ordinal_day_seen = false;
 
-#if HAVE_STRUCT_TM_TM_ZONE
-  pc.local_time_zone_table[0].name = tmp.tm_zone;
-  pc.local_time_zone_table[0].type = tLOCAL_ZONE;
-  pc.local_time_zone_table[0].value = tmp.tm_isdst;
-  pc.local_time_zone_table[1].name = NULL;
+  pc.local_time_zone_table[0].name = NULL;
+  populate_local_time_zone_table (&pc, &tmp);
 
   /* Probe the names used in the next three calendar quarters, looking
      for a tm_isdst different from the one we already have.  */
-  {
-    int quarter;
-    for (quarter = 1; quarter <= 3; quarter++)
-      {
-        time_t probe;
-        if (ckd_add (&probe, Start, quarter * (90 * 24 * 60 * 60)))
-          break;
-        struct tm probe_tm;
-        if (localtime_rz (tz, &probe, &probe_tm) && probe_tm.tm_zone
-            && probe_tm.tm_isdst != pc.local_time_zone_table[0].value)
-          {
-              {
-                pc.local_time_zone_table[1].name = probe_tm.tm_zone;
-                pc.local_time_zone_table[1].type = tLOCAL_ZONE;
-                pc.local_time_zone_table[1].value = probe_tm.tm_isdst;
-                pc.local_time_zone_table[2].name = NULL;
-              }
-            break;
-          }
-      }
-  }
-#else
-#if HAVE_TZNAME
-  {
-# if !HAVE_DECL_TZNAME
-    extern char *tzname[];
-# endif
-    int i;
-    for (i = 0; i < 2; i++)
-      {
-        pc.local_time_zone_table[i].name = tzname[i];
-        pc.local_time_zone_table[i].type = tLOCAL_ZONE;
-        pc.local_time_zone_table[i].value = i;
-      }
-    pc.local_time_zone_table[i].name = NULL;
-  }
-#else
-  pc.local_time_zone_table[0].name = NULL;
-#endif
-#endif
-
-  if (pc.local_time_zone_table[0].name && pc.local_time_zone_table[1].name
-      && ! strcmp (pc.local_time_zone_table[0].name,
-                   pc.local_time_zone_table[1].name))
+  for (int quarter = 1; quarter <= 3; quarter++)
     {
-      /* This locale uses the same abbreviation for standard and
-         daylight times.  So if we see that abbreviation, we don't
-         know whether it's daylight time.  */
-      pc.local_time_zone_table[0].value = -1;
-      pc.local_time_zone_table[1].name = NULL;
+      time_t probe;
+      if (ckd_add (&probe, Start, quarter * (90 * 24 * 60 * 60)))
+        break;
+      struct tm probe_tm;
+      if (localtime_rz (tz, &probe, &probe_tm)
+          && (! pc.local_time_zone_table[0].name
+              || probe_tm.tm_isdst != pc.local_time_zone_table[0].value))
+        {
+          populate_local_time_zone_table (&pc, &probe_tm);
+          if (pc.local_time_zone_table[1].name)
+            {
+              if (streq (pc.local_time_zone_table[0].name,
+                         pc.local_time_zone_table[1].name))
+                {
+                  /* This locale uses the same abbreviation for standard and
+                     daylight times.  So if we see that abbreviation, we don't
+                     know whether it's daylight time.  */
+                  pc.local_time_zone_table[0].value = -1;
+                  pc.local_time_zone_table[1].name = NULL;
+                }
+
+              break;
+            }
+        }
     }
 
   if (yyparse (&pc) != 0)
@@ -1909,32 +1943,32 @@ parse_datetime_body (struct timespec *result, char const *p,
 
   if (debugging (&pc))
     {
-      dbg_printf (_("input timezone: "));
+      dbg_fputs (_("input timezone: "));
 
       if (pc.timespec_seen)
-        fprintf (stderr, _("'@timespec' - always UTC"));
+        fputs (_("'@timespec' - always UTC"), stderr);
       else if (pc.zones_seen)
-        fprintf (stderr, _("parsed date/time string"));
+        fputs (_("parsed date/time string"), stderr);
       else if (tzstring)
         {
           if (tz != tzdefault)
             fprintf (stderr, _("TZ=\"%s\" in date string"), tzstring);
-          else if (STREQ (tzstring, "UTC0"))
+          else if (streq (tzstring, "UTC0"))
             {
               /* Special case: 'date -u' sets TZ="UTC0".  */
-              fprintf (stderr, _("TZ=\"UTC0\" environment value or -u"));
+              fputs (_("TZ=\"UTC0\" environment value or -u"), stderr);
             }
           else
             fprintf (stderr, _("TZ=\"%s\" environment value"), tzstring);
         }
       else
-        fprintf (stderr, _("system default"));
+        fputs (_("system default"), stderr);
 
       /* Account for DST changes if tLOCAL_ZONE was seen.
          local timezone only changes DST and is relative to the
          default timezone.*/
       if (pc.local_zones_seen && !pc.zones_seen && 0 < pc.local_isdst)
-        fprintf (stderr, ", dst");
+        fputs (", dst", stderr);
 
       if (pc.zones_seen)
         fprintf (stderr, " (%s)", time_zone_str (pc.time_zone, time_zone_buf));
@@ -1952,15 +1986,15 @@ parse_datetime_body (struct timespec *result, char const *p,
           if (debugging (&pc))
             {
               if (pc.times_seen > 1)
-                dbg_printf ("error: seen multiple time parts\n");
+                dbg_fputs (_("error: seen multiple time parts\n"));
               if (pc.dates_seen > 1)
-                dbg_printf ("error: seen multiple date parts\n");
+                dbg_fputs (_("error: seen multiple date parts\n"));
               if (pc.days_seen > 1)
-                dbg_printf ("error: seen multiple days parts\n");
+                dbg_fputs (_("error: seen multiple days parts\n"));
               if (pc.dsts_seen > 1)
-                dbg_printf ("error: seen multiple daylight-saving parts\n");
+                dbg_fputs (_("error: seen multiple daylight-saving parts\n"));
               if ((pc.J_zones_seen + pc.local_zones_seen + pc.zones_seen) > 1)
-                dbg_printf ("error: seen multiple time-zone parts\n");
+                dbg_fputs (_("error: seen multiple time-zone parts\n"));
             }
           goto fail;
         }
@@ -1970,7 +2004,7 @@ parse_datetime_body (struct timespec *result, char const *p,
           || ckd_add (&tm.tm_mday, pc.day, 0))
         {
           if (debugging (&pc))
-            dbg_printf (_("error: year, month, or day overflow\n"));
+            dbg_fputs (_("error: year, month, or day overflow\n"));
           goto fail;
         }
       if (pc.times_seen || (pc.rels_seen && ! pc.dates_seen && ! pc.days_seen))
@@ -1998,7 +2032,8 @@ parse_datetime_body (struct timespec *result, char const *p,
           tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
           pc.seconds.tv_nsec = 0;
           if (debugging (&pc))
-            dbg_printf ("warning: using midnight as starting time: 00:00:00\n");
+            dbg_printf (_("warning: using midnight as starting time: %s\n"),
+                        "00:00:00");
         }
 
       /* Let mktime deduce tm_isdst if we have an absolute timestamp.  */
@@ -2126,13 +2161,13 @@ parse_datetime_body (struct timespec *result, char const *p,
           if (debugging (&pc))
             {
               if ((pc.rel.year != 0 || pc.rel.month != 0) && tm.tm_mday != 15)
-                dbg_printf (_("warning: when adding relative months/years, "
-                              "it is recommended to specify the 15th of the "
-                              "months\n"));
+                dbg_fputs (_("warning: when adding relative months/years, "
+                             "it is recommended to specify the 15th of the "
+                             "months\n"));
 
               if (pc.rel.day != 0 && tm.tm_hour != 12)
-                dbg_printf (_("warning: when adding relative days, "
-                              "it is recommended to specify noon\n"));
+                dbg_fputs (_("warning: when adding relative days, "
+                             "it is recommended to specify noon\n"));
             }
 
           int year, month, day;
@@ -2188,8 +2223,8 @@ parse_datetime_body (struct timespec *result, char const *p,
                  mktime (&tm).
               */
               if (tm0.tm_isdst != -1 && tm.tm_isdst != tm0.tm_isdst)
-                dbg_printf (_("warning: daylight saving time changed after "
-                              "date adjustment\n"));
+                dbg_fputs (_("warning: daylight saving time changed after "
+                             "date adjustment\n"));
 
               /* Warn if the user did not ask to adjust days but mday changed,
                  or
@@ -2207,8 +2242,8 @@ parse_datetime_body (struct timespec *result, char const *p,
                   && (tm.tm_mday != day
                       || (pc.rel.month == 0 && tm.tm_mon != month)))
                 {
-                  dbg_printf (_("warning: month/year adjustment resulted in "
-                                "shifted dates:\n"));
+                  dbg_fputs (_("warning: month/year adjustment resulted in "
+                               "shifted dates:\n"));
                   char tm_year_buf[TM_YEAR_BUFSIZE];
                   dbg_printf (_("     adjusted Y M D: %s %02d %02d\n"),
                               tm_year_str (year, tm_year_buf), month + 1, day);
@@ -2225,7 +2260,7 @@ parse_datetime_body (struct timespec *result, char const *p,
       if (pc.zones_seen)
         {
           bool overflow = false;
-#ifdef HAVE_TM_GMTOFF
+#ifdef HAVE_STRUCT_TM_TM_GMTOFF
           long int utcoff = tm.tm_gmtoff;
 #else
           time_t t = Start;
@@ -2279,8 +2314,8 @@ parse_datetime_body (struct timespec *result, char const *p,
             || ckd_add (&t4, t3, d4))
           {
             if (debugging (&pc))
-              dbg_printf (_("error: adding relative time caused an "
-                            "overflow\n"));
+              dbg_fputs (_("error: adding relative time caused an "
+                           "overflow\n"));
             goto fail;
           }
 
@@ -2312,8 +2347,8 @@ parse_datetime_body (struct timespec *result, char const *p,
             struct tm lmt;
             if (tm.tm_isdst != -1 && localtime_rz (tz, &result->tv_sec, &lmt)
                 && tm.tm_isdst != lmt.tm_isdst)
-              dbg_printf (_("warning: daylight saving time changed after "
-                            "time adjustment\n"));
+              dbg_fputs (_("warning: daylight saving time changed after "
+                           "time adjustment\n"));
           }
       }
     }
@@ -2322,9 +2357,9 @@ parse_datetime_body (struct timespec *result, char const *p,
     {
       /* Special case: using 'date -u' simply set TZ=UTC0 */
       if (! tzstring)
-        dbg_printf (_("timezone: system default\n"));
-      else if (STREQ (tzstring, "UTC0"))
-        dbg_printf (_("timezone: Universal Time\n"));
+        dbg_fputs (_("timezone: system default\n"));
+      else if (streq (tzstring, "UTC0"))
+        dbg_fputs (_("timezone: Universal Time\n"));
       else
         dbg_printf (_("timezone: TZ=\"%s\" environment value\n"), tzstring);
 
@@ -2341,7 +2376,7 @@ parse_datetime_body (struct timespec *result, char const *p,
                                         dbg_tm, sizeof dbg_tm));
       if (localtime_rz (tz, &result->tv_sec, &lmt))
         {
-#ifdef HAVE_TM_GMTOFF
+#ifdef HAVE_STRUCT_TM_TM_GMTOFF
           bool got_utcoff = true;
           long int utcoff = lmt.tm_gmtoff;
 #else

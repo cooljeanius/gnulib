@@ -4,7 +4,8 @@ tests/test-freadseek.sh
 tests/macros.h
 
 Depends-on:
-unistd
+unistd-h
+memeq
 
 configure.ac:
 

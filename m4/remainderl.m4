@@ -1,8 +1,10 @@
-# remainderl.m4 serial 14
-dnl Copyright (C) 2012-2023 Free Software Foundation, Inc.
+# remainderl.m4
+# serial 19
+dnl Copyright (C) 2012-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_REMAINDERL],
 [
@@ -16,7 +18,7 @@ AC_DEFUN([gl_FUNC_REMAINDERL],
 
   dnl Test whether remainderl() exists. Assume that remainderl(), if it exists, is
   dnl defined in the same library as remainder().
-  save_LIBS="$LIBS"
+  saved_LIBS="$LIBS"
   LIBS="$LIBS $REMAINDER_LIBM"
   AC_CACHE_CHECK([for remainderl],
     [gl_cv_func_remainderl],
@@ -40,87 +42,21 @@ AC_DEFUN([gl_FUNC_REMAINDERL],
         [gl_cv_func_remainderl=yes],
         [gl_cv_func_remainderl=no])
     ])
-  LIBS="$save_LIBS"
+  LIBS="$saved_LIBS"
   if test $gl_cv_func_remainderl = yes; then
     HAVE_REMAINDERL=1
     REMAINDERL_LIBM="$REMAINDER_LIBM"
-    dnl Also check whether it's declared.
-    dnl IRIX 6.5 has remainderl() in libm but doesn't declare it in <math.h>.
-    AC_CHECK_DECLS([remainderl], , [HAVE_DECL_REMAINDERL=0], [[#include <math.h>]])
 
-    save_LIBS="$LIBS"
+    saved_LIBS="$LIBS"
     LIBS="$LIBS $REMAINDERL_LIBM"
     gl_FUNC_REMAINDERL_WORKS
-    LIBS="$save_LIBS"
+    LIBS="$saved_LIBS"
     case "$gl_cv_func_remainderl_works" in
       *yes) ;;
       *) REPLACE_REMAINDERL=1 ;;
     esac
-
-    m4_ifdef([gl_FUNC_REMAINDERL_IEEE], [
-      if test $gl_remainderl_required = ieee && test $REPLACE_REMAINDERL = 0; then
-        AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
-        AC_CACHE_CHECK([whether remainderl works according to ISO C 99 with IEC 60559],
-          [gl_cv_func_remainderl_ieee],
-          [
-            save_LIBS="$LIBS"
-            LIBS="$LIBS $REMAINDERL_LIBM"
-            AC_RUN_IFELSE(
-              [AC_LANG_SOURCE([[
-#ifndef __NO_MATH_INLINES
-# define __NO_MATH_INLINES 1 /* for glibc */
-#endif
-#include <math.h>
-extern
-#ifdef __cplusplus
-"C"
-#endif
-long double remainderl (long double, long double);
-/* Compare two numbers with ==.
-   This is a separate function because IRIX 6.5 "cc -O" miscompiles an
-   'x == x' test.  */
-static int
-numeric_equal (long double x, long double y)
-{
-  return x == y;
-}
-static long double dummy (long double x, long double y) { return 0; }
-int main (int argc, char *argv[])
-{
-  long double (* volatile my_remainderl) (long double, long double) = argc ? remainderl : dummy;
-  long double f;
-  /* Test remainderl(...,0.0L).
-     This test fails on OSF/1 5.1.  */
-  f = my_remainderl (2.0L, 0.0L);
-  if (numeric_equal (f, f))
-    return 1;
-  return 0;
-}
-              ]])],
-              [gl_cv_func_remainderl_ieee=yes],
-              [gl_cv_func_remainderl_ieee=no],
-              [case "$host_os" in
-                                     # Guess yes on glibc systems.
-                 *-gnu* | gnu*)      gl_cv_func_remainderl_ieee="guessing yes" ;;
-                                     # Guess yes on musl systems.
-                 *-musl* | midipix*) gl_cv_func_remainderl_ieee="guessing yes" ;;
-                                     # Guess yes on native Windows.
-                 mingw*)             gl_cv_func_remainderl_ieee="guessing yes" ;;
-                                     # If we don't know, obey --enable-cross-guesses.
-                 *)                  gl_cv_func_remainderl_ieee="$gl_cross_guess_normal" ;;
-               esac
-              ])
-            LIBS="$save_LIBS"
-          ])
-        case "$gl_cv_func_remainderl_ieee" in
-          *yes) ;;
-          *) REPLACE_REMAINDERL=1 ;;
-        esac
-      fi
-    ])
   else
     HAVE_REMAINDERL=0
-    HAVE_DECL_REMAINDERL=0
   fi
   if test $HAVE_REMAINDERL = 0 || test $REPLACE_REMAINDERL = 1; then
     dnl Find libraries needed to link lib/remainderl.c.
@@ -153,7 +89,8 @@ int main (int argc, char *argv[])
 
 dnl Test whether remainderl() works.
 dnl It produces completely wrong values on OpenBSD 5.1/SPARC.
-dnl On musl 1.2.2/{arm64,s390x}, the result is accurate to only 16 digits.
+dnl On musl 1.2.2/{arm64,s390x} and NetBSD 10.0, the result is accurate to only
+dnl 16 digits.
 AC_DEFUN([gl_FUNC_REMAINDERL_WORKS],
 [
   AC_REQUIRE([AC_PROG_CC])
@@ -188,14 +125,6 @@ AC_DEFUN([gl_FUNC_REMAINDERL_WORKS],
 # undef LDBL_MIN_EXP
 # define LDBL_MIN_EXP DBL_MIN_EXP
 #endif
-#if defined __sgi && (LDBL_MANT_DIG >= 106)
-# undef LDBL_MANT_DIG
-# define LDBL_MANT_DIG 106
-# if defined __GNUC__
-#  undef LDBL_MIN_EXP
-#  define LDBL_MIN_EXP DBL_MIN_EXP
-# endif
-#endif
 extern
 #ifdef __cplusplus
 "C"
@@ -218,7 +147,7 @@ int main (int argc, char *argv[])
     if (gz >= 0.0L)
       result |= 1;
   }
-  /* This test fails on musl 1.2.2/arm64, musl 1.2.2/s390x.  */
+  /* This test fails on musl 1.2.2/arm64, musl 1.2.2/s390x, NetBSD 10.0.  */
   {
     const long double TWO_LDBL_MANT_DIG = /* 2^LDBL_MANT_DIG */
       (long double) (1U << ((LDBL_MANT_DIG - 1) / 5))
@@ -243,10 +172,10 @@ int main (int argc, char *argv[])
            *-gnu* | gnu*)      gl_cv_func_remainderl_works="guessing yes" ;;
                                # Guess no on musl systems.
            *-musl* | midipix*) gl_cv_func_remainderl_works="guessing no" ;;
-                               # Guess no on OpenBSD.
-           openbsd*)           gl_cv_func_remainderl_works="guessing no" ;;
+                               # Guess no on NetBSD and OpenBSD.
+           netbsd* | openbsd*) gl_cv_func_remainderl_works="guessing no" ;;
                                # Guess yes on native Windows.
-           mingw*)             gl_cv_func_remainderl_works="guessing yes" ;;
+           mingw* | windows*)  gl_cv_func_remainderl_works="guessing yes" ;;
                                # If we don't know, obey --enable-cross-guesses.
            *)                  gl_cv_func_remainderl_works="$gl_cross_guess_normal" ;;
          esac

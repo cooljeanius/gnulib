@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2023 Free Software Foundation, Inc.
+ * Copyright (C) 2017-2026 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,21 +45,25 @@ main (void)
     loc = newlocale (LC_ALL_MASK, "C", NULL);
     ASSERT (loc != NULL);
     ret = strfmon_l (buf, sizeof (buf), loc, "%^#5.0n", 123.4);
-    ASSERT (   (ret == 5 && strcmp (buf,  "  123") == 0) /* AIX, Solaris */
-            || (ret == 6 && strcmp (buf, "   123") == 0) /* glibc */
-            || (ret == 7 && strcmp (buf, "   123 ") == 0) /* Mac OS X */
+    ASSERT (   (ret == 5 && streq (buf,  "  123")) /* AIX, Solaris */
+            || (ret == 6 && streq (buf, "   123")) /* glibc */
+            || (ret == 7 && streq (buf, "   123 ")) /* Mac OS X */
            );
   }
 
   /* Test whether the decimal point comes from the right locale:
-     glibc bug <https://sourceware.org/bugzilla/show_bug.cgi?id=19633>.  */
+     glibc bug <https://sourceware.org/PR19633>.  */
   if (setlocale (LC_ALL, "en_US.UTF-8") == NULL)
     {
+      if (test_exit_status != EXIT_SUCCESS)
+        return test_exit_status;
       fprintf (stderr, "Skipping test: English Unicode locale is not installed\n");
       return 77;
     }
   if (setlocale (LC_ALL, "de_DE.UTF-8") == NULL)
     {
+      if (test_exit_status != EXIT_SUCCESS)
+        return test_exit_status;
       fprintf (stderr, "Skipping test: English Unicode locale is not installed\n");
       return 77;
     }
@@ -73,7 +77,7 @@ main (void)
     setlocale (LC_ALL, "de_DE.UTF-8");
     loc = newlocale (LC_ALL_MASK, "en_US.UTF-8", NULL);
     ASSERT (strfmon_l (buf, sizeof (buf), loc, "%.2n", 123.5) >= 0);
-    ASSERT (strcmp (buf, expected_buf) == 0);
+    ASSERT (streq (buf, expected_buf));
     freelocale (loc);
   }
   {
@@ -86,10 +90,10 @@ main (void)
     setlocale (LC_ALL, "en_US.UTF-8");
     loc = newlocale (LC_ALL_MASK, "de_DE.UTF-8", NULL);
     ASSERT (strfmon_l (buf, sizeof (buf), loc, "%.2n", 123.5) >= 0);
-    ASSERT (strcmp (buf, expected_buf) == 0);
+    ASSERT (streq (buf, expected_buf));
     freelocale (loc);
   }
 #endif
 
-  return 0;
+  return test_exit_status;
 }
